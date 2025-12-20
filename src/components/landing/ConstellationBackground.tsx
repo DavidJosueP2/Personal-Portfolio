@@ -16,64 +16,82 @@ type Star = {
   twinkleCurve: number
 }
 
-type NebulaFieldBlob = {
+// --- Nebula sprites (small, layered, GSAP animated) -------------------------
+
+// Fewer, larger, rounder blobs ("universe clouds")
+const NEBULA_COUNT = 8 // 5..8 recommended
+const MAX_OPACITY = 0.24
+const MIN_OPACITY = 0.01
+const MOVE_RANGE: [number, number] = [260, 820] // px (min..max)
+const BLUR_RANGE: [number, number] = [38, 98] // px (min..max)
+
+type NebulaLayer = 0 | 1 | 2
+
+type NebulaSprite = {
+  id: number
+  layer: NebulaLayer
+
+  // animated values (GSAP mutates these)
   x: number
   y: number
-  r: number
-  a: number
-  hue: "cool" | "warm"
-  ox: number
-  oy: number
-  phase: number
-  freq: number
-  pulse: number
-  vx: number
-  vy: number
-  life: number // 0..1
-  lifeDir: 1 | -1
-}
+  opacity: number
+  driftX: number
+  driftY: number
+  scale: number
+  rot: number
 
-function makeNebulaField(count: number): NebulaFieldBlob[] {
-  return Array.from({ length: count }, () => ({
-    // keep blobs more centered to avoid side columns
-    x: rand(-900, 900),
-    y: rand(-700, 700),
-    ox: rand(-260, 260),
-    oy: rand(-220, 220),
-    r: rand(220, 640),
-    a: rand(0.03, 0.085),
-    hue: Math.random() > 0.22 ? "cool" : "warm",
-    phase: rand(0, Math.PI * 2),
-    freq: rand(0.12, 0.28),
-    pulse: rand(0.06, 0.18),
-    vx: rand(-0.35, 0.35),
-    vy: rand(-0.3, 0.3),
-    life: rand(0.35, 1),
-    lifeDir: 1,
-  }))
-}
+  // elliptical + organic shaping
+  stretchX: number
+  stretchY: number
 
-function respawnNebulaBlob(b: NebulaFieldBlob) {
-  // keep respawns centered too
-  b.x = rand(-1100, 1100)
-  b.y = rand(-900, 900)
-  b.ox = rand(-260, 260)
-  b.oy = rand(-220, 220)
-  b.r = rand(220, 720)
-  b.a = rand(0.028, 0.09)
-  b.hue = Math.random() > 0.22 ? "cool" : "warm"
-  b.phase = rand(0, Math.PI * 2)
-  b.freq = rand(0.11, 0.3)
-  b.pulse = rand(0.06, 0.2)
-  b.vx = rand(-0.4, 0.4)
-  b.vy = rand(-0.35, 0.35)
-  b.life = 0
-  b.lifeDir = 1
+  // static-ish parameters (re-generated on respawn)
+  blurPx: number
+  radius: number // base draw radius (before scale)
+  moveRange: number
+  moveDuration: number
+  fadeDuration: number
+  tintMix: number
+
+  alive: boolean
+  tl?: gsap.core.Timeline
+  driftTween?: gsap.core.Tween
+  breatheTween?: gsap.core.Tween
+  respawnCall?: gsap.core.Tween
 }
 
 type RGB = { r: number; g: number; b: number }
 
+function parseCssRgbTriplet(input: string): RGB | null {
+  // Accepts formats like: "52 211 153" or "52, 211, 153"
+  const cleaned = input.trim().replaceAll(/\s+/g, " ")
+  if (!cleaned) return null
+  const parts = cleaned.includes(",") ? cleaned.split(",") : cleaned.split(" ")
+  if (parts.length < 3) return null
+  const r = Number(parts[0])
+  const g = Number(parts[1])
+  const b = Number(parts[2])
+  if (![r, g, b].every((n) => Number.isFinite(n))) return null
+  return {
+    r: clamp(Math.round(r), 0, 255),
+    g: clamp(Math.round(g), 0, 255),
+    b: clamp(Math.round(b), 0, 255),
+  }
+}
+
+function readAccentRgbFromCss(): RGB | null {
+  if (globalThis.window === undefined) return null
+  const raw = globalThis
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue("--accent-rgb")
+  return parseCssRgbTriplet(raw)
+}
+
 function getAccentTint(accent: string | undefined): RGB {
+  // Prefer the actual runtime token (keeps perfect match with the selected accent)
+  const fromCss = readAccentRgbFromCss()
+  if (fromCss) return fromCss
+
+  // Fallback (keeps previous behavior if CSS variable isn't available)
   switch (accent) {
     case "lime":
       return { r: 190, g: 255, b: 60 }
@@ -85,8 +103,10 @@ function getAccentTint(accent: string | undefined): RGB {
       return { r: 167, g: 139, b: 250 }
     case "amber":
       return { r: 251, g: 191, b: 36 }
+    case "emerald":
+      return { r: 52, g: 211, b: 153 }
     default:
-      return { r: 0, g: 255, b: 170 }
+      return { r: 52, g: 211, b: 153 }
   }
 }
 
@@ -98,6 +118,291 @@ function vignette(ctx: CanvasRenderingContext2D, w: number, h: number) {
   vg.addColorStop(1, "rgba(0,0,0,0.82)")
   ctx.fillStyle = vg
   ctx.fillRect(0, 0, w, h)
+}
+
+function makeNebulaSpriteCanvas(size: number) {
+  const c = document.createElement("canvas")
+  c.width = size
+  c.height = size
+  const cctx = c.getContext("2d")
+  if (!cctx) return c
+
+  // Irregular soft alpha mask: multiple offset lobes + mild erosion.
+  const cx = size / 2
+  const cy = size / 2
+
+  cctx.clearRect(0, 0, size, size)
+  cctx.globalCompositeOperation = "source-over"
+
+  // base soft disk
+  const base = cctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.52)
+  base.addColorStop(0, "rgba(255,255,255,0.9)")
+  base.addColorStop(0.28, "rgba(255,255,255,0.42)")
+  base.addColorStop(0.65, "rgba(255,255,255,0.14)")
+  base.addColorStop(1, "rgba(255,255,255,0)")
+  cctx.fillStyle = base
+  cctx.beginPath()
+  cctx.arc(cx, cy, size * 0.52, 0, Math.PI * 2)
+  cctx.fill()
+
+  // overlay lobes (break roundness)
+  cctx.globalCompositeOperation = "lighter"
+  for (let i = 0; i < 6; i++) {
+    const ox = rand(-size * 0.22, size * 0.22)
+    const oy = rand(-size * 0.18, size * 0.18)
+    const rr = rand(size * 0.22, size * 0.46)
+    const g = cctx.createRadialGradient(cx + ox, cy + oy, 0, cx + ox, cy + oy, rr)
+    g.addColorStop(0, "rgba(255,255,255,0.35)")
+    g.addColorStop(0.45, "rgba(255,255,255,0.12)")
+    g.addColorStop(1, "rgba(255,255,255,0)")
+    cctx.fillStyle = g
+    cctx.beginPath()
+    cctx.arc(cx + ox, cy + oy, rr, 0, Math.PI * 2)
+    cctx.fill()
+  }
+
+  // edge erosion: random transparent dots near perimeter
+  cctx.globalCompositeOperation = "destination-out"
+  cctx.globalAlpha = 0.22
+  for (let i = 0; i < 140; i++) {
+    const a = rand(0.2, 1)
+    cctx.fillStyle = `rgba(0,0,0,${a})`
+    const ang = rand(0, Math.PI * 2)
+    const rad = rand(size * 0.22, size * 0.52)
+    const x = cx + Math.cos(ang) * rad
+    const y = cy + Math.sin(ang) * rad
+    cctx.beginPath()
+    cctx.arc(x, y, rand(0.6, 1.8), 0, Math.PI * 2)
+    cctx.fill()
+  }
+  cctx.globalAlpha = 1
+  cctx.globalCompositeOperation = "source-over"
+
+  // Micro speckles
+  cctx.globalAlpha = 0.05
+  for (let i = 0; i < 80; i++) {
+    const x = rand(0, size)
+    const y = rand(0, size)
+    const a = rand(0.2, 1)
+    cctx.fillStyle = `rgba(255,255,255,${a})`
+    cctx.fillRect(x, y, 1, 1)
+  }
+  cctx.globalAlpha = 1
+
+  return c
+}
+
+function layerForIndex(i: number): NebulaLayer {
+  // Weighted layers: more background blobs than foreground.
+  const t = i / Math.max(1, NEBULA_COUNT - 1)
+  if (t < 0.55) return 0
+  if (t < 0.85) return 1
+  return 2
+}
+
+function layerFactors(layer: NebulaLayer) {
+  switch (layer) {
+    case 0:
+      return { parallax: 0.25, opacityMaxMul: 0.85, blurMul: 1.15, scaleMul: 1.05 }
+    case 1:
+      return { parallax: 0.45, opacityMaxMul: 1, blurMul: 0.95, scaleMul: 1 }
+    case 2:
+      return { parallax: 0.7, opacityMaxMul: 1.05, blurMul: 0.8, scaleMul: 0.92 }
+  }
+}
+
+function randomizeNebulaParams(n: NebulaSprite, vp: { width: number; height: number }, spawn?: { x: number; y: number }) {
+  const layerFx = layerFactors(n.layer)
+
+  // Big, soft blobs. Size also adapts a bit to viewport.
+  const minSide = Math.max(360, Math.min(vp.width, vp.height))
+  const baseRadius = rand(minSide * 0.22, minSide * 0.46) * layerFx.scaleMul
+  const blurPx = rand(BLUR_RANGE[0], BLUR_RANGE[1]) * layerFx.blurMul
+
+  const opMax = clamp(MAX_OPACITY * layerFx.opacityMaxMul, 0, 1)
+  const opMin = MIN_OPACITY
+
+  const moveRange = rand(MOVE_RANGE[0], MOVE_RANGE[1])
+
+  // slower, smoother animation
+  const moveDuration = rand(22, 54)
+  const fadeDuration = rand(16, 44)
+
+  // Position: controlled spawn (zone-based) to avoid central clustering.
+  const pad = 40
+  const x = clamp(spawn?.x ?? rand(pad, Math.max(pad + 1, vp.width - pad)), pad, Math.max(pad + 1, vp.width - pad))
+  const y = clamp(spawn?.y ?? rand(pad, Math.max(pad + 1, vp.height - pad)), pad, Math.max(pad + 1, vp.height - pad))
+
+  // accent dominates, keep a little white
+  const tintMix = rand(0.9, 1)
+
+  // Avoid very oval ratios: keep scaleX/scaleY close (round blob)
+  const sx = rand(0.85, 1.18) * (n.layer === 0 ? 1.04 : 1)
+  const sy = rand(0.85, 1.18) * (n.layer === 0 ? 1.04 : 1)
+
+  n.radius = baseRadius
+  n.blurPx = blurPx
+  n.moveRange = moveRange
+  n.moveDuration = moveDuration
+  n.fadeDuration = fadeDuration
+  n.tintMix = tintMix
+
+  n.stretchX = sx
+  n.stretchY = sy
+  n.rot = rand(0, Math.PI * 2)
+
+  n.x = x
+  n.y = y
+  n.driftX = 0
+  n.driftY = 0
+  n.scale = rand(0.82, 1.12)
+  n.opacity = opMin
+  n.alive = true
+
+  return { opMax, opMin }
+}
+
+function startNebulaAnimation(
+    n: NebulaSprite,
+    vp: { width: number; height: number },
+    getMaxMin: () => { opMax: number; opMin: number },
+    target: { x: number; y: number; strength: number },
+    getCohortPull: (id: number) => number
+) {
+  n.tl?.kill()
+  n.driftTween?.kill()
+  n.breatheTween?.kill()
+  n.respawnCall?.kill()
+
+  const { opMax, opMin } = getMaxMin()
+
+  // Opacity pulse (soft, never blankets the whole screen)
+  const tl = gsap.timeline({ repeat: -1 })
+  tl.set(n, { opacity: rand(opMin, opMin * 2) })
+  tl.to(n, {
+    opacity: rand(opMax * 0.6, opMax),
+    duration: rand(6, 14),
+    ease: "sine.inOut",
+  })
+  tl.to(n, {
+    opacity: rand(opMin, opMin * 1.6),
+    duration: rand(10, 22),
+    ease: "sine.inOut",
+  })
+  n.tl = tl
+
+  // Breathing (scale only)
+  const baseScale = n.scale
+  n.breatheTween = gsap.to(n, {
+    scale: baseScale * rand(0.92, 1.12),
+    duration: rand(14, 32),
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1,
+  })
+
+  // Free 2D drift across the viewport using absolute x/y moves.
+  // This guarantees blobs will naturally reach edges.
+  const driftOnce = () => {
+    const pull = getCohortPull(n.id) * target.strength
+
+    const biasedX = n.x + (target.x - n.x) * pull
+    const biasedY = n.y + (target.y - n.y) * pull
+
+    const nextX = biasedX + rand(-n.moveRange, n.moveRange)
+    const nextY = biasedY + rand(-n.moveRange, n.moveRange)
+
+    // allow going beyond bounds a bit (edge presence), then wrap
+    const pad = 240
+
+    n.driftTween = gsap.to(n, {
+      x: nextX,
+      y: nextY,
+      rot: n.rot + rand(-0.55, 0.55),
+      duration: rand(n.moveDuration * 0.75, n.moveDuration * 1.25),
+      ease: "sine.inOut",
+      onComplete: () => {
+        // wrap-around to keep continuous movement
+        const w = vp.width
+        const h = vp.height
+
+        if (n.x < -pad) n.x += w + pad * 2
+        else if (n.x > w + pad) n.x -= w + pad * 2
+
+        if (n.y < -pad) n.y += h + pad * 2
+        else if (n.y > h + pad) n.y -= h + pad * 2
+
+        driftOnce()
+      },
+    })
+  }
+
+  driftOnce()
+}
+
+function drawNebulaSprites(
+    ctx: CanvasRenderingContext2D,
+    vp: { width: number; height: number },
+    sprites: HTMLCanvasElement[],
+    nebulas: NebulaSprite[],
+    tint: RGB,
+    parallaxOffset: { x: number; y: number }
+) {
+  ctx.save()
+  ctx.globalCompositeOperation = "screen"
+
+  const layers: NebulaLayer[] = [0, 1, 2]
+  for (const layer of layers) {
+    const lf = layerFactors(layer)
+    for (const n of nebulas) {
+      if (n.layer !== layer) continue
+      if (n.opacity <= 0.0005) continue
+
+      const x = n.x + parallaxOffset.x * lf.parallax
+      const y = n.y + parallaxOffset.y * lf.parallax
+
+      const rBase = n.radius * n.scale
+      const rx = rBase * n.stretchX
+      const ry = rBase * n.stretchY
+
+      const pad = 260
+      if (x + rx < -pad || x - rx > vp.width + pad || y + ry < -pad || y - ry > vp.height + pad) continue
+
+      // accent dominates
+      const mix = n.tintMix
+      const rr = Math.round(255 * (1 - mix) + tint.r * mix)
+      const gg = Math.round(255 * (1 - mix) + tint.g * mix)
+      const bb = Math.round(255 * (1 - mix) + tint.b * mix)
+
+      ctx.filter = `blur(${Math.round(n.blurPx)}px)`
+      ctx.globalAlpha = clamp(n.opacity, 0, 1)
+
+      const sprite = sprites[layer]
+
+      // draw as rotated ellipse by transforming context (cheap: transform + drawImage)
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.rotate(n.rot)
+      ctx.scale(rx / rBase, ry / rBase)
+
+      const size = rBase * 2
+      ctx.globalCompositeOperation = "screen"
+      ctx.fillStyle = `rgba(${rr},${gg},${bb},1)`
+      ctx.drawImage(sprite, -rBase, -rBase, size, size)
+
+      if (layer === 2) {
+        ctx.globalAlpha = clamp(n.opacity * 0.45, 0, 1)
+        ctx.filter = `blur(${Math.round(n.blurPx * 0.7)}px)`
+        ctx.drawImage(sprite, -rBase * 0.92, -rBase * 0.92, size * 0.92, size * 0.92)
+      }
+
+      ctx.restore()
+    }
+  }
+
+  ctx.filter = "none"
+  ctx.globalAlpha = 1
+  ctx.restore()
 }
 
 /**
@@ -119,8 +424,46 @@ export function ConstellationBackground() {
     canvas.style.position = "absolute"
     canvas.style.inset = "0"
 
+    // Hint the browser: we only animate transform-ish values and opacity.
+    canvas.style.willChange = "transform, opacity"
+
     let raf = 0
     let vp = resizeCanvasToViewport(canvas, ctx)
+
+    // Shared "attractor" point to create occasional soft overlap/connection
+    const target = {
+      x: vp.width * 0.5,
+      y: vp.height * 0.5,
+      strength: 0.18, // small bias; avoids central clustering
+    }
+
+    let cohort: number[] = []
+    const chooseCohort = () => {
+      // choose 2..3 nebulas to be pulled for a while
+      const count = Math.random() < 0.55 ? 2 : 3
+      const ids = Array.from({ length: NEBULA_COUNT }, (_, i) => i)
+      // shuffle (small N)
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[ids[i], ids[j]] = [ids[j], ids[i]]
+      }
+      cohort = ids.slice(0, count)
+
+      // move target somewhere not always centered
+      const pad = 80
+      target.x = rand(pad, Math.max(pad + 1, vp.width - pad))
+      target.y = rand(pad, Math.max(pad + 1, vp.height - pad))
+
+      // pulse attraction strength
+      target.strength = rand(0.12, 0.26)
+    }
+
+    const getCohortPull = (id: number) => (cohort.includes(id) ? 1 : 0.12)
+
+    chooseCohort()
+    const retargetTl = gsap.timeline({ repeat: -1 })
+    retargetTl.call(chooseCohort)
+    retargetTl.to({}, { duration: rand(10, 18) })
 
     // Scroll -> "travel speed". We ease it to feel like a camera inertia.
     const scroll = {
@@ -141,11 +484,30 @@ export function ConstellationBackground() {
       glowMin: 1.1,
       glowMax: 2.6,
       auraStrength: 0.42,
-      // IMPORTANT: disable nebula to remove side patterns/columns
-      enableNebula: false,
+      // Nebula underlay
+      enableNebula: true,
       // keep a clean frame (no stars/noise hugging the viewport edges)
       edgeMargin: 28,
     }
+
+    // Accent-aware tint cache (keeps the nebula/stars synced with the selected accent)
+    let accentTint: RGB = getAccentTint(document.documentElement.dataset.accent)
+    const updateAccentTint = () => {
+      accentTint = getAccentTint(document.documentElement.dataset.accent)
+    }
+
+    // Ensure initial tint picks up any late-applied CSS variables.
+    updateAccentTint()
+
+    const accentObserver: MutationObserver | null =
+        globalThis.MutationObserver === undefined
+            ? null
+            : new MutationObserver(() => updateAccentTint())
+
+    accentObserver?.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-accent", "style", "class"],
+    })
 
     const stars: Star[] = []
     const resetStar = (s: Star, randomZ = true) => {
@@ -186,17 +548,126 @@ export function ConstellationBackground() {
       stars.push(s)
     }
 
-    const nebula = {
-      // fewer blobs -> less chance of noticeable side patterns/columns
-      blobs: makeNebulaField(12),
-      driftX: rand(-700, 700),
-      driftY: rand(-700, 700),
+    // Nebula sprites (few, large blobs)
+    const spriteCanvases = [
+      makeNebulaSpriteCanvas(256),
+      makeNebulaSpriteCanvas(256),
+      makeNebulaSpriteCanvas(256),
+    ]
+
+    const nebulas: NebulaSprite[] = Array.from({ length: NEBULA_COUNT }, (_, i) => {
+      const layer = layerForIndex(i)
+      return {
+        id: i,
+        layer,
+        x: 0,
+        y: 0,
+        opacity: MIN_OPACITY,
+        driftX: 0,
+        driftY: 0,
+        scale: 1,
+        rot: 0,
+        stretchX: 1,
+        stretchY: 1,
+        blurPx: 60,
+        radius: 280,
+        moveRange: 420,
+        moveDuration: 34,
+        fadeDuration: 26,
+        tintMix: 0.92,
+        alive: true,
+      }
+    })
+
+    const initNebulas = () => {
+      // Zone-based initial distribution (edge-heavy):
+      // - >=1 top (0..25%)
+      // - >=1 bottom (75..100%)
+      // - >=1 side (left 0..20% OR right 80..100%)
+      // - max 2 in center box (40..60% x/y)
+      const pad = 60
+      const w = vp.width
+      const h = vp.height
+
+      const inCenter = (x: number, y: number) => {
+        const nx = x / Math.max(1, w)
+        const ny = y / Math.max(1, h)
+        return nx >= 0.4 && nx <= 0.6 && ny >= 0.4 && ny <= 0.6
+      }
+
+      const zonePoint = (xMinN: number, xMaxN: number, yMinN: number, yMaxN: number) => {
+        const x = rand(w * xMinN, w * xMaxN)
+        const y = rand(h * yMinN, h * yMaxN)
+        return {
+          x: clamp(x, pad, Math.max(pad + 1, w - pad)),
+          y: clamp(y, pad, Math.max(pad + 1, h - pad)),
+        }
+      }
+
+      const zoneSpawns: Array<{ x: number; y: number }> = [
+        zonePoint(0.02, 0.2, 0.02, 0.25), // top-left
+        zonePoint(0.8, 0.98, 0.02, 0.25), // top-right
+        zonePoint(0.02, 0.2, 0.75, 0.98), // bottom-left
+        zonePoint(0.8, 0.98, 0.75, 0.98), // bottom-right (forces edge presence)
+      ]
+
+      // ensure at least one strong side presence (left/right bands)
+      zoneSpawns.push(
+          Math.random() < 0.5
+              ? zonePoint(0.8, 0.98, 0.25, 0.7)
+              : zonePoint(0.02, 0.2, 0.25, 0.7)
+      )
+
+      // fill remaining with EDGE-biased picks; keep center limited to max 2
+      let centerCount = 0
+      const pickRandomSpawn = () => {
+        const pick = Math.random()
+        if (pick < 0.3) return zonePoint(0.02, 0.22, 0.02, 0.98) // left edge band
+        if (pick < 0.6) return zonePoint(0.78, 0.98, 0.02, 0.98) // right edge band
+        if (pick < 0.78) return zonePoint(0.2, 0.8, 0.02, 0.22) // top band
+        if (pick < 0.93) return zonePoint(0.2, 0.8, 0.78, 0.98) // bottom band
+        return zonePoint(0.38, 0.62, 0.38, 0.62) // near-center
+      }
+
+      while (zoneSpawns.length < nebulas.length) {
+        const p = pickRandomSpawn()
+        const isC = inCenter(p.x, p.y)
+        if (isC && centerCount >= 2) continue
+        if (isC) centerCount++
+        zoneSpawns.push(p)
+      }
+
+      // Shuffle spawns so the layering doesn't always map to the same zone
+      for (let i = zoneSpawns.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[zoneSpawns[i], zoneSpawns[j]] = [zoneSpawns[j], zoneSpawns[i]]
+      }
+
+      for (let i = 0; i < nebulas.length; i++) {
+        const n = nebulas[i]
+        const spawn = zoneSpawns[i]
+        const { opMax, opMin } = randomizeNebulaParams(n, vp, spawn)
+        startNebulaAnimation(n, vp, () => ({ opMax, opMin }), target, getCohortPull)
+      }
     }
 
     const onResize = () => {
       vp = resizeCanvasToViewport(canvas, ctx)
+
+      // keep target in bounds
+      const pad = 80
+      target.x = clamp(target.x, pad, Math.max(pad + 1, vp.width - pad))
+      target.y = clamp(target.y, pad, Math.max(pad + 1, vp.height - pad))
+
       // Re-spread stars to fit new viewport
       for (const s of stars) resetStar(s, true)
+
+      // keep nebulas inside the viewport after resize
+      const nPad = 60
+      for (const n of nebulas) {
+        n.x = clamp(n.x, nPad, Math.max(nPad + 1, vp.width - nPad))
+        n.y = clamp(n.y, nPad, Math.max(nPad + 1, vp.height - nPad))
+      }
     }
 
     // Track scroll velocity
@@ -212,80 +683,17 @@ export function ConstellationBackground() {
     globalThis.addEventListener("resize", onResize)
     globalThis.addEventListener("scroll", onScroll, { passive: true })
 
-    // Subtle ambient drift via GSAP ticker-like feel (but use RAF); GSAP only for easing constants if desired.
+    // Subtle ambient drift
     const ambient = { driftX: 0, driftY: 0 }
     const driftTl = gsap
-      .timeline({ repeat: -1, yoyo: true, defaults: { ease: "sine.inOut" } })
-      .to(ambient, { driftX: 18, driftY: -12, duration: 6 })
-      .to(ambient, { driftX: -14, driftY: 10, duration: 6 })
+        .timeline({ repeat: -1, yoyo: true, defaults: { ease: "sine.inOut" } })
+        .to(ambient, { driftX: 18, driftY: -12, duration: 6 })
+        .to(ambient, { driftX: -14, driftY: 10, duration: 6 })
+
+    // init nebulas after we have vp
+    initNebulas()
 
     let t0 = performance.now()
-
-    const updateNebula = (baseX: number, baseY: number, attractX: number, attractY: number, idlePhase: number, dt: number) => {
-      const step = Math.min(2.2, dt * 60)
-
-      for (const b of nebula.blobs) {
-        updateBlobLifecycle(b, step)
-        updateBlobMotion(b, baseX, baseY, attractX, attractY, idlePhase, step)
-      }
-
-      maybeMergeSplit(nebula.blobs, step)
-    }
-
-    const renderNebula = (tint: RGB, baseX: number, baseY: number, idlePhase: number) => {
-      ctx.save()
-      ctx.globalCompositeOperation = "screen"
-
-      for (const b of nebula.blobs) {
-        const wob = Math.sin(idlePhase * b.freq + b.phase)
-        const wob2 = Math.cos(idlePhase * (b.freq * 0.85) + b.phase)
-
-        const x = baseX + b.x + b.ox * wob * 0.25
-        const y = baseY + b.y + b.oy * wob2 * 0.25
-
-        const life = clamp(b.life, 0, 1)
-        const pr = b.r * (0.85 + wob * b.pulse) * (0.65 + life * 0.55)
-        const a = b.a * (0.15 + life * 0.95)
-
-        if (x + pr < -260 || x - pr > vp.width + 260 || y + pr < -260 || y - pr > vp.height + 260) continue
-
-        const g = ctx.createRadialGradient(x, y, 0, x, y, pr)
-        if (b.hue === "cool") {
-          g.addColorStop(0, `rgba(${tint.r},${tint.g},${tint.b},${a})`)
-          g.addColorStop(0.55, `rgba(${tint.r},${tint.g},${tint.b},${a * 0.22})`)
-          g.addColorStop(1, "rgba(0,0,0,0)")
-        } else {
-          g.addColorStop(0, `rgba(255,180,120,${a * 0.62})`)
-          g.addColorStop(0.6, `rgba(255,180,120,${a * 0.16})`)
-          g.addColorStop(1, "rgba(0,0,0,0)")
-        }
-
-        ctx.fillStyle = g
-        ctx.beginPath()
-        ctx.arc(x, y, pr, 0, Math.PI * 2)
-        ctx.fill()
-      }
-
-      vignette(ctx, vp.width, vp.height)
-      ctx.restore()
-    }
-
-    const drawNebula = (tint: RGB, dt: number, idlePhase: number) => {
-      const cx = vp.width / 2
-      const cy = vp.height / 2
-      const anchorY = -vp.height * 0.48
-      const par = scroll.zTravel * 0.65
-
-      // Pull the nebula towards center; avoid big lateral offsets.
-      const baseX = cx + ambient.driftX * 0.85 + nebula.driftX * 0.75 - par * 0.07
-      const baseY = cy + anchorY + ambient.driftY * 0.85 + nebula.driftY * 0.75 - par * 0.06
-
-      const attractX = baseX + Math.cos(idlePhase * 0.45) * 220 + Math.sin(idlePhase * 0.9) * 70
-      const attractY = baseY + Math.sin(idlePhase * 0.42) * 170 + Math.cos(idlePhase * 0.8) * 60
-
-      updateNebula(baseX, baseY, attractX, attractY, idlePhase, dt)
-      renderNebula(tint, baseX, baseY, idlePhase)
-    }
 
     const drawStar = (s: Star, time: number, zSpeed: number, forward: number, tint: RGB) => {
       // Move in depth (Z). zSpeed > 0 means moving "forward" into space.
@@ -316,19 +724,13 @@ export function ConstellationBackground() {
         sy = cy + s.y * scale
       }
 
-      // Twinkle: should reach fully off (0) and fully on (1), but smooth.
-      // We shape a sine and then add per-star curve.
+      // Twinkle
       const tw = (Math.sin(time * 0.001 * s.twinkleSpeed + s.twinklePhase) + 1) / 2 // 0..1
       const shaped = Math.pow(tw, s.twinkleCurve)
-
-      // Let it go to almost 0 sometimes, but keep per-star max cap.
-      // Also keep variety: some stars never get extremely bright.
       const intensity = clamp(shaped, 0, 1)
 
-      // Per-star peak & floor
       const alphaStar = lerp(0, s.maxAlpha, intensity)
-      const alphaFloor = s.baseAlpha * (1 - intensity) // gives some dim persistence on some stars
-      // Close stars appear stronger overall
+      const alphaFloor = s.baseAlpha * (1 - intensity)
       const depth = 0.28 + (1 - s.z) * 0.72
       const alpha = clamp((alphaStar + alphaFloor) * depth, 0, 1)
 
@@ -338,51 +740,72 @@ export function ConstellationBackground() {
       const sg = Math.round(255 * (1 - mix) + tint.g * mix)
       const sb = Math.round(255 * (1 - mix) + tint.b * mix)
 
-      // Core dot size: keep crisp
-      const core = clamp(
-        s.r * (0.55 + (1 - s.z) * 0.95) * (0.88 + intensity * 0.18),
-        0.5,
-        1.85
+      // --- Visual redesign: small sharp core + large diffuse aura --------------
+      // NOTE: We do NOT change motion/twinkle logic; only how the star is painted.
+
+      // Keep the core tiny and crisp.
+      const coreR = clamp(
+          s.r * (0.42 + (1 - s.z) * 0.72) * (0.85 + intensity * 0.25),
+          0.35,
+          1.45
       )
 
-      // Aura: small + subtle, but clearly present like the reference
-      const innerGlow = clamp(core * (1.15 + (1 - s.z) * 0.55), core * 1.1, core * 2.2)
-      const outerGlow = clamp(core * (1.9 + (1 - s.z) * 1.25), innerGlow * 1.25, core * 4.2)
+      // Big, smoky aura that extends well beyond the core.
+      const auraR = clamp(coreR * (7.5 + (1 - s.z) * 7.5), coreR * 5.5, coreR * 18)
+      const hazeR = clamp(auraR * 1.35, auraR * 1.15, auraR * 1.65)
+      const sparkleR = clamp(coreR * 2.8, coreR * 2.2, coreR * 4.2)
 
-      // soft aura behind the dot
-      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, outerGlow)
-      g.addColorStop(0, `rgba(${sr},${sg},${sb},${alpha * style.auraStrength})`)
-      g.addColorStop(0.18, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.22)})`)
-      g.addColorStop(0.45, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.08)})`)
-      g.addColorStop(1, "rgba(0,0,0,0)")
-      ctx.fillStyle = g
+      // Very wide, soft haze (smoke-like)
+      ctx.save()
+      ctx.globalCompositeOperation = "lighter"
+
+      const haze = ctx.createRadialGradient(sx, sy, 0, sx, sy, hazeR)
+      haze.addColorStop(0, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.22)})`)
+      haze.addColorStop(0.12, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.12)})`)
+      haze.addColorStop(0.38, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.06)})`)
+      haze.addColorStop(1, "rgba(0,0,0,0)")
+      ctx.fillStyle = haze
       ctx.beginPath()
-      ctx.arc(sx, sy, outerGlow, 0, Math.PI * 2)
+      ctx.arc(sx, sy, hazeR, 0, Math.PI * 2)
       ctx.fill()
 
-      // tiny inner diffusion (keeps it from looking like only a flat dot)
-      const ring = ctx.createRadialGradient(sx, sy, 0, sx, sy, innerGlow)
-      ring.addColorStop(0, `rgba(255,255,255,${alpha * 0.16})`)
-      ring.addColorStop(1, "rgba(255,255,255,0)")
-      ctx.fillStyle = ring
+      // Tighter aura (still very soft)
+      const aura = ctx.createRadialGradient(sx, sy, 0, sx, sy, auraR)
+      aura.addColorStop(0, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.55)})`)
+      aura.addColorStop(0.18, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.18)})`)
+      aura.addColorStop(0.55, `rgba(${sr},${sg},${sb},${alpha * (style.auraStrength * 0.06)})`)
+      aura.addColorStop(1, "rgba(0,0,0,0)")
+      ctx.fillStyle = aura
       ctx.beginPath()
-      ctx.arc(sx, sy, innerGlow, 0, Math.PI * 2)
+      ctx.arc(sx, sy, auraR, 0, Math.PI * 2)
       ctx.fill()
 
-      // core point
+      // Soft bloom right around the core (gives "sparkle" without hard edges)
+      const sparkle = ctx.createRadialGradient(sx, sy, 0, sx, sy, sparkleR)
+      sparkle.addColorStop(0, `rgba(255,255,255,${alpha * 0.36})`)
+      sparkle.addColorStop(0.32, `rgba(255,255,255,${alpha * 0.08})`)
+      sparkle.addColorStop(1, "rgba(255,255,255,0)")
+      ctx.fillStyle = sparkle
+      ctx.beginPath()
+      ctx.arc(sx, sy, sparkleR, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Crisp core
+      ctx.globalCompositeOperation = "source-over"
       ctx.fillStyle = `rgba(${sr},${sg},${sb},${alpha})`
       ctx.beginPath()
-      ctx.arc(sx, sy, core, 0, Math.PI * 2)
+      ctx.arc(sx, sy, coreR, 0, Math.PI * 2)
       ctx.fill()
 
-      // Micro-highlight to make the core feel "hot" (subtle)
-      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.35})`
+      // Tiny highlight offset (makes it read less like a flat circle)
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.6})`
       ctx.beginPath()
-      ctx.arc(sx - core * 0.15, sy - core * 0.18, core * 0.35, 0, Math.PI * 2)
+      ctx.arc(sx - coreR * 0.18, sy - coreR * 0.22, Math.max(0.25, coreR * 0.28), 0, Math.PI * 2)
       ctx.fill()
 
-      // Warp streaks when moving fast: draw away from center
-      // NOTE: Don't draw streaks on wrap frames, and keep the endpoint inside the viewport.
+      ctx.restore()
+
+      // Keep existing streak behavior
       if (!wrapped && forward > 0.18 && Math.random() < forward * 0.18) {
         const dx = sx - cx
         const dy = sy - cy
@@ -396,7 +819,7 @@ export function ConstellationBackground() {
         const ey = clamp(sy + uy * len, -margin, vp.height + margin)
 
         ctx.strokeStyle = `rgba(${sr},${sg},${sb},${alpha * 0.28})`
-        ctx.lineWidth = Math.max(0.5, core * 0.55)
+        ctx.lineWidth = Math.max(0.5, coreR * 0.55)
         ctx.beginPath()
         ctx.moveTo(sx, sy)
         ctx.lineTo(ex, ey)
@@ -404,66 +827,61 @@ export function ConstellationBackground() {
       }
     }
 
-    const drawStars = (time: number, dt: number) => {
-      const tint = getAccentTint(document.documentElement.dataset.accent)
+    const drawFrame = (time: number, dt: number) => {
+      const tint = accentTint
 
       // ease velocity
       scroll.velocity = lerp(scroll.velocity, scroll.targetVelocity, 0.11)
 
-      // Auto-brake: if no scroll input recently, return target speed back to idle smoothly.
-      // This prevents getting stuck in "interstellar travel" after a fast swipe.
+      // Auto-brake
       const idleTarget = 0
       const since = performance.now() - scroll.lastInputTs
       if (since > 140) {
-        // decay faster after the first ~140ms of no input
         const brake = since > 900 ? 0.085 : 0.045
         scroll.targetVelocity = lerp(scroll.targetVelocity, idleTarget, brake)
-        // deadzone snap to avoid micro drift
         if (Math.abs(scroll.targetVelocity) < 0.02) scroll.targetVelocity = 0
       }
 
-      // More "interstellar" depth speed (idle + stronger response)
       const zSpeed = (scroll.velocity * 0.0032 + 0.00034) * (dt * 60)
-
-      // integrate "travel" for nebula parallax
       scroll.zTravel += scroll.velocity * dt * 1.35
-
-      // keep it infinite (prevents huge numbers affecting parallax)
       if (scroll.zTravel > 100000) scroll.zTravel -= 200000
       else if (scroll.zTravel < -100000) scroll.zTravel += 200000
 
       const forward = clamp(Math.abs(scroll.velocity) / 14, 0, 1)
 
-      // Clear
       ctx.clearRect(0, 0, vp.width, vp.height)
       ctx.fillStyle = "rgb(0,0,0)"
       ctx.fillRect(0, 0, vp.width, vp.height)
 
-      // Slight background gradient so it's not flat black
       const bg = ctx.createRadialGradient(
-        vp.width / 2,
-        vp.height / 2,
-        0,
-        vp.width / 2,
-        vp.height / 2,
-        Math.max(vp.width, vp.height) * 0.7
+          vp.width / 2,
+          vp.height / 2,
+          0,
+          vp.width / 2,
+          vp.height / 2,
+          Math.max(vp.width, vp.height) * 0.7
       )
       bg.addColorStop(0, "rgba(10,10,16,1)")
       bg.addColorStop(1, "rgba(0,0,0,1)")
       ctx.fillStyle = bg
       ctx.fillRect(0, 0, vp.width, vp.height)
 
-      // Nebula underlay (disabled because it created side patterns)
+      // Nebula sprites (many small blobs)
       if (style.enableNebula) {
-        drawNebula(tint, dt, time * 0.001)
+        const par = scroll.zTravel * 0.65
+        const parallaxOffset = {
+          x: ambient.driftX * 0.95 - par * 0.04,
+          y: ambient.driftY * 0.95 - par * 0.035,
+        }
+        drawNebulaSprites(ctx, vp, spriteCanvases, nebulas, tint, parallaxOffset)
+        vignette(ctx, vp.width, vp.height)
       }
 
-      // Stars
       for (const s of stars) {
         drawStar(s, time, zSpeed, forward, tint)
       }
 
-      // Subtle grain (reduced) - avoid drawing on the extreme edges
+      // Subtle grain
       ctx.save()
       ctx.globalAlpha = 0.035
       ctx.fillStyle = "#fff"
@@ -477,11 +895,10 @@ export function ConstellationBackground() {
     const loop = (t: number) => {
       const dt = Math.min(0.05, (t - t0) / 1000)
       t0 = t
-      drawStars(t, dt)
+      drawFrame(t, dt)
       raf = globalThis.requestAnimationFrame(loop)
     }
 
-    // init
     onScroll()
     raf = globalThis.requestAnimationFrame(loop)
 
@@ -489,98 +906,27 @@ export function ConstellationBackground() {
       globalThis.removeEventListener("resize", onResize)
       globalThis.removeEventListener("scroll", onScroll)
       globalThis.cancelAnimationFrame(raf)
+      accentObserver?.disconnect()
+      retargetTl.kill()
+      for (const n of nebulas) {
+        n.alive = false
+        n.tl?.kill()
+        n.driftTween?.kill()
+        n.breatheTween?.kill()
+        n.respawnCall?.kill()
+      }
+      gsap.killTweensOf(nebulas)
       driftTl.kill()
     }
   }, [])
 
   return (
-    <div
-      className="pointer-events-none fixed inset-0"
-      style={{ zIndex: 0, isolation: "isolate" }}
-      aria-hidden
-    >
-      <canvas ref={canvasRef} className="h-full w-full" />
-      {/* overlay removed (it created a visible horizontal/center wash in the hero) */}
-    </div>
+      <div
+          className="pointer-events-none fixed inset-0"
+          style={{ zIndex: 0, isolation: "isolate" }}
+          aria-hidden
+      >
+        <canvas ref={canvasRef} className="h-full w-full" />
+      </div>
   )
-}
-
-function updateBlobLifecycle(b: NebulaFieldBlob, step: number) {
-  const lifeSpeed = 0.0035 + b.freq * 0.002
-  b.life += b.lifeDir * lifeSpeed * step
-  if (b.life >= 1) {
-    b.life = 1
-    if (Math.random() < 0.006) b.lifeDir = -1
-  } else if (b.life <= 0) {
-    respawnNebulaBlob(b)
-  }
-}
-
-function updateBlobMotion(
-  b: NebulaFieldBlob,
-  baseX: number,
-  baseY: number,
-  attractX: number,
-  attractY: number,
-  idlePhase: number,
-  step: number
-) {
-  const bx = baseX + b.x
-  const by = baseY + b.y
-
-  const dx = attractX - bx
-  const dy = attractY - by
-  const d = Math.max(1, Math.hypot(dx, dy))
-  const ux = dx / d
-  const uy = dy / d
-
-  const repel = d < 240 ? (240 - d) / 240 : 0
-  const attract = d > 260 ? Math.min(1, (d - 260) / 1000) : 0
-
-  const wob = Math.sin(idlePhase * b.freq + b.phase)
-  const wob2 = Math.cos(idlePhase * (b.freq * 0.88) + b.phase * 1.7)
-
-  const sx = -uy
-  const sy = ux
-  const swirl = 0.012 * Math.sin(idlePhase * 0.25 + b.phase)
-
-  b.vx += ux * (0.02 * attract) - ux * (0.032 * repel) + wob * 0.008 + sx * swirl
-  b.vy += uy * (0.02 * attract) - uy * (0.032 * repel) + wob2 * 0.008 + sy * swirl
-
-  b.vx *= 0.965
-  b.vy *= 0.965
-
-  b.x += b.vx * step
-  b.y += b.vy * step
-
-  if (b.x < -1600) b.x = 1600
-  if (b.x > 1600) b.x = -1600
-  if (b.y < -1300) b.y = 1300
-  if (b.y > 1300) b.y = -1300
-}
-
-function maybeMergeSplit(blobs: NebulaFieldBlob[], step: number) {
-  if (blobs.length < 8) return
-  if (Math.random() >= 0.012 * step) return
-
-  const i = Math.floor(rand(0, blobs.length))
-  const j = Math.floor(rand(0, blobs.length))
-  if (i === j) return
-
-  const a = blobs[i]
-  const b = blobs[j]
-  const dx = a.x - b.x
-  const dy = a.y - b.y
-  const d = Math.hypot(dx, dy)
-  if (d >= 420) return
-
-  const t = 0.18
-  a.x = lerp(a.x, b.x, t)
-  a.y = lerp(a.y, b.y, t)
-  a.r = clamp(a.r + b.r * 0.12, 180, 820)
-  a.a = clamp(a.a + b.a * 0.08, 0.02, 0.12)
-  a.lifeDir = 1
-  a.life = clamp(a.life + 0.08, 0, 1)
-
-  respawnNebulaBlob(b)
 }
