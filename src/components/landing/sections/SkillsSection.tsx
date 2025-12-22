@@ -101,6 +101,8 @@ export function SkillsSection() {
     const header = Array.from(root.querySelectorAll<HTMLElement>("[data-skills-head]"))
     const chips = Array.from(root.querySelectorAll<HTMLElement>("[data-skill-chip]"))
 
+    const cleanupMap = new WeakMap<Element, () => void>()
+
     // initial states
     gsap.set(header, { autoAlpha: 0, y: 14 })
     gsap.set(chips, { autoAlpha: 0, y: 10, scale: 0.98, filter: "blur(5px)" })
@@ -112,7 +114,6 @@ export function SkillsSection() {
       tl.to(header, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.06 }, 0)
 
       // Wave reveal for chips: stagger by a pseudo-grid.
-      // We don't know the final column count, but distribute via index.
       const cols = Math.min(6, Math.max(2, Math.round(Math.sqrt(chips.length))))
       const order = chips
         .map((el, i) => ({ el, i, row: Math.floor(i / cols), col: i % cols }))
@@ -139,7 +140,7 @@ export function SkillsSection() {
     const io = new IntersectionObserver(
       (entries) => {
         const e = entries[0]
-        if (!e || !e.isIntersecting) return
+        if (!e?.isIntersecting) return
         play()
         io.disconnect()
 
@@ -157,11 +158,10 @@ export function SkillsSection() {
           chip.addEventListener("mouseenter", onEnter)
           chip.addEventListener("mouseleave", onLeave)
 
-          // store cleanup callbacks on element
-          ;(chip as any).__gsapCleanup = () => {
+          cleanupMap.set(chip, () => {
             chip.removeEventListener("mouseenter", onEnter)
             chip.removeEventListener("mouseleave", onLeave)
-          }
+          })
         }
       },
       { root: null, rootMargin: "0px 0px -18% 0px", threshold: 0.12 }
@@ -172,11 +172,7 @@ export function SkillsSection() {
     return () => {
       io.disconnect()
       gsap.killTweensOf([...header, ...chips])
-      for (const chip of chips) {
-        const cleanup = (chip as any).__gsapCleanup
-        if (typeof cleanup === "function") cleanup()
-        delete (chip as any).__gsapCleanup
-      }
+      for (const chip of chips) cleanupMap.get(chip)?.()
     }
   }, [])
 
@@ -210,8 +206,16 @@ export function SkillsSection() {
     <section ref={rootRef} id="skills" className="mx-auto w-full max-w-6xl px-6 py-20">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 data-skills-head className="text-2xl font-extrabold text-white">Skills</h2>
-          <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">What I don’t know, I learn. What I learn, I perfect.</p>
+          <h2
+            data-skills-head
+            className="text-3xl font-extrabold text-white md:text-4xl"
+            style={{ fontFamily: "Gloock, Onest, system-ui" }}
+          >
+            Skills
+          </h2>
+          <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">
+            What I don’t know, I learn. What I learn, I perfect.
+          </p>
         </div>
 
         <div data-skills-head className="flex items-center gap-2">

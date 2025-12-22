@@ -14,7 +14,10 @@ export function AboutSection() {
 
   return (
     <section id="about" className="mx-auto w-full max-w-6xl px-6 py-20">
-      <div ref={rootRef} className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 backdrop-blur md:p-12">
+      <div
+        ref={rootRef}
+        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/2 p-8 backdrop-blur md:p-12"
+      >
         <div className="pointer-events-none absolute inset-0 opacity-50">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[22px_22px]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_55%)]" />
@@ -22,7 +25,16 @@ export function AboutSection() {
 
         <div className="relative grid gap-10 md:grid-cols-2 md:gap-12">
           <div>
-            <h2 data-reveal className="text-2xl font-extrabold text-white">About</h2>
+            <h2
+              data-reveal
+              className="text-3xl font-extrabold text-white md:text-4xl"
+              style={{ fontFamily: "Gloock, Onest, system-ui" }}
+            >
+              About
+            </h2>
+            <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
+              Get to know me!
+            </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
               I'm David Barragán, a Software Engineer who delivers both: product-grade frontend and reliable backend foundations.
             </p>

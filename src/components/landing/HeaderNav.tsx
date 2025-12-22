@@ -41,6 +41,7 @@ function AccentSwatch({
 }
 
 const SECTIONS = [
+  { id: "top", label: "Top" },
   { id: "about", label: "About" },
   { id: "projects", label: "Projects" },
   { id: "skills", label: "Skills" },
@@ -54,9 +55,15 @@ function useActiveSection(sectionIds: readonly string[]) {
   React.useEffect(() => {
     const els = sectionIds
       .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => Boolean(el))
+      .filter(isHTMLElement)
 
     if (els.length === 0) return
+
+    // Force a sensible initial value on mount.
+    setActive((prev) => {
+      const first = els[0]
+      return prev || first?.id || ""
+    })
 
     const obs = new IntersectionObserver(
       (entries) => {
@@ -64,12 +71,13 @@ function useActiveSection(sectionIds: readonly string[]) {
           .filter((e) => e.isIntersecting)
           .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))
         const top = visible[0]
-        if (top?.target?.id) setActive(top.target.id)
+        if (top?.target && (top.target as HTMLElement).id) setActive((top.target as HTMLElement).id)
       },
       {
         root: null,
-        rootMargin: "-35% 0px -55% 0px",
-        threshold: [0.1, 0.2, 0.35, 0.5, 0.7],
+        // pick the section that lives around the top third of the viewport
+        rootMargin: "-20% 0px -70% 0px",
+        threshold: [0.08, 0.12, 0.2, 0.35, 0.5, 0.7],
       }
     )
 
@@ -157,23 +165,25 @@ export function HeaderNav() {
           DJB
         </button>
 
-        <nav className="hidden items-center gap-2 md:flex">
-          {SECTIONS.map(({ label, id }) => (
-            <Button
-              key={id}
-              type="button"
-              variant="ghost"
-              className={
-                "h-9 rounded-full px-3 transition " +
-                (active === id
-                  ? "bg-white/10 text-white"
-                  : "text-white/70 hover:bg-white/5 hover:text-white")
-              }
-              onClick={() => scrollToId(id)}
-            >
-              {label}
-            </Button>
-          ))}
+        <nav className="hidden items-center md:flex">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur">
+            {SECTIONS.filter((s) => s.id !== "top").map(({ label, id }) => (
+              <Button
+                key={id}
+                type="button"
+                variant="ghost"
+                className={
+                  "h-9 rounded-full px-3 transition " +
+                  (active === id
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:bg-white/5 hover:text-white")
+                }
+                onClick={() => scrollToId(id)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </nav>
 
         <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-2 backdrop-blur">
@@ -239,4 +249,8 @@ export function HeaderNav() {
       </div>
     </header>
   )
+}
+
+function isHTMLElement(el: HTMLElement | null): el is HTMLElement {
+  return el instanceof HTMLElement
 }

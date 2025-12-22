@@ -21,7 +21,13 @@ export function CertsSection() {
         </div>
 
         <div className="relative">
-          <h2 data-reveal className="text-2xl font-extrabold text-white">Certificates</h2>
+          <h2
+            data-reveal
+            className="text-3xl font-extrabold text-white md:text-4xl"
+            style={{ fontFamily: "Gloock, Onest, system-ui" }}
+          >
+            Certificates
+          </h2>
           <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
             Verified credentials (Azure, etc.) with links and IDs.
           </p>

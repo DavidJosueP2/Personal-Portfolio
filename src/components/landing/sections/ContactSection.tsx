@@ -36,8 +36,16 @@ export function ContactSection() {
         </div>
 
         <div className="relative">
-          <h2 data-reveal className="text-2xl font-extrabold text-white">Contact</h2>
-          <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">Want a product that feels premium—fast, animated, and scalable? Let's talk.</p>
+          <h2
+            data-reveal
+            className="text-3xl font-extrabold text-white md:text-4xl"
+            style={{ fontFamily: "Gloock, Onest, system-ui" }}
+          >
+            Contact
+          </h2>
+          <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
+            Want a product that feels premium—fast, animated, and scalable? Let's talk.
+          </p>
 
           <div data-reveal className="mt-6 flex flex-wrap items-center gap-3">
             <Button className="rounded-full bg-white/10 text-white hover:bg-white/15" type="button" onClick={copyEmail}>

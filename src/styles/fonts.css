@@ -61,3 +61,10 @@
   font-display: swap;
   src: url("/assets/fonts/onest/Onest-Black.woff2") format("woff2");
 }
+@font-face{
+  font-family: "Gloock";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/Gloock/Gloock-Regular.woff2") format("woff2");
+}
