@@ -69,6 +69,8 @@ export function ProjectsExperience({ projects }: Props) {
   const [activeProjectIndex, setActiveProjectIndex] = React.useState(0)
   const safeProjects = projects.length ? projects : []
 
+  const [showRail, setShowRail] = React.useState(false)
+
   // Keep active index valid even if filters change the list length
   React.useEffect(() => {
     if (!safeProjects.length) return
@@ -152,7 +154,24 @@ export function ProjectsExperience({ projects }: Props) {
     }
   }, [safeProjects.length])
 
-  // NOTE: keep scroll/pin logic isolated. Avoid extra ScrollTriggers/observers here.
+  // Scope the fixed rail to the Projects section only (no extra ScrollTriggers).
+  React.useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0]
+        setShowRail(Boolean(e?.isIntersecting))
+      },
+      // Tight margins so it doesn't appear during About or linger into Skills.
+      // It will show when the section is roughly in the middle band of the viewport.
+      { root: null, threshold: 0, rootMargin: "-30% 0px -30% 0px" }
+    )
+
+    io.observe(host)
+    return () => io.disconnect()
+  }, [])
 
   if (!safeProjects.length) return null
 
@@ -162,12 +181,23 @@ export function ProjectsExperience({ projects }: Props) {
       className="relative w-full overflow-x-clip"
       style={{ scrollbarGutter: "stable" }}
     >
-      {/* Rail: fixed to viewport but only mounted inside Projects section */}
-      <ProjectsRail
-        projects={safeProjects}
-        activeIndex={activeProjectIndex}
-        onSelect={(idx) => setActiveProjectIndex(clamp(idx, 0, safeProjects.length - 1))}
-      />
+      {/*
+        Rail: keep mounted to avoid React commit crashes while ScrollTrigger pins/unpins.
+        We only toggle visibility + pointer-events.
+      */}
+      <div
+        className={
+          "transition-opacity duration-150 " +
+          (showRail ? "opacity-100" : "pointer-events-none opacity-0")
+        }
+        aria-hidden={!showRail}
+      >
+        <ProjectsRail
+          projects={safeProjects}
+          activeIndex={activeProjectIndex}
+          onSelect={(idx) => setActiveProjectIndex(clamp(idx, 0, safeProjects.length - 1))}
+        />
+      </div>
 
       {/* The pinned stage (drives the scroll-to-switch-projects experience) */}
       <div ref={pinRef} className="relative h-[92vh] w-full overflow-x-clip">
@@ -219,16 +249,18 @@ function ProjectPanel({
     const right = rightRef.current
     if (!left || !right) return
 
+    // Ensure previous animations don't leave the panels hidden
     gsap.killTweensOf([left, right])
+    gsap.set([left, right], { clearProps: "opacity,visibility,filter,transform" })
 
-    // enter
-    gsap.fromTo(left, { autoAlpha: 0, x: -14, filter: "blur(5px)" }, { autoAlpha: 1, x: 0, filter: "blur(0px)", duration: 0.42 })
-    gsap.fromTo(right, { autoAlpha: 0, x: 14, filter: "blur(5px)" }, { autoAlpha: 1, x: 0, filter: "blur(0px)", duration: 0.46, delay: 0.02 })
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
+    tl.fromTo(left, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.38 }, 0)
+    tl.fromTo(right, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 0.02)
 
     return () => {
-      // exit (when key changes/unmount)
-      gsap.to(left, { autoAlpha: 0, x: -10, duration: 0.18, ease: "power2.in" })
-      gsap.to(right, { autoAlpha: 0, x: 10, duration: 0.18, ease: "power2.in" })
+      tl.kill()
+      gsap.killTweensOf([left, right])
+      gsap.set([left, right], { clearProps: "opacity,visibility,filter,transform" })
     }
   }, [project.id])
 
@@ -325,9 +357,42 @@ function ProjectPanel({
             >
               <div className="absolute inset-0 rounded-3xl ring-1 ring-white/8" aria-hidden />
 
-              <div className="relative h-[62vh] max-h-130 min-h-85 max-md:h-[48vh] max-md:min-h-[320px]">
+              <div className="relative h-[62vh] max-h-[520px] min-h-[340px] max-md:h-[48vh] max-md:min-h-[320px]">
+                {/* Background cover (fallback) */}
+                <div
+                  aria-hidden
+                  className={
+                    "absolute inset-0 z-0 bg-center bg-cover transition-opacity " +
+                    (coverFailed || coverLoaded ? "opacity-0" : "opacity-100")
+                  }
+                  style={{ backgroundImage: `url(${cover.src})` }}
+                />
+
+                {/* Primary image layer (visible) */}
+                <img
+                  data-water-img
+                  key={cover.src}
+                  src={cover.src}
+                  alt={cover.alt}
+                  className={
+                    "pointer-events-none absolute inset-0 z-10 h-full w-full object-cover transition-opacity duration-300 " +
+                    (coverLoaded && !coverFailed ? "opacity-100" : "opacity-0")
+                  }
+                  loading="eager"
+                  decoding="async"
+                  onLoad={() => {
+                    setCoverLoaded(true)
+                    setCoverFailed(false)
+                  }}
+                  onError={() => {
+                    setCoverLoaded(true)
+                    setCoverFailed(true)
+                    console.warn("Failed to load project cover:", cover.src)
+                  }}
+                />
+
                 {!coverLoaded ? (
-                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                  <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
                     <div className="h-full w-full animate-pulse bg-white/[0.03]" />
                     <div className="absolute bottom-4 right-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs text-white/70">
                       Loading preview…
@@ -336,7 +401,7 @@ function ProjectPanel({
                 ) : null}
 
                 {coverFailed ? (
-                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                  <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
                     <div className="rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-xs text-white/70">
                       Preview unavailable
                     </div>
@@ -346,7 +411,7 @@ function ProjectPanel({
                 <button
                   type="button"
                   onClick={() => setGalleryOpen(true)}
-                  className="group absolute inset-0 z-10 text-left"
+                  className="group absolute inset-0 z-30 text-left"
                   aria-label="Open project gallery"
                 >
                   <span className="sr-only">Open gallery</span>
@@ -361,28 +426,9 @@ function ProjectPanel({
                   </span>
                 </button>
 
-                <img
-                  data-water-img
-                  key={cover.src}
-                  src={cover.src}
-                  alt={cover.alt}
-                  className={"h-full w-full " + (coverFailed ? "opacity-0" : "object-cover")}
-                  loading="eager"
-                  onLoad={() => {
-                    setCoverLoaded(true)
-                    setCoverFailed(false)
-                  }}
-                  onError={() => {
-                    setCoverLoaded(true)
-                    setCoverFailed(true)
-                    // eslint-disable-next-line no-console
-                    console.warn("Failed to load project cover:", cover.src)
-                  }}
-                />
-
                 <div
                   data-accent-fog
-                  className="pointer-events-none absolute inset-0 mix-blend-screen opacity-90"
+                  className="pointer-events-none absolute inset-0 z-10 mix-blend-screen opacity-75"
                   style={{
                     background:
                       "radial-gradient(circle at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.28) 22%, rgba(0,0,0,0) 58%)",
@@ -390,7 +436,7 @@ function ProjectPanel({
                   }}
                 />
 
-                <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/15 to-black/10" />
+                <div className="pointer-events-none absolute inset-0 z-20 bg-linear-to-t from-black/55 via-black/10 to-black/10" />
               </div>
             </div>
           </div>
