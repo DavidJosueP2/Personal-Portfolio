@@ -122,11 +122,17 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
     globalThis.document?.addEventListener("visibilitychange", onVisibilityChange)
 
     // Capture early to run before other handlers.
-    globalThis.window?.addEventListener("pointerdown", unlockOnGesture, { capture: true, passive: true })
-    globalThis.window?.addEventListener("keydown", unlockOnGesture, { capture: true })
-    globalThis.window?.addEventListener("touchstart", unlockOnGesture, { capture: true, passive: true })
-    globalThis.window?.addEventListener("wheel", unlockOnGesture, { capture: true, passive: true })
-    globalThis.window?.addEventListener("scroll", unlockOnGesture, { capture: true, passive: true })
+    const pointerOpts: AddEventListenerOptions = { capture: true, passive: true }
+    const touchOpts: AddEventListenerOptions = { capture: true, passive: true }
+    const wheelOpts: AddEventListenerOptions = { capture: true, passive: true }
+    const scrollOpts: AddEventListenerOptions = { capture: true, passive: true }
+    const keyOpts: AddEventListenerOptions = { capture: true }
+
+    globalThis.window?.addEventListener("pointerdown", unlockOnGesture, pointerOpts)
+    globalThis.window?.addEventListener("keydown", unlockOnGesture, keyOpts)
+    globalThis.window?.addEventListener("touchstart", unlockOnGesture, touchOpts)
+    globalThis.window?.addEventListener("wheel", unlockOnGesture, wheelOpts)
+    globalThis.window?.addEventListener("scroll", unlockOnGesture, scrollOpts)
 
     void startMutedAutoplay().then(() => {
       // If user has sound enabled by default and browser allows it (rare), try to unmute.
@@ -135,11 +141,11 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
 
     return () => {
       globalThis.document?.removeEventListener("visibilitychange", onVisibilityChange)
-      globalThis.window?.removeEventListener("pointerdown", unlockOnGesture, { capture: true } as any)
-      globalThis.window?.removeEventListener("keydown", unlockOnGesture, { capture: true } as any)
-      globalThis.window?.removeEventListener("touchstart", unlockOnGesture, { capture: true } as any)
-      globalThis.window?.removeEventListener("wheel", unlockOnGesture, { capture: true } as any)
-      globalThis.window?.removeEventListener("scroll", unlockOnGesture, { capture: true } as any)
+      globalThis.window?.removeEventListener("pointerdown", unlockOnGesture, pointerOpts)
+      globalThis.window?.removeEventListener("keydown", unlockOnGesture, keyOpts)
+      globalThis.window?.removeEventListener("touchstart", unlockOnGesture, touchOpts)
+      globalThis.window?.removeEventListener("wheel", unlockOnGesture, wheelOpts)
+      globalThis.window?.removeEventListener("scroll", unlockOnGesture, scrollOpts)
 
       audio.pause()
       audio.src = ""

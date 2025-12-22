@@ -3,6 +3,8 @@ import { gsap } from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import type { Project } from "../types"
 import { prefersReducedMotion } from "@/lib/motion"
+import { ProjectGalleryDialog } from "./ProjectGalleryDialog"
+import { ProjectsRail } from "./ProjectsRail"
 
 type Props = {
   projects: Project[]
@@ -150,6 +152,8 @@ export function ProjectsExperience({ projects }: Props) {
     }
   }, [safeProjects.length])
 
+  // NOTE: keep scroll/pin logic isolated. Avoid extra ScrollTriggers/observers here.
+
   if (!safeProjects.length) return null
 
   return (
@@ -158,17 +162,22 @@ export function ProjectsExperience({ projects }: Props) {
       className="relative w-full overflow-x-clip"
       style={{ scrollbarGutter: "stable" }}
     >
-      {/* The pinned stage (same height as the original implementation) */}
+      {/* Rail: fixed to viewport but only mounted inside Projects section */}
+      <ProjectsRail
+        projects={safeProjects}
+        activeIndex={activeProjectIndex}
+        onSelect={(idx) => setActiveProjectIndex(clamp(idx, 0, safeProjects.length - 1))}
+      />
+
+      {/* The pinned stage (drives the scroll-to-switch-projects experience) */}
       <div ref={pinRef} className="relative h-[92vh] w-full overflow-x-clip">
         <div className="pointer-events-auto mx-auto h-full w-full px-4 sm:px-6">
           <div className="relative mx-auto h-full w-full max-w-[1400px] min-w-0">
             <ProjectPanel
               key={safeProjects[activeProjectIndex].id}
               project={safeProjects[activeProjectIndex]}
-              allProjects={safeProjects}
               index={activeProjectIndex}
               count={safeProjects.length}
-              onSelect={(idx) => setActiveProjectIndex(clamp(idx, 0, safeProjects.length - 1))}
             />
           </div>
         </div>
@@ -179,20 +188,29 @@ export function ProjectsExperience({ projects }: Props) {
 
 function ProjectPanel({
   project,
-  allProjects,
   index,
   count,
-  onSelect,
 }: Readonly<{
   project: Project
-  allProjects: Project[]
   index: number
   count: number
-  onSelect: (idx: number) => void
 }>) {
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const leftRef = React.useRef<HTMLDivElement | null>(null)
   const rightRef = React.useRef<HTMLDivElement | null>(null)
+
+  const [galleryOpen, setGalleryOpen] = React.useState(false)
+  const [coverLoaded, setCoverLoaded] = React.useState(false)
+  const [coverFailed, setCoverFailed] = React.useState(false)
+
+  // Close gallery when switching projects to avoid showing stale images
+  React.useEffect(() => {
+    setGalleryOpen(false)
+    setCoverLoaded(false)
+    setCoverFailed(false)
+  }, [project.id])
+
+  const cover = project.images.cover
 
   // transitions (gallery + right panel) on project change
   React.useLayoutEffect(() => {
@@ -201,12 +219,16 @@ function ProjectPanel({
     const right = rightRef.current
     if (!left || !right) return
 
-    const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
-    tl.fromTo(left, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.38 }, 0)
-    tl.fromTo(right, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 0.02)
+    gsap.killTweensOf([left, right])
+
+    // enter
+    gsap.fromTo(left, { autoAlpha: 0, x: -14, filter: "blur(5px)" }, { autoAlpha: 1, x: 0, filter: "blur(0px)", duration: 0.42 })
+    gsap.fromTo(right, { autoAlpha: 0, x: 14, filter: "blur(5px)" }, { autoAlpha: 1, x: 0, filter: "blur(0px)", duration: 0.46, delay: 0.02 })
 
     return () => {
-      tl.kill()
+      // exit (when key changes/unmount)
+      gsap.to(left, { autoAlpha: 0, x: -10, duration: 0.18, ease: "power2.in" })
+      gsap.to(right, { autoAlpha: 0, x: 10, duration: 0.18, ease: "power2.in" })
     }
   }, [project.id])
 
@@ -266,106 +288,114 @@ function ProjectPanel({
     }
   }, [project.id])
 
-  const cover = project.images.cover
-
-  // vertical list previews 01..N
-  const previewIndices = React.useMemo(() => Array.from({ length: count }, (_, i) => i), [count])
-
-  const previewTransform: React.CSSProperties | undefined = React.useMemo(() => {
-    // Only apply the stacked/tilt transform on md+ sizes.
-    if (typeof window === "undefined") return undefined
-    return window.matchMedia?.("(min-width: 768px)")?.matches ? ({} as React.CSSProperties) : undefined
-  }, [])
-
   return (
     <div ref={rootRef} className="relative min-w-0 h-full">
       <div className="grid h-full min-w-0 items-center gap-10 max-md:grid-cols-1 max-md:items-start max-md:gap-6 md:grid-cols-[minmax(520px,0.9fr)_minmax(0,1.1fr)]">
         {/* LEFT */}
         <div ref={leftRef} className="relative min-w-0">
-          {/* LEFT previews */}
-          <div className="absolute left-0 top-1/2 z-20 -translate-y-1/2 max-md:static max-md:mb-4 max-md:translate-y-0">
-            <div className="flex flex-col items-center gap-3 max-md:flex-row max-md:items-center">
-              <button
-                type="button"
-                onClick={() => onSelect(index - 1)}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-white/12 bg-black/45 text-white/85 hover:bg-white/5"
-                aria-label="Previous project"
-              >
-                ↑
-              </button>
-
-              <div className="flex flex-col gap-2 max-md:flex-row max-md:max-w-full max-md:gap-2 max-md:overflow-x-auto max-md:pb-2">
-                {previewIndices.map((pi) => {
-                  const p = allProjects[pi]
-                  const isActive = pi === index
-
-                  const dist = Math.abs(pi - index)
-                  const offsetX = Math.min(24, dist * 10)
-                  const tilt = (pi < index ? -1 : 1) * Math.min(10, dist * 4)
-
-                  const style = previewTransform
-                    ? { transform: `translateX(${offsetX}px) rotate(${tilt}deg)` }
-                    : undefined
-
-                  return (
-                    <button
-                      key={`preview-${p.id}`}
-                      type="button"
-                      onClick={() => onSelect(pi)}
-                      className={
-                        "group relative flex items-center gap-3 rounded-2xl border bg-black/40 px-3 py-2 text-left backdrop-blur transition-colors shrink-0 " +
-                        (isActive ? "border-white/25 bg-white/10" : "border-white/10 hover:border-white/20 hover:bg-white/5")
-                      }
-                      style={style}
-                      aria-current={isActive ? "true" : undefined}
-                    >
-                      <div className="w-10 text-xs font-semibold tracking-[0.2em] text-white/70">{formatIndex(pi + 1)}.</div>
-                      <div className="h-9 w-14 overflow-hidden rounded-lg border border-white/10 bg-black/55">
-                        <img
-                          src={p.images.cover.src}
-                          alt=""
-                          aria-hidden
-                          className={"h-full w-full object-cover transition-opacity " + (isActive ? "opacity-100" : "opacity-70")}
-                          loading="lazy"
-                        />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onSelect(index + 1)}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-white/12 bg-black/45 text-white/85 hover:bg-white/5"
-                aria-label="Next project"
-              >
-                ↓
-              </button>
-            </div>
-          </div>
-
           {/* Main image card */}
-          <div
-            data-water-card
-            className="relative ml-28 overflow-hidden rounded-3xl border border-white/10 bg-black/50 shadow-[0_25px_120px_rgba(0,0,0,0.65)] max-md:ml-0"
-          >
-            <div className="relative h-[62vh] max-h-130 min-h-85 max-md:h-[48vh] max-md:min-h-[320px]">
-              <img data-water-img src={cover.src} alt={cover.alt} className="h-full w-full object-contain" loading="lazy" />
+          <div className="relative mx-auto w-full max-w-[620px]">
+            {/* energetic aura behind */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-10 -z-10 opacity-95"
+              style={{
+                background:
+                  "radial-gradient(60% 55% at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.18) 35%, rgba(0,0,0,0) 70%), radial-gradient(55% 45% at 75% 25%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 22%, rgba(0,0,0,0) 55%), radial-gradient(40% 35% at 25% 80%, rgba(var(--accent-rgb, 52 211 153) / 0.25) 0%, rgba(0,0,0,0) 60%)",
+                filter: "blur(18px)",
+              }}
+            />
 
-              <div
-                data-accent-fog
-                className="pointer-events-none absolute inset-0 mix-blend-screen opacity-90"
-                style={{
-                  background:
-                    "radial-gradient(circle at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.28) 22%, rgba(0,0,0,0) 58%)",
-                  filter: "blur(28px)",
-                }}
-              />
+            {/* constellation/noise layer */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 -z-10 opacity-80 mix-blend-screen"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 18% 28%, rgba(255,255,255,0.30) 0 1px, transparent 2px), radial-gradient(circle at 62% 18%, rgba(255,255,255,0.25) 0 1px, transparent 2px), radial-gradient(circle at 82% 56%, rgba(255,255,255,0.22) 0 1px, transparent 2px), radial-gradient(circle at 38% 72%, rgba(255,255,255,0.20) 0 1px, transparent 2px), radial-gradient(circle at 22% 84%, rgba(255,255,255,0.18) 0 1px, transparent 2px)",
+                backgroundSize: "220px 220px, 260px 260px, 300px 300px, 240px 240px, 280px 280px",
+                backgroundPosition: "0 0, 30px 40px, -10px 80px, 60px -20px, -40px -30px",
+                filter: "blur(0.3px)",
+              }}
+            />
 
-              <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/15 to-black/10" />
+            <div
+              data-water-card
+              className="relative overflow-hidden rounded-3xl bg-black/55 shadow-[0_25px_120px_rgba(0,0,0,0.70)]"
+            >
+              <div className="absolute inset-0 rounded-3xl ring-1 ring-white/8" aria-hidden />
+
+              <div className="relative h-[62vh] max-h-130 min-h-85 max-md:h-[48vh] max-md:min-h-[320px]">
+                {!coverLoaded ? (
+                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                    <div className="h-full w-full animate-pulse bg-white/[0.03]" />
+                    <div className="absolute bottom-4 right-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs text-white/70">
+                      Loading preview…
+                    </div>
+                  </div>
+                ) : null}
+
+                {coverFailed ? (
+                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                    <div className="rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-xs text-white/70">
+                      Preview unavailable
+                    </div>
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => setGalleryOpen(true)}
+                  className="group absolute inset-0 z-10 text-left"
+                  aria-label="Open project gallery"
+                >
+                  <span className="sr-only">Open gallery</span>
+
+                  {/* subtle hover vignette without killing parallax */}
+                  <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_55%)]" />
+
+                  {/* CTA pill */}
+                  <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/55 px-3 py-1 text-xs text-white/85 backdrop-blur-sm">
+                    View gallery
+                    <span className="text-white/65">→</span>
+                  </span>
+                </button>
+
+                <img
+                  data-water-img
+                  key={cover.src}
+                  src={cover.src}
+                  alt={cover.alt}
+                  className={"h-full w-full " + (coverFailed ? "opacity-0" : "object-cover")}
+                  loading="eager"
+                  onLoad={() => {
+                    setCoverLoaded(true)
+                    setCoverFailed(false)
+                  }}
+                  onError={() => {
+                    setCoverLoaded(true)
+                    setCoverFailed(true)
+                    // eslint-disable-next-line no-console
+                    console.warn("Failed to load project cover:", cover.src)
+                  }}
+                />
+
+                <div
+                  data-accent-fog
+                  className="pointer-events-none absolute inset-0 mix-blend-screen opacity-90"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.28) 22%, rgba(0,0,0,0) 58%)",
+                    filter: "blur(28px)",
+                  }}
+                />
+
+                <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/15 to-black/10" />
+              </div>
             </div>
           </div>
+
+          <ProjectGalleryDialog project={project} open={galleryOpen} onOpenChange={setGalleryOpen} />
         </div>
 
         {/* RIGHT */}
