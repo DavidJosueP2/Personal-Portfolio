@@ -140,7 +140,7 @@ export function ProjectShowcase({
 
       {/* accent glow (shown on hover) */}
       <div className="pointer-events-none absolute inset-0 opacity-0" data-project-glow>
-        <div className="absolute -inset-48 bg-[radial-gradient(circle,rgba(0,255,170,0.14),transparent_60%)] [html[data-accent='red']_&]:bg-[radial-gradient(circle,rgba(255,60,90,0.18),transparent_60%)] [html[data-accent='cyan']_&]:bg-[radial-gradient(circle,rgba(34,211,238,0.18),transparent_60%)] [html[data-accent='violet']_&]:bg-[radial-gradient(circle,rgba(167,139,250,0.18),transparent_60%)] [html[data-accent='amber']_&]:bg-[radial-gradient(circle,rgba(251,191,36,0.18),transparent_60%)]" />
+        <div className="absolute -inset-48 bg-[radial-gradient(circle,rgb(var(--accent-rgb,52_211_153)_/_0.18),transparent_60%)]" />
       </div>
 
       {/* accent orb that follows the mouse (smaller than full glow) */}

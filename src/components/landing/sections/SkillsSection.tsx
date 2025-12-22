@@ -231,7 +231,7 @@ export function SkillsSection() {
             Skills
           </h2>
           <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">
-            What I don’t know, I learn. What I learn, I perfect.
+            Backend-first tooling, full-stack delivery — from Spring Boot services to production-ready UIs.
           </p>
         </div>
 
@@ -254,7 +254,16 @@ export function SkillsSection() {
         <GroupSection key={g.group} title={g.group} items={g.items} />
       ))}
 
-      <p className="mt-8 text-xs text-white/55">Showing {shown} (grouped) out of {total} icons found in /assets/img</p>
+      <p className="mt-8 text-xs text-white/55">
+        Showing <span className="font-semibold text-white/75">{shown}</span> technologies
+        {query.trim().length ? (
+          <>
+            {" "}
+            matching <span className="font-semibold text-white/75">“{query.trim()}”</span>
+          </>
+        ) : null}
+        .
+      </p>
     </section>
   )
 }

@@ -36,10 +36,12 @@ export function AboutSection() {
               Get to know me!
             </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
-              I'm David Barragán, a Software Engineer who delivers both: product-grade frontend and reliable backend foundations.
+              I'm David Barragán — a full‑stack engineer with a backend focus.
+              I work mainly with Java + Spring Boot, REST APIs, microservices, and SQL databases.
             </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
-              I care about clean architecture, strong fundamentals, and motion used as a tool—not decoration.
+              I care about clean architecture, validations, automated testing, and CI/CD.
+              On the frontend, I build fast interfaces where motion is used with intention.
             </p>
           </div>
 
@@ -48,7 +50,7 @@ export function AboutSection() {
             <div data-reveal className="mt-4 space-y-4">
               <div>
                 <p className="text-sm font-semibold text-white/85">Software Engineering</p>
-                <p className="mt-1 text-xs text-white/60">Technical University of Ambato, 7th semester</p>
+                <p className="mt-1 text-xs text-white/60">Technical University of Ambato, 7th semester.</p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-white/85">Continuous Learning</p>

@@ -190,7 +190,7 @@ export function HeaderNav() {
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a
-            href="https://github.com/"
+            href="https://github.com/DavidJosueP2"
             target="_blank"
             rel="noreferrer"
             className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/20 hover:bg-white/5"
@@ -201,7 +201,7 @@ export function HeaderNav() {
           </a>
 
           <a
-            href="https://linkedin.com/"
+            href="https://www.linkedin.com/in/david-barragan-dev"
             target="_blank"
             rel="noreferrer"
             className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/20 hover:bg-white/5"

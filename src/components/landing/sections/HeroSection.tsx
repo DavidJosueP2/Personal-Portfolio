@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/shadcn/button"
 import { useAccentTheme } from "@/context/accent-theme"
 import { prefersReducedMotion } from "@/lib/motion"
 import { topHeroTools, socialLogos } from "@/assets/img/tech"
+import cvPdf from "@/assets/docs/Curriculum.pdf"
 
 function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
@@ -12,7 +13,8 @@ function scrollToId(id: string) {
 function HeroBackdrop({ leftGlowClass, rightGlowClass }: Readonly<{ leftGlowClass: string; rightGlowClass: string }>) {
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:64px_64px]" />
+      {/* subtle grid/backplate */}
+      <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[64px_64px]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
       <div className={leftGlowClass} />
       <div className={rightGlowClass} />
@@ -29,9 +31,9 @@ export function HeroSection() {
   // Only rotate the highlighted word + the ending phrase (keeps it readable)
   const headlineVariants = React.useMemo(
     () => [
-      { accent: "experiences", tail: "that feel alive." },
-      { accent: "interfaces", tail: "that move with purpose." },
-      { accent: "products", tail: "that users remember." },
+      { accent: "APIs", tail: "built to last." },
+      { accent: "microservices", tail: "done right." },
+      { accent: "systems", tail: "from backend to UI." },
     ],
     []
   )
@@ -129,21 +131,11 @@ export function HeroSection() {
 
   const leftGlowClass =
     "absolute -left-32 top-24 h-96 w-96 rounded-full blur-3xl " +
-    "bg-lime-300/10 " +
-    "[html[data-accent='emerald']_&]:bg-emerald-400/10 " +
-    "[html[data-accent='red']_&]:bg-red-500/10 " +
-    "[html[data-accent='cyan']_&]:bg-cyan-400/10 " +
-    "[html[data-accent='violet']_&]:bg-violet-500/10 " +
-    "[html[data-accent='amber']_&]:bg-amber-400/10"
+    "bg-[rgb(var(--accent-rgb,52_211_153)_/_0.10)]"
 
   const rightGlowClass =
     "absolute -right-40 bottom-0 h-[28rem] w-[28rem] rounded-full blur-3xl " +
-    "bg-lime-300/8 " +
-    "[html[data-accent='emerald']_&]:bg-emerald-400/8 " +
-    "[html[data-accent='red']_&]:bg-red-500/8 " +
-    "[html[data-accent='cyan']_&]:bg-cyan-400/8 " +
-    "[html[data-accent='violet']_&]:bg-violet-500/8 " +
-    "[html[data-accent='amber']_&]:bg-amber-400/8"
+    "bg-[rgb(var(--accent-rgb,52_211_153)_/_0.08)]"
 
   return (
     <section id="top" className="relative overflow-hidden">
@@ -151,7 +143,10 @@ export function HeroSection() {
         <div ref={rootRef} className="w-full">
           <HeroBackdrop leftGlowClass={leftGlowClass} rightGlowClass={rightGlowClass} />
           <div className="mx-auto max-w-4xl text-center">
-            <p data-hero className="text-xs font-semibold tracking-[0.35em] text-lime-200/80 [html[data-accent='emerald']_&]:text-emerald-200/80 [html[data-accent='red']_&]:text-red-200/80 [html[data-accent='cyan']_&]:text-cyan-200/80 [html[data-accent='violet']_&]:text-violet-200/80 [html[data-accent='amber']_&]:text-amber-200/80">
+            <p
+              data-hero
+              className="text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)_/_0.8)]"
+            >
               <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-black/25 font-mono text-[11px] tracking-[0.02em] text-white/75">
                 &lt;/&gt;
               </span>
@@ -164,7 +159,7 @@ export function HeroSection() {
                 <span className="text-white">who builds </span>
                 <span
                   ref={accentWordRef}
-                  className="text-lime-200 [html[data-accent='emerald']_&]:text-emerald-200 [html[data-accent='red']_&]:text-red-200 [html[data-accent='cyan']_&]:text-cyan-200 [html[data-accent='violet']_&]:text-violet-200 [html[data-accent='amber']_&]:text-amber-200"
+                  className="text-[rgb(var(--accent-rgb,52_211_153))]"
                 >
                   {h.accent}
                 </span>
@@ -175,18 +170,47 @@ export function HeroSection() {
             </h1>
 
             <p data-hero className="mx-auto mt-6 max-w-2xl text-pretty text-sm text-white/75 md:text-base">
-              Product-grade frontend, reliable backend, and motion that never compromises performance.
+              Backend-first full‑stack. Java + Spring Boot, SQL, CI/CD.
             </p>
 
             <div data-hero className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Button type="button" className="rounded-full bg-white/10 text-white hover:bg-white/15" onClick={() => scrollToId("projects")}>
+              <Button
+                type="button"
+                className="rounded-full bg-white/10 text-white hover:bg-white/15"
+                onClick={() => scrollToId("projects")}
+              >
                 View Projects
               </Button>
 
-              <a href="https://linkedin.com/" target="_blank" rel="noreferrer" className="inline-flex">
-                <Button type="button" variant="outline" className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5">
+              <a href={cvPdf} target="_blank" rel="noreferrer" className="inline-flex">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
+                >
+                  CV
+                </Button>
+              </a>
+
+              <a href="https://www.linkedin.com/in/david-barragan-dev" target="_blank" rel="noreferrer" className="inline-flex">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
+                >
                   <img src={socialLogos.LinkedIn} alt="" aria-hidden className="h-4 w-4 object-contain" />
                   <span className="ml-2">LinkedIn</span>
+                </Button>
+              </a>
+
+              <a href="https://github.com/DavidJosueP2" target="_blank" rel="noreferrer" className="inline-flex">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
+                >
+                  <img src={socialLogos.GitHub} alt="" aria-hidden className="h-4 w-4 object-contain" />
+                  <span className="ml-2">GitHub</span>
                 </Button>
               </a>
             </div>
