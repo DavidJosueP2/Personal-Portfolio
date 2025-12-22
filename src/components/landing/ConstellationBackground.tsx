@@ -20,7 +20,7 @@ type Star = {
 
 // Fewer, larger, rounder blobs ("universe clouds")
 const NEBULA_COUNT = 8 // 5..8 recommended
-const MAX_OPACITY = 0.35
+const MAX_OPACITY = 0.3
 const MIN_OPACITY = 0.25
 const MOVE_RANGE: [number, number] = [260, 820] // px (min..max)
 const BLUR_RANGE: [number, number] = [38, 98] // px (min..max)

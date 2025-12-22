@@ -23,10 +23,9 @@ export const projects: Project[] = [
     status: "offline",
     tech: [
       topHeroTools.find((t) => t.name === "Spring"),
+      topHeroTools.find((t) => t.name === "React"),
       topHeroTools.find((t) => t.name === "Docker"),
       topHeroTools.find((t) => t.name === "Azure"),
-      topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "TypeScript"),
     ]
       .filter(Boolean)
       .map((t) => ({ name: t!.name, iconSrc: t!.src })),
@@ -83,8 +82,8 @@ export const projects: Project[] = [
     featuredRank: 2,
     status: "offline",
     tech: [
+      topHeroTools.find((t) => t.name === "Nest.js"),
       topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "TypeScript"),
       topHeroTools.find((t) => t.name === "Docker"),
       topHeroTools.find((t) => t.name === "Azure"),
     ]
@@ -116,7 +115,7 @@ export const projects: Project[] = [
     highlights: [
       "Spring Boot microservices with Eureka discovery",
       "React + TypeScript frontend",
-      "Distributed PostgreSQL using Citus",
+      "Distributed Databases PostgreSQL using Citus",
       "Clean architecture + layered patterns",
       "CI/CD with GitHub Actions + deployment on Azure",
     ],
@@ -137,7 +136,6 @@ export const projects: Project[] = [
     tech: [
       topHeroTools.find((t) => t.name === "Spring"),
       topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "TypeScript"),
       topHeroTools.find((t) => t.name === "Docker"),
       topHeroTools.find((t) => t.name === "Azure"),
     ]
@@ -189,7 +187,6 @@ export const projects: Project[] = [
       topHeroTools.find((t) => t.name === "Azure"),
       topHeroTools.find((t) => t.name === "Docker"),
       topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "TypeScript"),
     ]
       .filter(Boolean)
       .map((t) => ({ name: t!.name, iconSrc: t!.src })),

@@ -5,6 +5,7 @@ import LinkedIn from "./LinkedIn.png"
 import ReactLogo from "./React.png"
 import Spring from "./Spring.png"
 import TypeScript from "./TypeScript.png"
+import Nest from "./Nest.js.png"
 
 export const topHeroTools = [
   { name: "TypeScript", src: TypeScript },
@@ -12,6 +13,7 @@ export const topHeroTools = [
   { name: "Spring", src: Spring },
   { name: "Docker", src: Docker },
   { name: "Azure", src: Azure },
+  { name: "Nest.js", src: Nest },
 ] as const
 
 export const socialLogos = {

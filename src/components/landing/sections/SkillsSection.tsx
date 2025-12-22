@@ -121,14 +121,14 @@ export function SkillsSection() {
     const cleanupMap = new WeakMap<Element, () => void>()
 
     // initial states
-    gsap.set(header, { autoAlpha: 0, y: 14 })
-    gsap.set(chips, { autoAlpha: 0, y: 10, scale: 0.98, filter: "blur(5px)" })
+    gsap.set(header, { autoAlpha: 0, y: 10 })
+    gsap.set(chips, { autoAlpha: 0, y: 8, scale: 0.99, filter: "blur(3px)" })
 
     const play = () => {
       gsap.killTweensOf([...header, ...chips])
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
-      tl.to(header, { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.04 }, 0)
+      tl.to(header, { autoAlpha: 1, y: 0, duration: 0.35, stagger: 0.025 }, 0)
 
       // Wave reveal for chips: stagger by a pseudo-grid.
       const cols = Math.min(6, Math.max(2, Math.round(Math.sqrt(chips.length))))
@@ -144,11 +144,11 @@ export function SkillsSection() {
           y: 0,
           scale: 1,
           filter: "blur(0px)",
-          duration: 0.4,
-          stagger: { each: 0.01, from: 0 },
+          duration: 0.22,
+          stagger: { each: 0.006, from: 0 },
           clearProps: "filter",
         },
-        0.1
+        0.06
       )
 
       return tl

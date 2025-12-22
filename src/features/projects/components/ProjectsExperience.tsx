@@ -114,11 +114,50 @@ export function ProjectsExperience({ projects }: Props) {
     if (!host || !pin) return
 
     const totalSteps = Math.max(1, safeProjects.length)
-    const stepPx = () => Math.max(1, Math.round(window.innerHeight * 0.92))
+
+    const getNavHeight = () => {
+      const nav = document.querySelector("header") as HTMLElement | null
+      if (!nav) return 0
+      const rect = nav.getBoundingClientRect()
+      return Number.isFinite(rect.height) ? rect.height : 0
+    }
+
+    const getViewportAvailableHeight = () => {
+      // visible viewport below the fixed navbar
+      return Math.max(1, window.innerHeight - getNavHeight())
+    }
+
+    const getPinHeight = () => {
+      // Prefer real rendered height instead of assuming 92vh
+      const rect = pin.getBoundingClientRect()
+      return Math.max(1, Math.round(rect.height || 0))
+    }
+
+    const stepPx = () => {
+      // Match scroll distance per-project to what user actually sees
+      // (viewport without navbar) and keep it stable even on resize.
+      return Math.max(1, Math.round(getViewportAvailableHeight() * 0.92))
+    }
+
+    const start = () => {
+      // We want to pin when the pinned stage is centered in the *available* viewport
+      // (viewport height minus navbar).
+      //
+      // Condition for centering:
+      //   pinTop == navHeight + (availableHeight - pinHeight)/2
+      const navH = getNavHeight()
+      const availableH = getViewportAvailableHeight()
+      const pinH = getPinHeight()
+      const desiredTop = navH + Math.max(0, (availableH - pinH) / 2)
+
+      // ScrollTrigger parsing: "top top+=X" means trigger's top reaches viewport top + X
+      // So we convert desiredTop into a top offset.
+      return `top top+=${Math.round(desiredTop)}`
+    }
 
     const st = ScrollTrigger.create({
       trigger: host,
-      start: "top top",
+      start,
       end: () => `+=${(totalSteps - 1) * stepPx()}`,
       pin: pin,
       pinSpacing: true,
