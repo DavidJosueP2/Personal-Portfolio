@@ -284,16 +284,33 @@ function ProjectPanel({
     if (!left || !right) return
 
     gsap.killTweensOf([left, right])
-    gsap.set([left, right], { clearProps: "opacity,visibility,filter,transform" })
 
-    const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
-    tl.fromTo(left, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.38 }, 0)
-    tl.fromTo(right, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 0.02)
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } })
+
+    // Start from a clean known state
+    gsap.set([left, right], { willChange: "transform,opacity,filter" })
+
+    // Quick, subtle exit to avoid a hard cut when switching projects
+    tl.to([left, right], { autoAlpha: 0, y: -5, filter: "blur(5px)", duration: 0.10 }, 0)
+
+    // Enter faster but still smooth
+    tl.fromTo(
+      left,
+      { autoAlpha: 0, y: 10, filter: "blur(10px)" },
+      { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.36 },
+      0.06
+    )
+    tl.fromTo(
+      right,
+      { autoAlpha: 0, y: 12, filter: "blur(12px)" },
+      { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.40 },
+      0.08
+    )
 
     return () => {
       tl.kill()
       gsap.killTweensOf([left, right])
-      gsap.set([left, right], { clearProps: "opacity,visibility,filter,transform" })
+      gsap.set([left, right], { clearProps: "opacity,visibility,filter,transform,willChange" })
     }
   }, [project.id])
 
@@ -305,7 +322,7 @@ function ProjectPanel({
           <ProjectsExperienceLeftMedia
             project={project}
             onOpenGallery={() => setGalleryOpen(true)}
-            hoverRef={leftRef}
+            hoverRef={rootRef}
           />
           <ProjectGalleryDialog project={project} open={galleryOpen} onOpenChange={setGalleryOpen} />
         </div>

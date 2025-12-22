@@ -39,16 +39,19 @@ export function ProjectsExperienceLeftMedia({
   React.useEffect(() => {
     if (prefersReducedMotion()) return
 
-    const listenTarget = hoverRef?.current ?? rootRef.current
+    const scopeEl = hoverRef?.current ?? rootRef.current
     const card = cardRef.current
     const img = imgRef.current
     const fog = fogRef.current
-    if (!listenTarget || !card || !img) return
+    if (!scopeEl || !card || !img) return
 
     gsap.set(card, { transformPerspective: 1000, transformOrigin: "50% 50%" })
 
-    const onMove = (e: MouseEvent) => {
-      const r = card.getBoundingClientRect()
+    const onMove = (e: PointerEvent) => {
+      const r = scopeEl.getBoundingClientRect()
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+      if (!inside) return
+
       const px = (e.clientX - r.left) / r.width
       const py = (e.clientY - r.top) / r.height
       const rotY = (px - 0.5) * 10
@@ -66,28 +69,23 @@ export function ProjectsExperienceLeftMedia({
       }
     }
 
-    const onEnter = () => {
-      listenTarget.addEventListener("mousemove", onMove)
-      gsap.to(card, { scale: 1.01, duration: 0.35, ease: "power3.out" })
-    }
-
-    const onLeave = () => {
-      listenTarget.removeEventListener("mousemove", onMove)
+    const reset = () => {
       gsap.to(card, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.7, ease: "power3.out" })
       gsap.to(img, { x: 0, y: 0, duration: 0.7, ease: "power3.out" })
-      if (fog) {
-        gsap.to(fog, { xPercent: 0, yPercent: 0, duration: 0.9, ease: "power3.out" })
-      }
+      if (fog) gsap.to(fog, { xPercent: 0, yPercent: 0, duration: 0.9, ease: "power3.out" })
     }
 
-    listenTarget.addEventListener("mouseenter", onEnter)
-    listenTarget.addEventListener("mouseleave", onLeave)
+    const onLeaveWindow = () => reset()
+
+    gsap.to(card, { scale: 1.01, duration: 0.35, ease: "power3.out" })
+    window.addEventListener("pointermove", onMove)
+    window.addEventListener("blur", onLeaveWindow)
 
     return () => {
-      listenTarget.removeEventListener("mouseenter", onEnter)
-      listenTarget.removeEventListener("mouseleave", onLeave)
-      listenTarget.removeEventListener("mousemove", onMove)
+      window.removeEventListener("pointermove", onMove)
+      window.removeEventListener("blur", onLeaveWindow)
       gsap.killTweensOf([card, img, fog])
+      reset()
     }
   }, [project.id, hoverRef])
 
@@ -148,35 +146,22 @@ export function ProjectsExperienceLeftMedia({
             </div>
           ) : null}
 
-          {/* Click target: keep it UNDER the image so it never hides it */}
-          <button
-            type="button"
-            onClick={onOpenGallery}
-            className="absolute inset-0 z-[5] bg-transparent"
-            aria-label="Open project gallery"
-          >
-            <span className="sr-only">Open gallery</span>
-          </button>
-
-          {/* Top UI (doesn't block clicks, but stays above the image) */}
-          <div className="pointer-events-none absolute inset-0 z-30" aria-hidden>
-            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_55%)]" />
-
-            <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/55 px-3 py-1 text-xs text-white/85 backdrop-blur-sm">
-              View gallery <span className="text-white/65">→</span>
-            </div>
-          </div>
-
-          {/* Image MUST be above every decorative layer */}
+          {/* Click on the image opens the gallery */}
           <img
             ref={imgRef}
             data-water-img
             key={cover.src}
             src={cover.src}
             alt={cover.alt}
-            className="absolute inset-0 z-10 h-full w-full object-cover"
+            className="absolute inset-0 z-10 h-full w-full cursor-pointer object-cover"
             loading="eager"
             decoding="async"
+            onClick={onOpenGallery}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onOpenGallery()
+            }}
             onLoad={() => {
               setCoverLoaded(true)
               setCoverFailed(false)
@@ -187,6 +172,15 @@ export function ProjectsExperienceLeftMedia({
               console.warn("Failed to load project cover:", cover.src)
             }}
           />
+
+          {/* Top UI (doesn't block clicks, but stays above the image) */}
+          <div className="pointer-events-none absolute inset-0 z-30" aria-hidden>
+            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_55%)]" />
+
+            <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/55 px-3 py-1 text-xs text-white/85 backdrop-blur-sm">
+              View gallery <span className="text-white/65">→</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
