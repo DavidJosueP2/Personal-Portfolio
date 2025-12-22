@@ -17,7 +17,7 @@ export function CertsSection() {
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/2 p-8 backdrop-blur md:p-12">
         <div className="pointer-events-none absolute inset-0 opacity-60">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[22px_22px]" />
-          <div className="absolute -inset-40 bg-[radial-gradient(circle,rgb(var(--accent-rgb,52_211_153)_/_0.12),transparent_60%)]" />
+          <div className="absolute -inset-40 bg-[radial-gradient(circle,rgb(var(--accent-rgb,52_211_153)/0.12),transparent_60%)]" />
         </div>
 
         <div className="relative">
@@ -26,7 +26,7 @@ export function CertsSection() {
             className="text-3xl font-extrabold text-white md:text-4xl"
             style={{ fontFamily: "Gloock, Onest, system-ui" }}
           >
-            Certificates
+            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Certificates</span>
           </h2>
           <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
             Verified credentials (Azure, etc.) with links and IDs.

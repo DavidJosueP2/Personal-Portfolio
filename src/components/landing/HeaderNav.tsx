@@ -89,6 +89,8 @@ function useActiveSection(sectionIds: readonly string[]) {
 }
 
 function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; setAccent: (a: Accent) => void }>) {
+  const [open, setOpen] = React.useState(false)
+
   const dotColor: Record<Accent, string> = {
     lime: "#bef264",
     emerald: "#34d399",
@@ -99,7 +101,7 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
   }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -118,12 +120,12 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
       <PopoverContent align="end" className="w-64 max-w-[calc(100vw-24px)]">
         <p className="text-xs font-semibold tracking-[0.25em] text-white/70">ACCENT</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <AccentSwatch value="lime" current={accent} onSelect={setAccent} style={{ backgroundColor: "#bef264" }} />
-          <AccentSwatch value="emerald" current={accent} onSelect={setAccent} style={{ backgroundColor: "#34d399" }} />
-          <AccentSwatch value="cyan" current={accent} onSelect={setAccent} style={{ backgroundColor: "#22d3ee" }} />
-          <AccentSwatch value="violet" current={accent} onSelect={setAccent} style={{ backgroundColor: "#a78bfa" }} />
-          <AccentSwatch value="amber" current={accent} onSelect={setAccent} style={{ backgroundColor: "#fbbf24" }} />
-          <AccentSwatch value="red" current={accent} onSelect={setAccent} style={{ backgroundColor: "#fb7185" }} />
+          <AccentSwatch value="lime" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#bef264" }} />
+          <AccentSwatch value="emerald" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#34d399" }} />
+          <AccentSwatch value="cyan" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#22d3ee" }} />
+          <AccentSwatch value="violet" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#a78bfa" }} />
+          <AccentSwatch value="amber" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fbbf24" }} />
+          <AccentSwatch value="red" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fb7185" }} />
         </div>
         <p className="mt-3 text-xs text-white/55">
           Current: <span className="font-semibold text-white">{accent}</span>

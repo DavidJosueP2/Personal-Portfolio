@@ -20,9 +20,11 @@ export function ProjectsSection() {
             className="text-3xl font-extrabold text-white md:text-4xl"
             style={{ fontFamily: "Gloock, Onest, system-ui" }}
           >
-            Projects
+            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Projects</span>
           </h2>
-          <p className="mt-2 max-w-prose text-sm text-white/70">Scroll to switch projects.</p>
+          <p className="mt-2 max-w-prose text-sm text-white/70">
+            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Scroll</span> to switch projects.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

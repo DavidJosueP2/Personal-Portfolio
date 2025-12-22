@@ -227,10 +227,11 @@ export function SkillsSection() {
             className="text-3xl font-extrabold text-white md:text-4xl"
             style={{ fontFamily: "Gloock, Onest, system-ui" }}
           >
-            Skills
+            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Skills</span>
           </h2>
           <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">
-              What I don’t know, I learn. What I learn, I perfect.
+            What I don’t know, I{" "}
+            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">learn</span>. What I learn, I perfect.
           </p>
         </div>
 
@@ -243,7 +244,7 @@ export function SkillsSection() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Spring, Java, Laravel, ..."
-            className="h-9 w-full max-w-65 rounded-full border border-white/10 bg-black/30 px-4 text-sm text-white/85 outline-none placeholder:text-white/30 focus-visible:ring-[3px] focus-visible:ring-white/10"
+            className="h-9 w-full max-w-65 rounded-full border border-white/10 bg-black/30 px-4 text-sm text-white/85 outline-none placeholder:text-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgb(var(--accent-rgb,52_211_153)_/_0.18)]"
             type="text"
           />
         </div>

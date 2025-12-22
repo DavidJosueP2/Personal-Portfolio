@@ -30,17 +30,21 @@ export function AboutSection() {
               className="text-3xl font-extrabold text-white md:text-4xl"
               style={{ fontFamily: "Gloock, Onest, system-ui" }}
             >
-              About
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">About</span>
             </h2>
             <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
               Get to know me!
             </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
-              I'm David Barragán — a full‑stack engineer with a backend focus.
-              I work mainly with Java + Spring Boot, REST APIs, microservices, and SQL databases.
+              I'm David Barragán — a full‑stack engineer with a{" "}
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">backend</span> focus.
+              I work mainly with{" "}
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Java</span> +{" "}
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Spring Boot</span>, REST APIs, microservices, and SQL databases.
             </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
-              I care about clean architecture, validations, automated testing, and CI/CD.
+              I care about clean architecture, validations, automated testing, and{" "}
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">CI/CD</span>.
               On the frontend, I build fast interfaces where motion is used with intention.
             </p>
           </div>

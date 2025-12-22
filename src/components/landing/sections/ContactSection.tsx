@@ -32,10 +32,10 @@ export function ContactSection() {
 
   return (
     <section ref={rootRef} id="contact" className="mx-auto w-full max-w-6xl px-6 py-20">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 backdrop-blur md:p-12">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/2 p-8 backdrop-blur md:p-12">
         <div className="pointer-events-none absolute inset-0 opacity-60">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[22px_22px]" />
-          <div className="absolute -inset-40 bg-[radial-gradient(circle,rgb(var(--accent-rgb,52_211_153)_/_0.12),transparent_60%)]" />
+          <div className="absolute -inset-40 bg-[radial-gradient(circle,rgb(var(--accent-rgb,52_211_153)/0.12),transparent_60%)]" />
         </div>
 
         <div className="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
@@ -46,10 +46,11 @@ export function ContactSection() {
               className="text-3xl font-extrabold text-white md:text-4xl"
               style={{ fontFamily: "Gloock, Onest, system-ui" }}
             >
-              Contact
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Contact</span>
             </h2>
             <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
-              Want a product that feels premium—fast, animated, and scalable? Let's talk.
+              Want a product that feels premium—fast, animated, and scalable?{" "}
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Let’s talk</span>.
             </p>
 
             <div data-reveal className="mt-7 flex flex-wrap items-center gap-3">
