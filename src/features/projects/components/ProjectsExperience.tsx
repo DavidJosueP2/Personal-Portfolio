@@ -338,18 +338,6 @@ function ProjectPanel({
               }}
             />
 
-            {/* constellation/noise layer */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -inset-6 -z-10 opacity-80 mix-blend-screen"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 18% 28%, rgba(255,255,255,0.30) 0 1px, transparent 2px), radial-gradient(circle at 62% 18%, rgba(255,255,255,0.25) 0 1px, transparent 2px), radial-gradient(circle at 82% 56%, rgba(255,255,255,0.22) 0 1px, transparent 2px), radial-gradient(circle at 38% 72%, rgba(255,255,255,0.20) 0 1px, transparent 2px), radial-gradient(circle at 22% 84%, rgba(255,255,255,0.18) 0 1px, transparent 2px)",
-                backgroundSize: "220px 220px, 260px 260px, 300px 300px, 240px 240px, 280px 280px",
-                backgroundPosition: "0 0, 30px 40px, -10px 80px, 60px -20px, -40px -30px",
-                filter: "blur(0.3px)",
-              }}
-            />
 
             <div
               data-water-card
@@ -358,26 +346,13 @@ function ProjectPanel({
               <div className="absolute inset-0 rounded-3xl ring-1 ring-white/8" aria-hidden />
 
               <div className="relative h-[62vh] max-h-[520px] min-h-[340px] max-md:h-[48vh] max-md:min-h-[320px]">
-                {/* Background cover (fallback) */}
-                <div
-                  aria-hidden
-                  className={
-                    "absolute inset-0 z-0 bg-center bg-cover transition-opacity " +
-                    (coverFailed || coverLoaded ? "opacity-0" : "opacity-100")
-                  }
-                  style={{ backgroundImage: `url(${cover.src})` }}
-                />
-
-                {/* Primary image layer (visible) */}
+                {/* Media container (robust). The <img> is the source of truth. */}
                 <img
                   data-water-img
                   key={cover.src}
                   src={cover.src}
                   alt={cover.alt}
-                  className={
-                    "pointer-events-none absolute inset-0 z-10 h-full w-full object-cover transition-opacity duration-300 " +
-                    (coverLoaded && !coverFailed ? "opacity-100" : "opacity-0")
-                  }
+                  className="absolute inset-0 z-10 h-full w-full object-cover"
                   loading="eager"
                   decoding="async"
                   onLoad={() => {
@@ -391,44 +366,33 @@ function ProjectPanel({
                   }}
                 />
 
-                {!coverLoaded ? (
-                  <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-                    <div className="h-full w-full animate-pulse bg-white/[0.03]" />
-                    <div className="absolute bottom-4 right-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs text-white/70">
-                      Loading preview…
-                    </div>
-                  </div>
-                ) : null}
-
+                {/* When the image fails, show explicit fallback (instead of a blank panel) */}
                 {coverFailed ? (
-                  <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+                  <div className="absolute inset-0 z-20 grid place-items-center bg-black/30">
                     <div className="rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-xs text-white/70">
                       Preview unavailable
                     </div>
                   </div>
                 ) : null}
 
-                <button
-                  type="button"
-                  onClick={() => setGalleryOpen(true)}
-                  className="group absolute inset-0 z-30 text-left"
-                  aria-label="Open project gallery"
+                {/* Loading veil: fades out once loaded so it can't hide the image */}
+                <div
+                  className={
+                    "pointer-events-none absolute inset-0 z-20 grid place-items-center transition-opacity duration-300 " +
+                    (coverLoaded ? "opacity-0" : "opacity-100")
+                  }
+                  aria-hidden
                 >
-                  <span className="sr-only">Open gallery</span>
+                  <div className="h-full w-full animate-pulse bg-white/3" />
+                  <div className="absolute bottom-4 right-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs text-white/70">
+                    Loading preview…
+                  </div>
+                </div>
 
-                  {/* subtle hover vignette without killing parallax */}
-                  <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_55%)]" />
-
-                  {/* CTA pill */}
-                  <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/55 px-3 py-1 text-xs text-white/85 backdrop-blur-sm">
-                    View gallery
-                    <span className="text-white/65">→</span>
-                  </span>
-                </button>
-
+                {/* Accent fog + vignette */}
                 <div
                   data-accent-fog
-                  className="pointer-events-none absolute inset-0 z-10 mix-blend-screen opacity-75"
+                  className="pointer-events-none absolute inset-0 z-20 mix-blend-screen opacity-75"
                   style={{
                     background:
                       "radial-gradient(circle at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.28) 22%, rgba(0,0,0,0) 58%)",
@@ -437,6 +401,23 @@ function ProjectPanel({
                 />
 
                 <div className="pointer-events-none absolute inset-0 z-20 bg-linear-to-t from-black/55 via-black/10 to-black/10" />
+
+                {/* Click target */}
+                <button
+                  type="button"
+                  onClick={() => setGalleryOpen(true)}
+                  className="group absolute inset-0 z-30 text-left"
+                  aria-label="Open project gallery"
+                >
+                  <span className="sr-only">Open gallery</span>
+
+                  <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_55%)]" />
+
+                  <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/55 px-3 py-1 text-xs text-white/85 backdrop-blur-sm">
+                    View gallery
+                    <span className="text-white/65">→</span>
+                  </span>
+                </button>
               </div>
             </div>
           </div>

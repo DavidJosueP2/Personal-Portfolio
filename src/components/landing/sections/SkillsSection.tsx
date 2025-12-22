@@ -4,7 +4,7 @@ import { prefersReducedMotion } from "@/lib/motion"
 
 type SkillIcon = { name: string; src: string }
 
-type GroupKey = "Frontend" | "Backend" | "DevOps & Cloud" | "Databases" | "Observability"
+type GroupKey = "Frontend" | "Backend" | "DevOps & Cloud" | "Databases" | "Tools"
 
 function toName(filePath: string) {
   const base = filePath.split("/").pop() ?? filePath
@@ -33,12 +33,29 @@ function groupFor(name: string): GroupKey | null {
   if (["spring", "java", "laravel", "php", "node", "nest"].some((k) => n.includes(k))) return "Backend"
   if (["docker", "kubernetes", "jenkins", "azure"].some((k) => n.includes(k))) return "DevOps & Cloud"
   if (["mysql", "postgres", "oracle", "microsoft sql"].some((k) => n.includes(k))) return "Databases"
-  if (["grafana", "prometheus"].some((k) => n.includes(k))) return "Observability"
+
+  // Everything else you want to showcase that isn't a language/framework goes here.
+  // Keep Grafana/Prometheus here, plus other tools (GitHub, SonarQube, etc.) if desired.
+  if (
+    [
+      "grafana",
+      "prometheus",
+      "github",
+      "github actions",
+      "sonarqube",
+      "junit",
+      "openapi",
+      "swagger",
+      "playwright",
+      "linux",
+    ].some((k) => n.includes(k))
+  )
+    return "Tools"
 
   return null
 }
 
-const GROUP_ORDER: GroupKey[] = ["Frontend", "Backend", "DevOps & Cloud", "Databases", "Observability"]
+const GROUP_ORDER: GroupKey[] = ["Frontend", "Backend", "DevOps & Cloud", "Databases", "Tools"]
 
 function sortWithinGroup(group: GroupKey, items: SkillIcon[]) {
   if (group !== "Backend") return items
@@ -80,7 +97,7 @@ function GroupSection({ title, items }: Readonly<{ title: GroupKey; items: Skill
         <h3 className="text-sm font-semibold tracking-[0.25em] text-white/75">{title}</h3>
         <span className="text-xs text-white/50">{items.length}</span>
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((i) => (
           <SkillChip key={`${title}:${i.name}`} icon={i} />
         ))}
