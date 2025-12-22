@@ -4,7 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
   line-height: 1.5;
   font-weight: 400;
 
@@ -48,23 +49,31 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --font-sans: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Gloock", "Onest", system-ui, serif;
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: rgb(var(--accent-rgb, 52 211 153));
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: rgb(var(--accent-rgb, 52 211 153) / 0.9);
+}
+
+/* selection should match chosen accent */
+::selection {
+  background: rgb(var(--accent-rgb, 52 211 153) / 0.32);
+  color: rgba(255, 255, 255, 0.96);
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  /* Importante: no centramos toda la app por defecto; lo controlas desde tus layouts */
+  display: block;
 }
 
 h1 {
@@ -72,7 +81,32 @@ h1 {
   line-height: 1.1;
 }
 
-button {
+h1,
+h2 {
+  font-family: var(--font-display);
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display, "Gloock", serif), serif;
+}
+
+/* If some components use these utility-ish classes, keep them consistent too */
+.prose :is(h1, h2) {
+  font-family: var(--font-display, serif);
+}
+.prose :is(h3, h4, h5, h6) {
+  font-family: var(--font-sans);
+}
+
+/* Estilos base del template de Vite: los restringimos para no afectar botones de UI (icon buttons, shadcn, etc.) */
+body button:not([data-slot]):not(.shadcn-reset) {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -83,12 +117,14 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
+
+body button:not([data-slot]):not(.shadcn-reset):hover {
+  border-color: rgb(var(--accent-rgb, 52 211 153) / 0.65);
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+
+body button:not([data-slot]):not(.shadcn-reset):focus,
+body button:not([data-slot]):not(.shadcn-reset):focus-visible {
+  outline: 4px auto rgb(var(--accent-rgb, 52 211 153) / 0.35);
 }
 
 @media (prefers-color-scheme: light) {
@@ -97,9 +133,9 @@ button:focus-visible {
     background-color: #ffffff;
   }
   a:hover {
-    color: #747bff;
+    color: rgb(var(--accent-rgb, 52 211 153) / 0.9);
   }
-  button {
+  body button:not([data-slot]):not(.shadcn-reset) {
     background-color: #f9f9f9;
   }
 }
@@ -185,5 +221,77 @@ button:focus-visible {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* Accento global por elección (sin reventar el theme shadcn): cambia solo brillo y tintes */
+  html[data-choice="blue"] {
+    --matrix-accent: 0 255 170;
+  }
+
+  html[data-choice="red"] {
+    --matrix-accent: 255 60 90;
+  }
+
+  /* Accent tokens for the whole app (drives shadcn "primary" + rings) */
+  html[data-accent="emerald"] {
+    --accent-rgb: 52 211 153;
+  }
+  html[data-accent="lime"] {
+    --accent-rgb: 190 242 100;
+  }
+  html[data-accent="cyan"] {
+    --accent-rgb: 34 211 238;
+  }
+  html[data-accent="violet"] {
+    --accent-rgb: 167 139 250;
+  }
+  html[data-accent="amber"] {
+    --accent-rgb: 251 191 36;
+  }
+  html[data-accent="red"] {
+    --accent-rgb: 251 113 133;
+  }
+
+  /* Map shadcn tokens to accent */
+  :root {
+    --primary: oklch(0.72 0.2 150);
+    --ring: oklch(0.72 0.2 150);
+  }
+
+  /* Use the runtime RGB accent for modern browsers */
+  html {
+    --primary: rgb(var(--accent-rgb, 52 211 153));
+    --ring: rgb(var(--accent-rgb, 52 211 153));
+    --accent: rgb(var(--accent-rgb, 52 211 153) / 0.12);
+    --accent-foreground: oklch(0.985 0 0);
+
+    /* accent helpers */
+    --accent-glow-strong: rgb(var(--accent-rgb, 52 211 153) / 0.24);
+    --accent-glow: rgb(var(--accent-rgb, 52 211 153) / 0.18);
+    --accent-glow-soft: rgb(var(--accent-rgb, 52 211 153) / 0.12);
+    --accent-text: rgb(var(--accent-rgb, 52 211 153) / 0.8);
+  }
+
+  .dark {
+    --primary: rgb(var(--accent-rgb, 52 211 153));
+    --ring: rgb(var(--accent-rgb, 52 211 153));
+    --accent: rgb(var(--accent-rgb, 52 211 153) / 0.14);
+    --accent-foreground: oklch(0.985 0 0);
+
+    /* slightly stronger glows in dark */
+    --accent-glow-strong: rgb(var(--accent-rgb, 52 211 153) / 0.26);
+    --accent-glow: rgb(var(--accent-rgb, 52 211 153) / 0.20);
+    --accent-glow-soft: rgb(var(--accent-rgb, 52 211 153) / 0.14);
+  }
+
+  /* ...existing code... */
+}
+
+@layer utilities {
+  .matrix-glow {
+    text-shadow:
+      0 0 10px rgba(var(--matrix-accent, 0 255 170) / 0.35),
+      0 0 34px rgba(var(--matrix-accent, 0 255 170) / 0.25);
   }
 }
