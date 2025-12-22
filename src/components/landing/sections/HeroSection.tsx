@@ -14,8 +14,8 @@ function HeroBackdrop({ leftGlowClass, rightGlowClass }: Readonly<{ leftGlowClas
   return (
     <div className="pointer-events-none absolute inset-0">
       {/* subtle grid/backplate */}
-      <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[64px_64px]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
+      <div className="absolute inset-0 opacity-45 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-size-[64px_64px]" />
+      <div className="absolute inset-0 opacity-90 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_55%)]" />
       <div className={leftGlowClass} />
       <div className={rightGlowClass} />
     </div>
@@ -31,7 +31,7 @@ export function HeroSection() {
   // Only rotate the highlighted word + the ending phrase (keeps it readable)
   const headlineVariants = React.useMemo(
     () => [
-      { accent: "APIs", tail: "built to last." },
+      { accent: "products", tail: "people love." },
       { accent: "microservices", tail: "done right." },
       { accent: "systems", tail: "from backend to UI." },
     ],
@@ -139,38 +139,60 @@ export function HeroSection() {
 
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="relative mx-auto flex min-h-svh max-w-6xl items-center px-6 pb-16 pt-28">
+      <div className="relative mx-auto flex min-h-svh w-full max-w-6xl items-center justify-center px-6 py-24">
         <div ref={rootRef} className="w-full">
           <HeroBackdrop leftGlowClass={leftGlowClass} rightGlowClass={rightGlowClass} />
           <div className="mx-auto max-w-4xl text-center">
             <p
               data-hero
-              className="text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)_/_0.8)]"
+              className="text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)/0.8)]"
             >
               <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-black/25 font-mono text-[11px] tracking-[0.02em] text-white/75">
                 &lt;/&gt;
-              </span>
+              </span>{" "}
               WAKE UP, DAVID BARRAGÁN
             </p>
 
-            <h1 data-hero className="mt-6 text-balance text-4xl font-black leading-[1.03] text-white md:text-7xl">
-              Software Engineer
-              <span className="block">
-                <span className="text-white">who builds </span>
-                <span
-                  ref={accentWordRef}
-                  className="text-[rgb(var(--accent-rgb,52_211_153))]"
-                >
-                  {h.accent}
+            <h1 data-hero className="mt-6 text-4xl font-black leading-[1.03] text-white md:text-7xl">
+              {/* Línea 1: fija */}
+              <span className="block">Software Engineer</span>
+
+              {/* Línea 2: dinámica */}
+              <span className="mt-1 block text-center">
+                {/* Mobile-first: fluido, permite wrap */}
+                <span className="md:hidden">
+                  <span className="text-white">who builds </span>
+                  <span ref={accentWordRef} className="text-[rgb(var(--accent-rgb,52_211_153))]">
+                    {h.accent}
+                  </span>
+                  <span ref={tailWordRef} className="text-white">
+                    {` ${h.tail}`}
+                  </span>
                 </span>
-                <span ref={tailWordRef} className="text-white">
-                  {` ${h.tail}`}
+
+                {/* Desktop+: 2 líneas estables, centradas, sin salto por cambio de longitud */}
+                <span className="relative hidden whitespace-nowrap md:block">
+                  {/* Ghost: reserva ancho para la variante más larga, pero no se ve */}
+                  <span className="invisible select-none">who builds microservices done right.</span>
+
+                  {/* Texto real (encima), siempre centrado */}
+                  <span className="absolute inset-0 inline-flex items-baseline justify-center gap-x-4">
+                    <span className="text-white">who builds</span>
+                    <span>
+                      <span ref={accentWordRef} className="text-[rgb(var(--accent-rgb,52_211_153))]">
+                        {h.accent}
+                      </span>
+                      <span ref={tailWordRef} className="text-white">
+                        {` ${h.tail}`}
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </span>
             </h1>
 
             <p data-hero className="mx-auto mt-6 max-w-2xl text-pretty text-sm text-white/75 md:text-base">
-              Backend-first full‑stack. Java + Spring Boot, SQL, CI/CD.
+              Product-grade frontend, reliable backend, and motion that never compromises performance.
             </p>
 
             <div data-hero className="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -192,7 +214,12 @@ export function HeroSection() {
                 </Button>
               </a>
 
-              <a href="https://www.linkedin.com/in/david-barragan-dev" target="_blank" rel="noreferrer" className="inline-flex">
+              <a
+                href="https://www.linkedin.com/in/david-barragan-dev"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex"
+              >
                 <Button
                   type="button"
                   variant="outline"
@@ -203,16 +230,7 @@ export function HeroSection() {
                 </Button>
               </a>
 
-              <a href="https://github.com/DavidJosueP2" target="_blank" rel="noreferrer" className="inline-flex">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
-                >
-                  <img src={socialLogos.GitHub} alt="" aria-hidden className="h-4 w-4 object-contain" />
-                  <span className="ml-2">GitHub</span>
-                </Button>
-              </a>
+              {/* GitHub button removed */}
             </div>
 
             <div data-hero className="mt-8 flex flex-wrap items-center justify-center gap-2">

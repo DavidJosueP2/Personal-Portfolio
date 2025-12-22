@@ -16,9 +16,9 @@ function readStoredAccent(): Accent {
   try {
     const raw = globalThis.localStorage.getItem(STORAGE_KEY)
     if (raw === "lime" || raw === "emerald" || raw === "cyan" || raw === "red" || raw === "violet" || raw === "amber") return raw
-    return "emerald"
+    return "lime"
   } catch {
-    return "emerald"
+    return "lime"
   }
 }
 
@@ -28,7 +28,7 @@ function applyAccentToDom(accent: Accent) {
 
 export function AccentThemeProvider({ children }: { children: React.ReactNode }) {
   const [accent, setAccentState] = React.useState<Accent>(() => {
-    if (typeof globalThis.window === "undefined") return "emerald"
+    if (typeof globalThis.window === "undefined") return "lime"
     return readStoredAccent()
   })
 
