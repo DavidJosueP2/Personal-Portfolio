@@ -5,6 +5,7 @@ import type { Project } from "../types"
 import { prefersReducedMotion } from "@/lib/motion"
 import { ProjectGalleryDialog } from "./ProjectGalleryDialog"
 import { ProjectsRail } from "./ProjectsRail"
+import { ProjectsExperienceLeftMedia } from "./ProjectsExperienceLeftMedia"
 
 type Props = {
   projects: Project[]
@@ -62,7 +63,7 @@ function formatCategoryLabel(category: Project["category"]) {
  * - Only the active project renders the heavy content (gallery + right panel)
  * - Previews render minimal UI and are synced with active index
  */
-export function ProjectsExperience({ projects }: Props) {
+export function ProjectsExperience({ projects }: Readonly<Props>) {
   const hostRef = React.useRef<HTMLElement | null>(null)
   const pinRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -269,17 +270,11 @@ function ProjectPanel({
   const rightRef = React.useRef<HTMLDivElement | null>(null)
 
   const [galleryOpen, setGalleryOpen] = React.useState(false)
-  const [coverLoaded, setCoverLoaded] = React.useState(false)
-  const [coverFailed, setCoverFailed] = React.useState(false)
 
   // Close gallery when switching projects to avoid showing stale images
   React.useEffect(() => {
     setGalleryOpen(false)
-    setCoverLoaded(false)
-    setCoverFailed(false)
   }, [project.id])
-
-  const cover = project.images.cover
 
   // transitions (gallery + right panel) on project change
   React.useLayoutEffect(() => {
@@ -288,7 +283,6 @@ function ProjectPanel({
     const right = rightRef.current
     if (!left || !right) return
 
-    // Ensure previous animations don't leave the panels hidden
     gsap.killTweensOf([left, right])
     gsap.set([left, right], { clearProps: "opacity,visibility,filter,transform" })
 
@@ -303,164 +297,16 @@ function ProjectPanel({
     }
   }, [project.id])
 
-  // parallax hover effect (keep!)
-  React.useEffect(() => {
-    if (prefersReducedMotion()) return
-
-    const root = rootRef.current
-    if (!root) return
-
-    const card = root.querySelector<HTMLElement>("[data-water-card]")
-    const img = root.querySelector<HTMLElement>("[data-water-img]")
-    const fog = root.querySelector<HTMLElement>("[data-accent-fog]")
-    const infoBg = root.querySelector<HTMLElement>("[data-info-bg]")
-
-    if (!card || !img) return
-
-    gsap.set(card, { transformPerspective: 1000, transformOrigin: "50% 50%" })
-
-    const onMove = (e: MouseEvent) => {
-      const r = card.getBoundingClientRect()
-      const px = (e.clientX - r.left) / r.width
-      const py = (e.clientY - r.top) / r.height
-      const rotY = (px - 0.5) * 10
-      const rotX = -(py - 0.5) * 8
-
-      gsap.to(card, { rotateX: rotX, rotateY: rotY, duration: 0.5, ease: "power3.out" })
-      gsap.to(img, { x: (px - 0.5) * -18, y: (py - 0.5) * -14, duration: 0.5, ease: "power3.out" })
-      if (fog) gsap.to(fog, { xPercent: (px - 0.5) * 10, yPercent: (py - 0.5) * 6, duration: 0.7, ease: "sine.out" })
-    }
-
-    const onEnter = () => {
-      root.addEventListener("mousemove", onMove)
-      gsap.to(card, { scale: 1.01, duration: 0.35, ease: "power3.out" })
-    }
-
-    const onLeave = () => {
-      root.removeEventListener("mousemove", onMove)
-      gsap.to(card, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.7, ease: "power3.out" })
-      gsap.to(img, { x: 0, y: 0, duration: 0.7, ease: "power3.out" })
-      if (fog) gsap.to(fog, { xPercent: 0, yPercent: 0, duration: 0.9, ease: "power3.out" })
-    }
-
-    root.addEventListener("mouseenter", onEnter)
-    root.addEventListener("mouseleave", onLeave)
-
-    if (infoBg) {
-      gsap.killTweensOf(infoBg)
-      gsap.to(infoBg, { backgroundPosition: "120% 0%", duration: 12, ease: "none", repeat: -1 })
-    }
-
-    return () => {
-      root.removeEventListener("mouseenter", onEnter)
-      root.removeEventListener("mouseleave", onLeave)
-      root.removeEventListener("mousemove", onMove)
-      gsap.killTweensOf([card, img, fog, infoBg])
-    }
-  }, [project.id])
-
   return (
     <div ref={rootRef} className="relative min-w-0 h-full">
       <div className="grid h-full min-w-0 items-center gap-10 max-md:grid-cols-1 max-md:items-start max-md:gap-6 md:grid-cols-[minmax(520px,0.9fr)_minmax(0,1.1fr)]">
         {/* LEFT */}
         <div ref={leftRef} className="relative min-w-0">
-          {/* Main image card */}
-          <div className="relative mx-auto w-full max-w-[620px]">
-            {/* energetic aura behind */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -inset-10 -z-10 opacity-95"
-              style={{
-                background:
-                  "radial-gradient(60% 55% at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.18) 35%, rgba(0,0,0,0) 70%), radial-gradient(55% 45% at 75% 25%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 22%, rgba(0,0,0,0) 55%), radial-gradient(40% 35% at 25% 80%, rgba(var(--accent-rgb, 52 211 153) / 0.25) 0%, rgba(0,0,0,0) 60%)",
-                filter: "blur(18px)",
-              }}
-            />
-
-
-            <div
-              data-water-card
-              className="relative overflow-hidden rounded-3xl bg-black/55 shadow-[0_25px_120px_rgba(0,0,0,0.70)]"
-            >
-              <div className="absolute inset-0 rounded-3xl ring-1 ring-white/8" aria-hidden />
-
-              <div className="relative h-[62vh] max-h-[520px] min-h-[340px] max-md:h-[48vh] max-md:min-h-[320px]">
-                {/* Media container (robust). The <img> is the source of truth. */}
-                <img
-                  data-water-img
-                  key={cover.src}
-                  src={cover.src}
-                  alt={cover.alt}
-                  className="absolute inset-0 z-10 h-full w-full object-cover"
-                  loading="eager"
-                  decoding="async"
-                  onLoad={() => {
-                    setCoverLoaded(true)
-                    setCoverFailed(false)
-                  }}
-                  onError={() => {
-                    setCoverLoaded(true)
-                    setCoverFailed(true)
-                    console.warn("Failed to load project cover:", cover.src)
-                  }}
-                />
-
-                {/* When the image fails, show explicit fallback (instead of a blank panel) */}
-                {coverFailed ? (
-                  <div className="absolute inset-0 z-20 grid place-items-center bg-black/30">
-                    <div className="rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-xs text-white/70">
-                      Preview unavailable
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Loading veil: fades out once loaded so it can't hide the image */}
-                <div
-                  className={
-                    "pointer-events-none absolute inset-0 z-20 grid place-items-center transition-opacity duration-300 " +
-                    (coverLoaded ? "opacity-0" : "opacity-100")
-                  }
-                  aria-hidden
-                >
-                  <div className="h-full w-full animate-pulse bg-white/3" />
-                  <div className="absolute bottom-4 right-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs text-white/70">
-                    Loading preview…
-                  </div>
-                </div>
-
-                {/* Accent fog + vignette */}
-                <div
-                  data-accent-fog
-                  className="pointer-events-none absolute inset-0 z-20 mix-blend-screen opacity-75"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 40% 45%, rgba(var(--accent-rgb, 52 211 153) / 0.55) 0%, rgba(var(--accent-rgb, 52 211 153) / 0.28) 22%, rgba(0,0,0,0) 58%)",
-                    filter: "blur(28px)",
-                  }}
-                />
-
-                <div className="pointer-events-none absolute inset-0 z-20 bg-linear-to-t from-black/55 via-black/10 to-black/10" />
-
-                {/* Click target */}
-                <button
-                  type="button"
-                  onClick={() => setGalleryOpen(true)}
-                  className="group absolute inset-0 z-30 text-left"
-                  aria-label="Open project gallery"
-                >
-                  <span className="sr-only">Open gallery</span>
-
-                  <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.08),transparent_55%)]" />
-
-                  <span className="pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/55 px-3 py-1 text-xs text-white/85 backdrop-blur-sm">
-                    View gallery
-                    <span className="text-white/65">→</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-
+          <ProjectsExperienceLeftMedia
+            project={project}
+            onOpenGallery={() => setGalleryOpen(true)}
+            hoverRef={leftRef}
+          />
           <ProjectGalleryDialog project={project} open={galleryOpen} onOpenChange={setGalleryOpen} />
         </div>
 
@@ -486,18 +332,7 @@ function ProjectPanel({
                 </p>
 
                 {project.status ? (
-                  <span
-                    className={
-                      "rounded-full border px-3 py-1 text-[10px] font-semibold tracking-[0.18em] uppercase " +
-                      (project.status === "live"
-                        ? "border-emerald-200/20 bg-emerald-400/10 text-emerald-100"
-                        : project.status === "wip"
-                          ? "border-amber-200/20 bg-amber-400/10 text-amber-100"
-                          : "border-white/10 bg-white/5 text-white/65")
-                    }
-                  >
-                    {project.status}
-                  </span>
+                  <ProjectStatusPill status={project.status} />
                 ) : null}
               </div>
 
@@ -565,5 +400,20 @@ function ProjectPanel({
         </div>
       </div>
     </div>
+  )
+}
+
+function ProjectStatusPill({ status }: Readonly<{ status: NonNullable<Project["status"]> }>) {
+  const klass =
+    status === "live"
+      ? "border-emerald-200/20 bg-emerald-400/10 text-emerald-100"
+      : status === "wip"
+        ? "border-amber-200/20 bg-amber-400/10 text-amber-100"
+        : "border-white/10 bg-white/5 text-white/65"
+
+  return (
+    <span className={"rounded-full border px-3 py-1 text-[10px] font-semibold tracking-[0.18em] uppercase " + klass}>
+      {status}
+    </span>
   )
 }
