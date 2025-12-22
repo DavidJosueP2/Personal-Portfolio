@@ -31,7 +31,7 @@ function groupFor(name: string): GroupKey | null {
 
   if (["react", "angular", "typescript", "tailwind"].some((k) => n.includes(k))) return "Frontend"
   if (["spring", "java", "laravel", "php", "node", "nest"].some((k) => n.includes(k))) return "Backend"
-  if (["docker", "kubernetes", "jenkins", "azure"].some((k) => n.includes(k))) return "DevOps & Cloud"
+  if (["docker", "kubernetes", "jenkins", "github actions", "azure"].some((k) => n.includes(k))) return "DevOps & Cloud"
   if (["mysql", "postgres", "oracle", "microsoft sql"].some((k) => n.includes(k))) return "Databases"
 
   // Everything else you want to showcase that isn't a language/framework goes here.
@@ -41,7 +41,7 @@ function groupFor(name: string): GroupKey | null {
       "grafana",
       "prometheus",
       "github",
-      "github actions",
+      // "github actions" moved to DevOps & Cloud
       "sonarqube",
       "junit",
       "openapi",
@@ -58,21 +58,66 @@ function groupFor(name: string): GroupKey | null {
 const GROUP_ORDER: GroupKey[] = ["Frontend", "Backend", "DevOps & Cloud", "Databases", "Tools"]
 
 function sortWithinGroup(group: GroupKey, items: SkillIcon[]) {
-  if (group !== "Backend") return items
+  // Backend: Enforced order: Spring Boot -> Java -> Laravel -> PHP
+  if (group === "Backend") {
+    const order = ["Spring", "Java", "Laravel", "PHP"]
+    const rank = (name: string) => {
+      const idx = order.findIndex((k) => k.toLowerCase() === name.toLowerCase())
+      return idx === -1 ? 999 : idx
+    }
 
-  // Enforced order: Spring Boot -> Java -> Laravel -> PHP
-  const order = ["Spring", "Java", "Laravel", "PHP"]
-  const rank = (name: string) => {
-    const idx = order.findIndex((k) => k.toLowerCase() === name.toLowerCase())
-    return idx === -1 ? 999 : idx
+    return [...items].sort((a, b) => {
+      const ra = rank(a.name)
+      const rb = rank(b.name)
+      if (ra !== rb) return ra - rb
+      return a.name.localeCompare(b.name)
+    })
   }
 
-  return [...items].sort((a, b) => {
-    const ra = rank(a.name)
-    const rb = rank(b.name)
-    if (ra !== rb) return ra - rb
-    return a.name.localeCompare(b.name)
-  })
+  // DevOps: keep Jenkins next to GitHub Actions, Docker next to Kubernetes, etc.
+  if (group === "DevOps & Cloud") {
+    const order = ["Azure", "Jenkins", "GitHub Actions", "Docker", "Kubernetes"]
+    const rank = (name: string) => {
+      const idx = order.findIndex((k) => k.toLowerCase() === name.toLowerCase())
+      return idx === -1 ? 999 : idx
+    }
+
+    return [...items].sort((a, b) => {
+      const ra = rank(displayName(a.name))
+      const rb = rank(displayName(b.name))
+      if (ra !== rb) return ra - rb
+      return a.name.localeCompare(b.name)
+    })
+  }
+
+  // Tools: keep Grafana+Prometheus, JUnit+SonarQube, Swagger+OpenAPI together.
+  if (group === "Tools") {
+    const order = [
+      "Grafana",
+      "Prometheus",
+      "JUnit",
+      "SonarQube",
+      "Swagger",
+      "OpenAPI",
+      "GitHub",
+      "Playwrite",
+      "Linux",
+    ]
+
+    const rank = (name: string) => {
+      const idx = order.findIndex((k) => k.toLowerCase() === name.toLowerCase())
+      return idx === -1 ? 999 : idx
+    }
+
+    return [...items].sort((a, b) => {
+      const ra = rank(displayName(a.name))
+      const rb = rank(displayName(b.name))
+      if (ra !== rb) return ra - rb
+      return a.name.localeCompare(b.name)
+    })
+  }
+
+  return items
 }
 
 function SkillChip({ icon }: Readonly<{ icon: SkillIcon }>) {

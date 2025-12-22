@@ -28,10 +28,12 @@ function AccentSwatch({
   return (
     <button
       type="button"
+      data-slot="accent-swatch"
       onClick={() => onSelect(value)}
       style={style}
       className={
-        "h-7 w-7 rounded-full border transition " +
+        "h-7 w-7 rounded-md border transition " +
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 " +
         (selected ? "border-white/80 ring-2 ring-white/20" : "border-white/15 hover:border-white/45")
       }
       aria-label={`Set accent to ${value}`}
@@ -59,30 +61,60 @@ function useActiveSection(sectionIds: readonly string[]) {
 
     if (els.length === 0) return
 
-    // Force a sensible initial value on mount.
-    setActive((prev) => {
-      const first = els[0]
-      return prev || first?.id || ""
-    })
+    const getNavHeight = () => {
+      // header padding + nav height; keep it stable even if fonts load
+      const header = document.querySelector<HTMLElement>("header")
+      return (header?.getBoundingClientRect().height ?? 0) + 8
+    }
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))
-        const top = visible[0]
-        if (top?.target && (top.target as HTMLElement).id) setActive((top.target as HTMLElement).id)
-      },
-      {
-        root: null,
-        // pick the section that lives around the top third of the viewport
-        rootMargin: "-20% 0px -70% 0px",
-        threshold: [0.08, 0.12, 0.2, 0.35, 0.5, 0.7],
+    const pickActive = () => {
+      const offset = getNavHeight()
+      const y = offset + 8 // a line just below the header
+
+      let bestId = active
+      let bestDist = Number.POSITIVE_INFINITY
+
+      for (const el of els) {
+        const rect = el.getBoundingClientRect()
+        // distance from this section's top to our reference line
+        const d = Math.abs(rect.top - y)
+
+        // Only consider sections that are in view-ish
+        // (either their top is above the line but bottom below it, or top below line but not too far)
+        const intersectsLine = rect.top <= y && rect.bottom >= y
+        const closeEnough = rect.top >= y && rect.top <= y + 240
+
+        if (intersectsLine || closeEnough) {
+          if (d < bestDist) {
+            bestDist = d
+            bestId = el.id
+          }
+        }
       }
-    )
 
-    for (const el of els) obs.observe(el)
-    return () => obs.disconnect()
+      if (bestId) setActive(bestId)
+    }
+
+    // Initial pick + on scroll/resize
+    pickActive()
+
+    const onScroll = () => pickActive()
+    const onResize = () => pickActive()
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", onResize)
+
+    // Also observe size changes (images/fonts) that can move sections.
+    const ro = new ResizeObserver(() => pickActive())
+    ro.observe(document.body)
+
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onResize)
+      ro.disconnect()
+    }
+    // sectionIds is a stable literal array; els captures real DOM nodes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionIds])
 
   return active

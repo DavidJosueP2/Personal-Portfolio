@@ -33,14 +33,14 @@ export function AboutSection() {
               <span className="text-[rgb(var(--accent-rgb,52_211_153))]">About</span>
             </h2>
             <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
-              Get to know me!
+              Ambato, Ecuador!
             </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
               I'm David Barragán — a full‑stack engineer with a{" "}
               <span className="text-[rgb(var(--accent-rgb,52_211_153))]">backend</span> focus.
               I work mainly with{" "}
               <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Java</span> +{" "}
-              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Spring Boot</span>, REST APIs, microservices, and SQL databases.
+              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Spring Boot</span>, REST APIs, microservices, and SQL databases, , including distributed databases.
             </p>
             <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
               I care about clean architecture, validations, automated testing, and{" "}

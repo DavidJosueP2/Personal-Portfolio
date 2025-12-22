@@ -1,5 +1,11 @@
-import { topHeroTools } from "@/assets/img/tech"
+import { techLogos } from "@/assets/img/tech"
 import type { Project } from "../types"
+
+type TechLogo = (typeof techLogos)[number]
+
+function toProjectTech(t: TechLogo) {
+  return { name: t.name === "Spring" ? "Spring Boot" : t.name, iconSrc: t.src }
+}
 
 // NOTE: Replace hrefs with your real repos when you have them handy.
 export const projects: Project[] = [
@@ -22,34 +28,27 @@ export const projects: Project[] = [
     featuredRank: 1,
     status: "offline",
     tech: [
-      topHeroTools.find((t) => t.name === "Spring"),
-      topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "Docker"),
-      topHeroTools.find((t) => t.name === "Azure"),
+      techLogos.find((t) => t.name === "Spring"),
+      techLogos.find((t) => t.name === "React"),
+      techLogos.find((t) => t.name === "Docker"),
+      techLogos.find((t) => t.name === "Azure"),
     ]
       .filter(Boolean)
-      .map((t) => ({ name: t!.name, iconSrc: t!.src })),
+      .map((t) => toProjectTech(t as TechLogo)),
     images: {
       cover: {
         src: new URL("../../../assets/img/projects/clinic/1.png", import.meta.url).toString(),
         alt: "Clinic platform screenshot",
         kind: "cover",
       },
-      gallery: Array.from({ length: 9 }, (_, i) => {
-        const idx = i + 1
-        const file = idx === 4 ? "5" : idx === 5 ? "6" : idx === 6 ? "7" : idx === 7 ? "8" : idx === 8 ? "9" : idx === 9 ? "10" : String(idx)
-        // clinic folder has 1,2,3,5,6,7,8,9,10
-        return {
-          src: new URL(`../../../assets/img/projects/clinic/${file}.png`, import.meta.url).toString(),
-          alt: `Clinic platform screenshot ${file}`,
-          kind: "gallery",
-        }
-      }),
+      gallery: ["1", "2", "3", "5", "6", "7", "8", "9", "10"].map((file) => ({
+        src: new URL(`../../../assets/img/projects/clinic/${file}.png`, import.meta.url).toString(),
+        alt: `Clinic platform screenshot ${file}`,
+        kind: "gallery",
+      })),
     },
     links: [
-      { kind: "repo", label: "Repo (backend)", href: "#" },
-      { kind: "repo", label: "Repo (frontend)", href: "#" },
-      { kind: "repo", label: "Repo (mobile)", href: "#" },
+      { kind: "repo", label: "Repo", href: "https://github.com/DRTX2/clinic" },
     ],
   },
   {
@@ -82,13 +81,13 @@ export const projects: Project[] = [
     featuredRank: 2,
     status: "offline",
     tech: [
-      topHeroTools.find((t) => t.name === "Nest.js"),
-      topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "Docker"),
-      topHeroTools.find((t) => t.name === "Azure"),
+      techLogos.find((t) => t.name === "Nest.js"),
+      techLogos.find((t) => t.name === "React"),
+      techLogos.find((t) => t.name === "Docker"),
+      techLogos.find((t) => t.name === "Azure"),
     ]
       .filter(Boolean)
-      .map((t) => ({ name: t!.name, iconSrc: t!.src })),
+      .map((t) => toProjectTech(t as TechLogo)),
     images: {
       cover: {
         src: new URL("../../../assets/img/projects/fuel-system/Picture1.png", import.meta.url).toString(),
@@ -102,8 +101,8 @@ export const projects: Project[] = [
       })),
     },
     links: [
-      { kind: "repo", label: "Repo (backend)", href: "#" },
-      { kind: "docs", label: "Architecture / README", href: "#" },
+      { kind: "repo", label: "Repo (backend)", href: "https://github.com/DavidJosueP2/Distributed-Gasoline-System" },
+      { kind: "repo", label: "Repo (frontend)", href: "https://github.com/JoelBonillaG/Distributed-Gasoline-System-Frontend" },
     ],
   },
   {
@@ -134,13 +133,13 @@ export const projects: Project[] = [
     featured: true,
     featuredRank: 3,
     tech: [
-      topHeroTools.find((t) => t.name === "Spring"),
-      topHeroTools.find((t) => t.name === "React"),
-      topHeroTools.find((t) => t.name === "Docker"),
-      topHeroTools.find((t) => t.name === "Azure"),
+      techLogos.find((t) => t.name === "Spring"),
+      techLogos.find((t) => t.name === "React"),
+      techLogos.find((t) => t.name === "Docker"),
+      techLogos.find((t) => t.name === "Azure"),
     ]
       .filter(Boolean)
-      .map((t) => ({ name: t!.name, iconSrc: t!.src })),
+      .map((t) => toProjectTech(t as TechLogo)),
     images: {
       cover: {
         src: new URL("../../../assets/img/projects/hospital/Picture1.png", import.meta.url).toString(),
@@ -163,7 +162,10 @@ export const projects: Project[] = [
         kind: "gallery",
       })),
     },
-    links: [{ kind: "repo", label: "Repo", href: "#" }],
+    links: [
+      { kind: "repo", label: "Repo (backend)", href: "https://github.com/JosueGarciaAbata/hospital-management-system" },
+      { kind: "repo", label: "Repo (frontend)", href: "https://github.com/DavidJosueP2/Hospital-Front" },
+    ],
   },
   {
     id: "moderation-platform",
@@ -183,13 +185,13 @@ export const projects: Project[] = [
     featured: true,
     featuredRank: 4,
     tech: [
-      topHeroTools.find((t) => t.name === "Spring"),
-      topHeroTools.find((t) => t.name === "Azure"),
-      topHeroTools.find((t) => t.name === "Docker"),
-      topHeroTools.find((t) => t.name === "React"),
+      techLogos.find((t) => t.name === "Spring"),
+      techLogos.find((t) => t.name === "Azure"),
+      techLogos.find((t) => t.name === "Docker"),
+      techLogos.find((t) => t.name === "React"),
     ]
       .filter(Boolean)
-      .map((t) => ({ name: t!.name, iconSrc: t!.src })),
+      .map((t) => toProjectTech(t as TechLogo)),
     images: {
       cover: {
         src: new URL("../../../assets/img/projects/moderation/Picture10.png", import.meta.url).toString(),
@@ -211,7 +213,10 @@ export const projects: Project[] = [
         kind: "gallery",
       })),
     },
-    links: [{ kind: "repo", label: "Repo", href: "#" }],
+    links: [
+      { kind: "repo", label: "Repo (backend)", href: "https://github.com/DavidJosueP2/Marketplace_Link" },
+      { kind: "repo", label: "Repo (frontend)", href: "https://github.com/DavidJosueP2/Marketplace-Link-Front" },
+    ],
   },
 ]
 
