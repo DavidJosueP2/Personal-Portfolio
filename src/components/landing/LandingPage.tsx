@@ -10,38 +10,39 @@ import { Footer } from "@/components/landing/Footer"
 import { ExperienceTimeline } from "@/components/landing/ExperienceTimeline"
 
 export function LandingPage() {
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <ConstellationBackground />
-      <div className="relative z-10">
-        <HeaderNav />
-        <HeroSection />
-        <AboutSection />
-        <ExperienceTimeline
-          items={[
-            {
-              range: "2025 – Present",
-              title: "Backend Developer",
-              org: "EEASA (Freelance Project)",
-              location: "Ambato, Ecuador",
-              description:
-                "Refactoring and improvement of a Spring Boot system for electricity meter incident management, optimizing entities and validations.",
-            },
-            {
-              range: "2025",
-              title: "Full Stack Developer",
-              org: "Universidad Técnica de Ambato (Academic Project)",
-              description:
-                "Implementation of a modular hospital system with microservices and distributed databases, including appointment management and scalable system design.",
-            },
-          ]}
-        />
-        <ProjectsSection />
-        <SkillsSection />
-        <CertsSection />
-        <ContactSection />
-        <Footer />
-      </div>
-    </div>
-  )
+    return (
+        <div className="min-h-screen bg-black text-white">
+            <ConstellationBackground />
+            <div className="relative z-10">
+                <HeaderNav />
+                <HeroSection />
+                <AboutSection />
+                <ExperienceTimeline
+                    items={[
+                        {
+                            range: "2025–2026",
+                            title: "Full Stack Developer",
+                            org: "Kronhos ERP · Professional Experience (6 months)",
+                            location: "Ambato, Ecuador",
+                            description:
+                                "Full stack development with Java and Spring Boot, building REST APIs and frontend integrations. Database management with SQL-based systems and data reporting using Power BI.",
+                        },
+                        {
+                            range: "2025",
+                            title: "Backend Developer",
+                            org: "EEASA · Freelance Project",
+                            location: "Ambato, Ecuador",
+                            description:
+                                "Refactoring and improvement of a Spring Boot system for electricity meter incident management, optimizing entities, validations, and overall system reliability.",
+                        },
+                    ]}
+                />
+                <ProjectsSection />
+                <SkillsSection />
+                <CertsSection />
+                <ContactSection />
+                <Footer />
+            </div>
+        </div>
+    )
 }
