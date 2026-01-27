@@ -46,7 +46,7 @@ export function CertsSection() {
                   ESP32 Microcontroller Programming Course
                 </p>
                 <p className="mt-2 text-xs text-white/60">
-                  Platzi • 2024
+                  Technical University of Ambato • 2025
                 </p>
               </div>
             </div>
