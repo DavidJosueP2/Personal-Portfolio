@@ -151,7 +151,7 @@ export function HeroSection() {
               <span>SOFTWARE ENGINEER</span>
             </p>
 
-            <h1 data-hero className="mt-6 text-4xl font-black leading-[1.03] text-white md:text-7xl">
+            <h1 data-hero className="mt-6 text-4xl font-bold leading-[1.03] text-white md:text-7xl">
               {/* Línea 1: fija */}
               <span className="block">David Barragán</span>
 
@@ -169,7 +169,7 @@ export function HeroSection() {
                 </span>
 
                 {/* Desktop+: 2 líneas estables, centradas, sin salto por cambio de longitud */}
-                <span className="relative hidden whitespace-nowrap md:block">
+                <span className="relative hidden whitespace-nowrap md:block md:text-[min(4vw,2.8125rem)]">
                   {/* Ghost: reserva ancho para la variante más larga, pero no se ve */}
                   <span className="invisible select-none">who builds microservices done right.</span>
 

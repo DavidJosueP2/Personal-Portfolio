@@ -29,7 +29,18 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
           "text-balance font-display text-[1.45rem] leading-tight text-[#ece9e2] sm:text-[1.65rem]",
           lead && "lg:text-[1.9rem]",
         )}>
-          {project.title}
+          {demo ? (
+            <a
+              href={demo.href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Visit ${project.title} live site`}
+              className="group/live inline-flex max-w-full items-start gap-2.5 rounded-sm text-inherit! hover:text-[rgb(var(--accent-rgb))]! focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[rgb(var(--accent-rgb))]"
+            >
+              <span className="min-w-0">{project.title}</span>
+              <ArrowUpRight aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-[rgb(var(--accent-rgb))] motion-safe:transition-transform motion-safe:group-hover/live:translate-x-0.5 motion-safe:group-hover/live:-translate-y-0.5" />
+            </a>
+          ) : project.title}
         </h3>
         <p className="mt-2 max-w-[53ch] text-sm leading-relaxed text-[#afb7bd]">
           {project.subtitle ?? project.description}
@@ -59,22 +70,8 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
               </button>
             </ProjectGalleryDialog>
 
-            {demo || repositories.length > 0 ? (
-              <ul aria-label={demo ? "Project links" : "GitHub repositories"} className="flex flex-wrap items-center gap-x-3">
-                {demo ? (
-                  <li>
-                    <a
-                      href={demo.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Visit ${project.title} live site`}
-                      className="inline-flex min-h-11 items-center gap-1.5 rounded-sm text-xs font-medium text-[#afb7bd]! hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
-                    >
-                      {demo.label}
-                      <ArrowUpRight aria-hidden="true" className="size-3.5" />
-                    </a>
-                  </li>
-                ) : null}
+            {repositories.length > 0 ? (
+              <ul aria-label="GitHub repositories" className="flex flex-wrap items-center gap-x-3">
                 {repositories.map(({ href, label }) => (
                   <li key={href}>
                     <a

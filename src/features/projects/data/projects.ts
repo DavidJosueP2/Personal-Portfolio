@@ -1,5 +1,7 @@
 import AKS from "@/assets/img/tech/AKS.png"
+import AmazonS3 from "@/assets/img/tech/Amazon S3.svg"
 import Azure from "@/assets/img/tech/azure.png"
+import Cloudflare from "@/assets/img/tech/Cloudflare.svg"
 import Jenkins from "@/assets/img/tech/Jenkins.png"
 import Nest from "@/assets/img/tech/Nest.js.png"
 import PostgreSQL from "@/assets/img/tech/PostgresSQL.png"
@@ -178,8 +180,8 @@ export const projects: Project[] = [
       "Testing-focused development",
       "Jenkins CI/CD pipeline + deployment on Azure",
     ],
-    stack: ["React", "Spring Boot", "Jenkins", "TypeScript", "Testing", "Azure"],
-    tags: ["frontend", "react", "typescript", "spring", "devops", "jenkins"],
+    stack: ["React", "Spring Boot", "Jenkins", "TypeScript", "Testing", "Azure", "Cloudflare", "Amazon S3"],
+    tags: ["frontend", "react", "typescript", "spring", "devops", "jenkins", "cloudflare", "aws", "s3"],
     category: "fullstack",
     featured: true,
     featuredRank: 4,
@@ -188,6 +190,8 @@ export const projects: Project[] = [
       { name: "TypeScript", iconSrc: TypeScript },
       { name: "Spring Boot", iconSrc: Spring },
       { name: "Jenkins", iconSrc: Jenkins },
+      { name: "Cloudflare", iconSrc: Cloudflare },
+      { name: "Amazon S3", iconSrc: AmazonS3 },
     ],
     images: {
       previewSrc: new URL("../../../assets/img/projects/moderation/preview.webp", import.meta.url).toString(),
@@ -265,8 +269,8 @@ export const projects: Project[] = [
       "Communities and real-time chat",
       "PostgreSQL persistence and SonarQube code analysis",
     ],
-    stack: ["React", "NestJS", "PostgreSQL", "SonarQube"],
-    tags: ["react", "nestjs", "postgresql", "sonarqube", "forum", "chat", "monorepo"],
+    stack: ["React", "NestJS", "PostgreSQL", "SonarQube", "Cloudflare", "Amazon S3"],
+    tags: ["react", "nestjs", "postgresql", "sonarqube", "forum", "chat", "monorepo", "cloudflare", "aws", "s3"],
     category: "fullstack",
     featured: true,
     featuredRank: 6,
@@ -276,6 +280,8 @@ export const projects: Project[] = [
       { name: "NestJS", iconSrc: Nest },
       { name: "PostgreSQL", iconSrc: PostgreSQL },
       { name: "SonarQube", iconSrc: SonarQube },
+      { name: "Cloudflare", iconSrc: Cloudflare },
+      { name: "Amazon S3", iconSrc: AmazonS3 },
     ],
     images: {
       cover: {
@@ -297,10 +303,15 @@ export const projects: Project[] = [
   },
 ]
 
+function projectPriority(project: Project) {
+  if (project.links.some(({ kind }) => kind === "demo")) return 0
+  return project.category === "microservices" ? 1 : 2
+}
+
 export function getPortfolioProjects() {
   return [...projects]
     .sort((a, b) =>
-      Number(b.category === "microservices") - Number(a.category === "microservices") ||
+      projectPriority(a) - projectPriority(b) ||
       (a.featuredRank ?? Number.MAX_SAFE_INTEGER) - (b.featuredRank ?? Number.MAX_SAFE_INTEGER)
     )
 }

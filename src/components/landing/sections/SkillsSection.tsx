@@ -34,7 +34,7 @@ function groupFor(name: string): GroupKey | null {
 
   if (["react", "angular", "typescript", "tailwind"].some((k) => n.includes(k))) return "Frontend"
   if (["spring", "java", "laravel", "php", "node", "nest"].some((k) => n.includes(k))) return "Backend"
-  if (["docker", "kubernetes", "jenkins", "github actions", "azure"].some((k) => n.includes(k))) return "DevOps & Cloud"
+  if (["docker", "kubernetes", "jenkins", "github actions", "azure", "aws"].some((k) => n.includes(k))) return "DevOps & Cloud"
   if (["mysql", "postgres", "oracle", "microsoft sql"].some((k) => n.includes(k))) return "Databases"
 
   // Everything else you want to showcase that isn't a language/framework goes here.
@@ -79,7 +79,7 @@ function sortWithinGroup(group: GroupKey, items: SkillIcon[]) {
 
   // DevOps: keep Jenkins next to GitHub Actions, Docker next to Kubernetes, etc.
   if (group === "DevOps & Cloud") {
-    const order = ["Azure", "Jenkins", "GitHub Actions", "Docker", "Kubernetes"]
+    const order = ["Azure", "AWS", "Jenkins", "GitHub Actions", "Docker", "Kubernetes"]
     const rank = (name: string) => {
       const idx = order.findIndex((k) => k.toLowerCase() === name.toLowerCase())
       return idx === -1 ? 999 : idx
@@ -272,7 +272,6 @@ export function SkillsSection() {
         <h2
           data-skills-head
           className="text-3xl font-extrabold text-white md:text-4xl"
-          style={{ fontFamily: "Gloock, Onest, system-ui" }}
         >
           <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Skills</span>
         </h2>

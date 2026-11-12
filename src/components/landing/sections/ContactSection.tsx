@@ -44,7 +44,6 @@ export function ContactSection() {
             <h2
               data-reveal
               className="text-3xl font-extrabold text-white md:text-4xl"
-              style={{ fontFamily: "Gloock, Onest, system-ui" }}
             >
               <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Contact</span>
             </h2>
