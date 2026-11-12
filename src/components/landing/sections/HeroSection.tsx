@@ -1,7 +1,6 @@
 import * as React from "react"
 import { gsap } from "gsap"
 import { Button } from "@/components/ui/shadcn/button"
-import { useAccentTheme } from "@/context/accent-theme"
 import { prefersReducedMotion } from "@/lib/motion"
 import { topHeroTools, socialLogos } from "@/assets/img/tech"
 import cvPdf from "@/assets/docs/Curriculum.pdf"
@@ -26,7 +25,6 @@ export function HeroSection() {
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const accentWordRef = React.useRef<HTMLSpanElement | null>(null)
   const tailWordRef = React.useRef<HTMLSpanElement | null>(null)
-  const { accent } = useAccentTheme()
 
   // Only rotate the highlighted word + the ending phrase (keeps it readable)
   const headlineVariants = React.useMemo(
@@ -145,17 +143,17 @@ export function HeroSection() {
           <div className="mx-auto max-w-4xl text-center">
             <p
               data-hero
-              className="text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)/0.8)]"
+              className="flex items-center justify-center gap-3 text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)/0.8)]"
             >
-              <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-black/25 font-mono text-[11px] tracking-[0.02em] text-white/75">
+              <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/25 font-mono text-[11px] tracking-[0.02em] text-white/75">
                 &lt;/&gt;
-              </span>{" "}
-              WAKE UP, DAVID BARRAGÁN
+              </span>
+              <span>SOFTWARE ENGINEER</span>
             </p>
 
             <h1 data-hero className="mt-6 text-4xl font-black leading-[1.03] text-white md:text-7xl">
               {/* Línea 1: fija */}
-              <span className="block">Software Engineer</span>
+              <span className="block">David Barragán</span>
 
               {/* Línea 2: dinámica */}
               <span className="mt-1 block text-center">
@@ -192,7 +190,7 @@ export function HeroSection() {
             </h1>
 
             <p data-hero className="mx-auto mt-6 max-w-2xl text-pretty text-sm text-white/75 md:text-base">
-              Product-grade frontend, reliable backend, and motion that never compromises performance.
+              Full Stack Developer. Loving Cloud, Microservices, Spring Boot &amp; React Native.
             </p>
 
             <div data-hero className="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -245,9 +243,6 @@ export function HeroSection() {
               ))}
             </div>
 
-            <p data-hero className="mt-7 text-xs text-white/55">
-              Current accent: <span className="font-semibold text-white">{accent}</span>
-            </p>
           </div>
         </div>
       </div>

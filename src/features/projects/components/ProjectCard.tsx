@@ -1,99 +1,113 @@
-import type { Project, ProjectLink } from "../types"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
+import { socialLogos } from "@/assets/img/tech"
+import { cn } from "@/lib/utils"
+import type { Project } from "../types"
+import { ProjectGalleryDialog } from "./ProjectGalleryDialog"
 
-function linkLabel(link: ProjectLink) {
-  if (link.label) return link.label
-  switch (link.kind) {
-    case "repo":
-      return "Repository"
-    case "demo":
-      return "Live demo"
-    case "docs":
-      return "Docs"
-    case "case-study":
-      return "Case study"
-  }
+type Props = {
+  project: Project
+  className: string
+  lead: boolean
 }
 
-function linkIcon(kind: ProjectLink["kind"]) {
-  // simple text-only fallback; you can replace with icons later
-  switch (kind) {
-    case "repo":
-      return "Code"
-    case "demo":
-      return "Demo"
-    case "docs":
-      return "Docs"
-    case "case-study":
-      return "Read"
-  }
-}
+export function ProjectCard({ project, className, lead }: Readonly<Props>) {
+  const { cover, previewSrc } = project.images
+  const technologies = project.tech?.filter(({ iconSrc }) => iconSrc) ?? []
+  const repositories = project.links.filter(({ kind }) => kind === "repo")
+  const demo = project.links.find(({ kind }) => kind === "demo")
 
-export function ProjectCard({ project }: Readonly<{ project: Project }>) {
   return (
     <article
       data-reveal-item
-      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 backdrop-blur"
+      className={cn(
+        "portfolio-glass group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 motion-safe:transition-colors hover:border-white/20 md:backdrop-blur-xs",
+        className,
+      )}
     >
-      <div className="relative">
-        <img
-          src={project.images.cover.src}
-          alt={project.images.cover.alt}
-          className="h-44 w-full object-cover opacity-90 transition-opacity duration-500 group-hover:opacity-100"
-          loading="lazy"
-        />
+      <div className="flex grow flex-col px-4 pt-5 sm:px-5 lg:px-6 lg:pt-6">
+        <h3 className={cn(
+          "text-balance font-display text-[1.45rem] leading-tight text-[#ece9e2] sm:text-[1.65rem]",
+          lead && "lg:text-[1.9rem]",
+        )}>
+          {project.title}
+        </h3>
+        <p className="mt-2 max-w-[53ch] text-sm leading-relaxed text-[#afb7bd]">
+          {project.subtitle ?? project.description}
+        </p>
 
-        {/* Accent hover glow */}
-        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-          <div className="absolute -inset-24 bg-[radial-gradient(circle,rgb(var(--accent-rgb,52_211_153)_/_0.24),transparent_60%)]" />
+        <div className="mt-auto pt-4">
+          {technologies.length > 0 ? (
+            <ul aria-label="Technologies" className="flex flex-wrap items-center gap-3">
+              {technologies.map(({ name, iconSrc }) => (
+                <li key={name} title={name}>
+                  <img src={iconSrc} alt={name} width={20} height={20} loading="lazy" decoding="async" className="h-5 w-5 object-contain" />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4">
+            <ProjectGalleryDialog project={project}>
+              <button
+                type="button"
+                data-slot="project-trigger"
+                aria-label={`View project: ${project.title}`}
+                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm text-sm font-medium text-[rgb(var(--accent-rgb)_/_0.86)] hover:text-[rgb(var(--accent-rgb))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+              >
+                View project
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </ProjectGalleryDialog>
+
+            {demo || repositories.length > 0 ? (
+              <ul aria-label={demo ? "Project links" : "GitHub repositories"} className="flex flex-wrap items-center gap-x-3">
+                {demo ? (
+                  <li>
+                    <a
+                      href={demo.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Visit ${project.title} live site`}
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-sm text-xs font-medium text-[#afb7bd]! hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+                    >
+                      {demo.label}
+                      <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                    </a>
+                  </li>
+                ) : null}
+                {repositories.map(({ href, label }) => (
+                  <li key={href}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={label === "GitHub" ? `${project.title} on GitHub` : `${project.title}: ${label} repository on GitHub`}
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-sm text-xs font-medium text-[#afb7bd]! hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+                    >
+                      <img src={socialLogos.GitHub} width={15} height={15} alt="" className="h-3.75 w-3.75 object-contain opacity-85" />
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div className="p-6">
-        <p className="text-[11px] font-semibold tracking-[0.25em] text-white/55">
-          {project.category.toUpperCase()}
-          {project.status ? <span className="ml-2 rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-[10px] text-white/60">{project.status}</span> : null}
-        </p>
-
-        <h3 className="mt-3 text-lg font-bold text-white">{project.title}</h3>
-        {project.subtitle ? <p className="mt-1 text-sm text-white/70">{project.subtitle}</p> : null}
-
-        <p className="mt-3 text-sm text-white/70">{project.description}</p>
-
-        {project.highlights?.length ? (
-          <ul className="mt-4 space-y-1 text-sm text-white/65">
-            {project.highlights.slice(0, 3).map((h) => (
-              <li key={h} className="flex gap-2">
-                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-white/35" />
-                <span>{h}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {project.stack.slice(0, 6).map((t) => (
-            <span key={t} className="rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-white/70">
-              {t}
-            </span>
-          ))}
+      <div className="px-4 pb-4 pt-2 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
+        <div className={cn(
+          "aspect-[2.08] overflow-hidden rounded-lg border border-white/12 bg-[#0c1012] md:aspect-auto",
+          project.category === "microservices" ? "md:h-44 lg:h-55" : "md:h-38 lg:h-45",
+        )}>
+          <img
+            src={previewSrc ?? cover.src}
+            alt={cover.alt}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover object-top opacity-90 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-300"
+          />
         </div>
-
-        {project.links.length ? (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {project.links.map((l) => (
-              <a
-                key={`${project.id}-${l.kind}-${l.href}`}
-                href={l.href}
-                target={l.href.startsWith("http") ? "_blank" : undefined}
-                rel={l.href.startsWith("http") ? "noreferrer" : undefined}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-white/80 hover:bg-white/5"
-              >
-                <span className="text-[10px] uppercase tracking-[0.18em] text-white/55">{linkIcon(l.kind)}</span>
-                <span>{linkLabel(l)}</span>
-              </a>
-            ))}
-          </div>
-        ) : null}
       </div>
     </article>
   )

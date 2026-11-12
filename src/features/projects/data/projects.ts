@@ -1,18 +1,21 @@
-import { techLogos } from "@/assets/img/tech"
+import AKS from "@/assets/img/tech/AKS.png"
+import Azure from "@/assets/img/tech/azure.png"
+import Jenkins from "@/assets/img/tech/Jenkins.png"
+import Nest from "@/assets/img/tech/Nest.js.png"
+import PostgreSQL from "@/assets/img/tech/PostgresSQL.png"
+import ReactLogo from "@/assets/img/tech/React.png"
+import SonarQube from "@/assets/img/tech/SonarQube.png"
+import Spring from "@/assets/img/tech/Spring.png"
+import Svelte from "@/assets/img/tech/Svelte.svg"
+import Tailwind from "@/assets/img/tech/Tailwind CSS.png"
+import TypeScript from "@/assets/img/tech/TypeScript.png"
 import type { Project } from "../types"
 
-type TechLogo = (typeof techLogos)[number]
-
-function toProjectTech(t: TechLogo) {
-  return { name: t.name === "Spring" ? "Spring Boot" : t.name, iconSrc: t.src }
-}
-
-// NOTE: Replace hrefs with your real repos when you have them handy.
 export const projects: Project[] = [
   {
     id: "clinic-platform",
     title: "Clinic Management Platform",
-    subtitle: "Fullstack + mobile, auth & security",
+    subtitle: "A clinic platform for patients and administrators, available on web and mobile.",
     description:
       "Integral clinic management system with secure access, patient/admin workflows, and multi-client experiences.",
     highlights: [
@@ -28,17 +31,15 @@ export const projects: Project[] = [
     featuredRank: 1,
     status: "offline",
     tech: [
-      techLogos.find((t) => t.name === "Spring"),
-      techLogos.find((t) => t.name === "React"),
-      techLogos.find((t) => t.name === "Docker"),
-      techLogos.find((t) => t.name === "Azure"),
-    ]
-      .filter(Boolean)
-      .map((t) => toProjectTech(t as TechLogo)),
+      { name: "Spring Boot", iconSrc: Spring },
+      { name: "React and React Native", iconSrc: ReactLogo },
+      { name: "PostgreSQL", iconSrc: PostgreSQL },
+    ],
     images: {
+      previewSrc: new URL("../../../assets/img/projects/clinic/preview.webp", import.meta.url).toString(),
       cover: {
         src: new URL("../../../assets/img/projects/clinic/1.png", import.meta.url).toString(),
-        alt: "Clinic platform screenshot",
+        alt: "ClinicCare home page with options to browse doctors and book an appointment",
         kind: "cover",
       },
       gallery: ["1", "2", "3", "5", "6", "7", "8", "9", "10"].map((file) => ({
@@ -48,13 +49,13 @@ export const projects: Project[] = [
       })),
     },
     links: [
-      { kind: "repo", label: "Repo", href: "https://github.com/DRTX2/clinic" },
+      { kind: "repo", label: "GitHub", href: "https://github.com/DRTX2/clinic" },
     ],
   },
   {
     id: "fuel-control",
     title: "Fuel, Trips & Routes Control System",
-    subtitle: "Microservices on Kubernetes (AKS)",
+    subtitle: "Fuel control, trip planning, and route tracking on Azure Kubernetes Service.",
     description:
       "A distributed system for fuel control, trip planning, and route tracking designed for scalability and resiliency.",
     highlights: [
@@ -66,12 +67,12 @@ export const projects: Project[] = [
     ],
     stack: [
       "NestJS",
+      "Kubernetes (AKS)",
+      "PostgreSQL",
       "Node.js",
       "React",
       "TypeScript",
-      "PostgreSQL",
       "Docker",
-      "Kubernetes (AKS)",
       "GitHub Actions",
       "Azure",
     ],
@@ -81,17 +82,16 @@ export const projects: Project[] = [
     featuredRank: 2,
     status: "offline",
     tech: [
-      techLogos.find((t) => t.name === "Nest.js"),
-      techLogos.find((t) => t.name === "React"),
-      techLogos.find((t) => t.name === "Docker"),
-      techLogos.find((t) => t.name === "Azure"),
-    ]
-      .filter(Boolean)
-      .map((t) => toProjectTech(t as TechLogo)),
+      { name: "NestJS", iconSrc: Nest },
+      { name: "Azure Kubernetes Service", iconSrc: AKS },
+      { name: "PostgreSQL", iconSrc: PostgreSQL },
+      { name: "React", iconSrc: ReactLogo },
+    ],
     images: {
+      previewSrc: new URL("../../../assets/img/projects/fuel-system/preview.webp", import.meta.url).toString(),
       cover: {
-        src: new URL("../../../assets/img/projects/fuel-system/Picture1.png", import.meta.url).toString(),
-        alt: "Fuel system screenshot",
+        src: new URL("../../../assets/img/projects/fuel-system/Picture7.png", import.meta.url).toString(),
+        alt: "FuelIQ trip board with trips grouped by status",
         kind: "cover",
       },
       gallery: Array.from({ length: 10 }, (_, i) => ({
@@ -101,14 +101,14 @@ export const projects: Project[] = [
       })),
     },
     links: [
-      { kind: "repo", label: "Repo (backend)", href: "https://github.com/DavidJosueP2/Distributed-Gasoline-System" },
-      { kind: "repo", label: "Repo (frontend)", href: "https://github.com/JoelBonillaG/Distributed-Gasoline-System-Frontend" },
+      { kind: "repo", label: "Backend", href: "https://github.com/DavidJosueP2/Distributed-Gasoline-System" },
+      { kind: "repo", label: "Frontend", href: "https://github.com/JoelBonillaG/Distributed-Gasoline-System-Frontend" },
     ],
   },
   {
     id: "hospital-suite",
     title: "Hospital Management Suite",
-    subtitle: "Spring microservices + React frontend",
+    subtitle: "Hospital operations powered by Spring microservices and distributed PostgreSQL.",
     description:
       "Hospital integration suite built as a microservices ecosystem with strong architectural patterns, distributed data, and a modern web client.",
     highlights: [
@@ -120,30 +120,29 @@ export const projects: Project[] = [
     ],
     stack: [
       "Spring Boot",
+      "PostgreSQL (Citus)",
+      "Azure",
       "Eureka",
       "React",
       "TypeScript",
-      "PostgreSQL (Citus)",
       "Docker",
       "GitHub Actions",
-      "Azure",
     ],
     tags: ["microservices", "spring", "react", "typescript", "postgres", "citus", "azure", "github-actions"],
     category: "microservices",
     featured: true,
     featuredRank: 3,
     tech: [
-      techLogos.find((t) => t.name === "Spring"),
-      techLogos.find((t) => t.name === "React"),
-      techLogos.find((t) => t.name === "Docker"),
-      techLogos.find((t) => t.name === "Azure"),
-    ]
-      .filter(Boolean)
-      .map((t) => toProjectTech(t as TechLogo)),
+      { name: "Spring Boot", iconSrc: Spring },
+      { name: "PostgreSQL (Citus)", iconSrc: PostgreSQL },
+      { name: "Azure", iconSrc: Azure },
+      { name: "React", iconSrc: ReactLogo },
+    ],
     images: {
+      previewSrc: new URL("../../../assets/img/projects/hospital/preview.webp", import.meta.url).toString(),
       cover: {
-        src: new URL("../../../assets/img/projects/hospital/Picture1.png", import.meta.url).toString(),
-        alt: "Hospital system screenshot",
+        src: new URL("../../../assets/img/projects/hospital/Picture3.png", import.meta.url).toString(),
+        alt: "Hospital administration dashboard listing medical centers",
         kind: "cover",
       },
       gallery: [
@@ -163,14 +162,14 @@ export const projects: Project[] = [
       })),
     },
     links: [
-      { kind: "repo", label: "Repo (backend)", href: "https://github.com/JosueGarciaAbata/hospital-management-system" },
-      { kind: "repo", label: "Repo (frontend)", href: "https://github.com/DavidJosueP2/Hospital-Front" },
+      { kind: "repo", label: "Backend", href: "https://github.com/JosueGarciaAbata/hospital-management-system" },
+      { kind: "repo", label: "Frontend", href: "https://github.com/DavidJosueP2/Hospital-Front" },
     ],
   },
   {
     id: "moderation-platform",
     title: "Moderation Platform",
-    subtitle: "React UI + Spring Boot backend, DevOps pipeline",
+    subtitle: "A moderation console with a Spring Boot API and a Jenkins delivery pipeline.",
     description:
       "Moderation tooling platform with polished UI and secure workflows, backed by a Spring Boot API and a CI/CD pipeline.",
     highlights: [
@@ -179,23 +178,22 @@ export const projects: Project[] = [
       "Testing-focused development",
       "Jenkins CI/CD pipeline + deployment on Azure",
     ],
-    stack: ["React", "TypeScript", "Spring Boot", "Testing", "Jenkins", "Azure"],
+    stack: ["React", "Spring Boot", "Jenkins", "TypeScript", "Testing", "Azure"],
     tags: ["frontend", "react", "typescript", "spring", "devops", "jenkins"],
     category: "fullstack",
     featured: true,
     featuredRank: 4,
     tech: [
-      techLogos.find((t) => t.name === "Spring"),
-      techLogos.find((t) => t.name === "Azure"),
-      techLogos.find((t) => t.name === "Docker"),
-      techLogos.find((t) => t.name === "React"),
-    ]
-      .filter(Boolean)
-      .map((t) => toProjectTech(t as TechLogo)),
+      { name: "React", iconSrc: ReactLogo },
+      { name: "TypeScript", iconSrc: TypeScript },
+      { name: "Spring Boot", iconSrc: Spring },
+      { name: "Jenkins", iconSrc: Jenkins },
+    ],
     images: {
+      previewSrc: new URL("../../../assets/img/projects/moderation/preview.webp", import.meta.url).toString(),
       cover: {
-        src: new URL("../../../assets/img/projects/moderation/Picture10.png", import.meta.url).toString(),
-        alt: "Moderation platform screenshot",
+        src: new URL("../../../assets/img/projects/moderation/Picture12.png", import.meta.url).toString(),
+        alt: "Marketplace Link moderator dashboard with status counts and a list of moderators",
         kind: "cover",
       },
       gallery: [
@@ -214,14 +212,95 @@ export const projects: Project[] = [
       })),
     },
     links: [
-      { kind: "repo", label: "Repo (backend)", href: "https://github.com/DavidJosueP2/Marketplace_Link" },
-      { kind: "repo", label: "Repo (frontend)", href: "https://github.com/DavidJosueP2/Marketplace-Link-Front" },
+      { kind: "repo", label: "Backend", href: "https://github.com/DavidJosueP2/Marketplace_Link" },
+      { kind: "repo", label: "Frontend", href: "https://github.com/DavidJosueP2/Marketplace-Link-Front" },
+    ],
+  },
+  {
+    id: "white-lace-promises",
+    title: "White Lace & Promises",
+    subtitle: "A wedding and event styling website built with SvelteKit.",
+    description: "A website for an event styling business, featuring a service overview, galleries of real weddings, and an enquiry form.",
+    highlights: [
+      "SvelteKit and TypeScript",
+      "Event services and real wedding galleries",
+      "Enquiry form for prospective clients",
+    ],
+    stack: ["SvelteKit", "TypeScript", "Tailwind CSS", "GSAP"],
+    tags: ["svelte", "sveltekit", "typescript", "tailwind", "events"],
+    category: "web",
+    featured: true,
+    featuredRank: 5,
+    status: "live",
+    tech: [
+      { name: "SvelteKit", iconSrc: Svelte },
+      { name: "TypeScript", iconSrc: TypeScript },
+      { name: "Tailwind CSS", iconSrc: Tailwind },
+    ],
+    images: {
+      cover: {
+        src: new URL("../../../assets/img/projects/wedding-page/home.png", import.meta.url).toString(),
+        alt: "White Lace & Promises wedding and event styling homepage",
+        kind: "cover",
+      },
+      gallery: [
+        { src: new URL("../../../assets/img/projects/wedding-page/real weddings.png", import.meta.url).toString(), alt: "Real weddings portfolio" },
+        { src: new URL("../../../assets/img/projects/wedding-page/gallery.png", import.meta.url).toString(), alt: "Event styling gallery" },
+        { src: new URL("../../../assets/img/projects/wedding-page/enquery.png", import.meta.url).toString(), alt: "Event enquiry form" },
+        { src: new URL("../../../assets/img/projects/wedding-page/about.png", import.meta.url).toString(), alt: "About the event styling business" },
+      ],
+    },
+    links: [
+      { kind: "demo", label: "Live site", href: "https://while-lace-promises.vercel.app/" },
+      { kind: "repo", label: "GitHub", href: "https://github.com/DavidJosueP2/While-Lace-Promises" },
+    ],
+  },
+  {
+    id: "foris-forum-chat",
+    title: "FORIS Forum & Chat",
+    subtitle: "A community forum with topic-based posts and real-time chat.",
+    description: "A Spanish-language platform for sharing posts, participating in communities, and chatting. The React frontend and NestJS backend share a monorepo.",
+    highlights: [
+      "Forum posts organized by topics and tags",
+      "Communities and real-time chat",
+      "PostgreSQL persistence and SonarQube code analysis",
+    ],
+    stack: ["React", "NestJS", "PostgreSQL", "SonarQube"],
+    tags: ["react", "nestjs", "postgresql", "sonarqube", "forum", "chat", "monorepo"],
+    category: "fullstack",
+    featured: true,
+    featuredRank: 6,
+    status: "live",
+    tech: [
+      { name: "React", iconSrc: ReactLogo },
+      { name: "NestJS", iconSrc: Nest },
+      { name: "PostgreSQL", iconSrc: PostgreSQL },
+      { name: "SonarQube", iconSrc: SonarQube },
+    ],
+    images: {
+      cover: {
+        src: new URL("../../../assets/img/projects/foris-forum chat/Home.png", import.meta.url).toString(),
+        alt: "FORIS forum homepage",
+        kind: "cover",
+      },
+      gallery: [
+        { src: new URL("../../../assets/img/projects/foris-forum chat/Comunidades.png", import.meta.url).toString(), alt: "FORIS communities view" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/Chats.png", import.meta.url).toString(), alt: "FORIS chat interface" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/Crear publicación.png", import.meta.url).toString(), alt: "FORIS post editor" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/login.png", import.meta.url).toString(), alt: "FORIS sign-in screen" },
+      ],
+    },
+    links: [
+      { kind: "demo", label: "Live site", href: "https://foris-forum-chat-2kyu.vercel.app/" },
+      { kind: "repo", label: "GitHub", href: "https://github.com/DavidJosueP2/FORIS-Forum-Chat" },
     ],
   },
 ]
 
-export function getFeaturedProjects() {
+export function getPortfolioProjects() {
   return [...projects]
-    .filter((p) => p.featured)
-    .sort((a, b) => (a.featuredRank ?? 999) - (b.featuredRank ?? 999))
+    .sort((a, b) =>
+      Number(b.category === "microservices") - Number(a.category === "microservices") ||
+      (a.featuredRank ?? Number.MAX_SAFE_INTEGER) - (b.featuredRank ?? Number.MAX_SAFE_INTEGER)
+    )
 }

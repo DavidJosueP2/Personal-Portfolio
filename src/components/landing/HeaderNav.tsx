@@ -44,19 +44,19 @@ function AccentSwatch({
 
 const SECTIONS = [
   { id: "top", label: "Top" },
-  { id: "about", label: "About" },
+  { id: "experience", label: "Experience" },
   { id: "projects", label: "Projects" },
   { id: "skills", label: "Skills" },
-  { id: "certs", label: "Certificates" },
+  { id: "about", label: "About & Certificates" },
   { id: "contact", label: "Contact" },
 ] as const
 
-function useActiveSection(sectionIds: readonly string[]) {
-  const [active, setActive] = React.useState<string>(sectionIds[0] ?? "")
+function useActiveSection() {
+  const [active, setActive] = React.useState<string>("top")
 
   React.useEffect(() => {
-    const els = sectionIds
-      .map((id) => document.getElementById(id))
+    const els = SECTIONS
+      .map(({ id }) => document.getElementById(id))
       .filter(isHTMLElement)
 
     if (els.length === 0) return
@@ -71,7 +71,7 @@ function useActiveSection(sectionIds: readonly string[]) {
       const offset = getNavHeight()
       const y = offset + 8 // a line just below the header
 
-      let bestId = active
+      let bestId: string | undefined
       let bestDist = Number.POSITIVE_INFINITY
 
       for (const el of els) {
@@ -113,9 +113,7 @@ function useActiveSection(sectionIds: readonly string[]) {
       window.removeEventListener("resize", onResize)
       ro.disconnect()
     }
-    // sectionIds is a stable literal array; els captures real DOM nodes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionIds])
+  }, [])
 
   return active
 }
@@ -171,7 +169,7 @@ export function HeaderNav() {
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const { enabled, toggle } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
-  const active = useActiveSection(SECTIONS.map((s) => s.id))
+  const active = useActiveSection()
 
   React.useEffect(() => {
     const root = rootRef.current
@@ -199,15 +197,16 @@ export function HeaderNav() {
           DJB
         </button>
 
-        <nav className="hidden items-center md:flex">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur">
+        <nav aria-label="Main navigation" className="hidden items-center min-[880px]:flex">
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur lg:gap-2">
             {SECTIONS.filter((s) => s.id !== "top").map(({ label, id }) => (
               <Button
                 key={id}
                 type="button"
                 variant="ghost"
+                aria-current={active === id ? "location" : undefined}
                 className={
-                  "h-9 rounded-full px-3 transition " +
+                  "h-9 rounded-full px-2 transition lg:px-3 " +
                   (active === id
                     ? "bg-white/10 text-white"
                     : "text-white/70 hover:bg-white/5 hover:text-white")

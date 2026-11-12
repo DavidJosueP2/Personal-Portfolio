@@ -288,6 +288,16 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
   /* ...existing code... */
 }
 
+@layer components {
+  .portfolio-glass {
+    background-color: rgb(15 19 21 / 0.64);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+      radial-gradient(ellipse at 50% 15%, rgb(var(--accent-rgb, 52 211 153) / 0.065), transparent 75%);
+    background-size: 22px 22px, 100% 100%;
+  }
+}
+
 @layer utilities {
   .matrix-glow {
     text-shadow:

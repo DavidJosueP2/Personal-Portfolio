@@ -1,5 +1,6 @@
 import * as React from "react"
 import { gsap } from "gsap"
+import { MicroservicesDemo } from "@/components/landing/skills/MicroservicesDemo"
 import { prefersReducedMotion } from "@/lib/motion"
 
 type SkillIcon = { name: string; src: string }
@@ -23,6 +24,8 @@ function displayName(raw: string) {
   if (/^Tailwind CSS$/i.test(raw)) return "Tailwind CSS"
   if (/^TypeScript$/i.test(raw)) return "TypeScript"
   if (/^Spring$/i.test(raw)) return "Spring Boot"
+  if (/^Kubernetes(?: \(\d+\))?$/i.test(raw)) return "Kubernetes"
+  if (/^Azure$/i.test(raw)) return "Azure"
   return raw
 }
 
@@ -124,11 +127,11 @@ function SkillChip({ icon }: Readonly<{ icon: SkillIcon }>) {
   return (
     <div
       data-skill-chip
-      className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 backdrop-blur transition hover:bg-white/5"
+      className="flex min-h-16 min-w-0 items-center gap-3 rounded-2xl border border-white/12 bg-[#101518]/60 px-3 py-3 transition-colors hover:bg-white/7 sm:px-4"
       title={displayName(icon.name)}
     >
-      <img src={icon.src} alt={displayName(icon.name)} className="h-9 w-9 shrink-0 object-contain" loading="lazy" />
-      <span className="truncate text-sm font-semibold text-white/75">{displayName(icon.name)}</span>
+      <img src={icon.src} alt="" className="size-7 shrink-0 object-contain sm:size-8" loading="lazy" />
+      <span className="min-w-0 text-sm font-semibold leading-snug text-white/85">{displayName(icon.name)}</span>
     </div>
   )
 }
@@ -137,12 +140,12 @@ function GroupSection({ title, items }: Readonly<{ title: GroupKey; items: Skill
   if (items.length === 0) return null
 
   return (
-    <div className="mt-10">
+    <div className="mt-7">
       <div className="flex items-center justify-between gap-4">
-        <h3 className="text-sm font-semibold tracking-[0.25em] text-white/75">{title}</h3>
+        <h3 className="text-sm font-semibold tracking-[0.12em] text-white/80">{title}</h3>
         <span className="text-xs text-white/50">{items.length}</span>
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-3 grid gap-2.5 min-[390px]:grid-cols-2 xl:grid-cols-3">
         {items.map((i) => (
           <SkillChip key={`${title}:${i.name}`} icon={i} />
         ))}
@@ -264,24 +267,28 @@ export function SkillsSection() {
   const shown = grouped.reduce((acc, g) => acc + g.items.length, 0)
 
   return (
-    <section ref={rootRef} id="skills" className="mx-auto w-full max-w-6xl px-6 py-20">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2
-            data-skills-head
-            className="text-3xl font-extrabold text-white md:text-4xl"
-            style={{ fontFamily: "Gloock, Onest, system-ui" }}
-          >
-            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Skills</span>
-          </h2>
-          <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">
-            What I don’t know, I{" "}
-            <span className="text-[rgb(var(--accent-rgb,52_211_153))]">learn</span>. What I learn, I perfect.
-          </p>
-        </div>
+    <section ref={rootRef} id="skills" className="mx-auto grid w-full max-w-6xl gap-y-6 px-6 py-20 lg:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:gap-y-4">
+      <div>
+        <h2
+          data-skills-head
+          className="text-3xl font-extrabold text-white md:text-4xl"
+          style={{ fontFamily: "Gloock, Onest, system-ui" }}
+        >
+          <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Skills</span>
+        </h2>
+        <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">
+          What I don’t know, I{" "}
+          <span className="text-[rgb(var(--accent-rgb,52_211_153))]">learn</span>. What I learn, I perfect.
+        </p>
+      </div>
 
-        <div data-skills-head className="flex items-center gap-2">
-          <label className="text-xs text-white/60" htmlFor="skills-search">
+      <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start lg:pt-3">
+        <MicroservicesDemo />
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-white/70" htmlFor="skills-search">
             Filter
           </label>
           <input
@@ -289,26 +296,26 @@ export function SkillsSection() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Spring, Java, Laravel, ..."
-            className="h-9 w-full max-w-65 rounded-full border border-white/10 bg-black/30 px-4 text-sm text-white/85 outline-none placeholder:text-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgb(var(--accent-rgb,52_211_153)_/_0.18)]"
+            className="h-10 w-full max-w-72 rounded-full border border-white/10 bg-black/30 px-4 text-sm text-white/85 outline-none placeholder:text-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgb(var(--accent-rgb,52_211_153)_/_0.18)]"
             type="text"
           />
         </div>
+
+        {grouped.map((g) => (
+          <GroupSection key={g.group} title={g.group} items={g.items} />
+        ))}
+
+        <p className="mt-5 text-xs text-white/55">
+          Showing <span className="font-semibold text-white/75">{shown}</span> technologies
+          {query.trim().length ? (
+            <>
+              {" "}
+              matching <span className="font-semibold text-white/75">“{query.trim()}”</span>
+            </>
+          ) : null}
+          .
+        </p>
       </div>
-
-      {grouped.map((g) => (
-        <GroupSection key={g.group} title={g.group} items={g.items} />
-      ))}
-
-      <p className="mt-8 text-xs text-white/55">
-        Showing <span className="font-semibold text-white/75">{shown}</span> technologies
-        {query.trim().length ? (
-          <>
-            {" "}
-            matching <span className="font-semibold text-white/75">“{query.trim()}”</span>
-          </>
-        ) : null}
-        .
-      </p>
     </section>
   )
 }

@@ -1,62 +1,28 @@
 import { gsap } from "gsap"
+import { prefersReducedMotion } from "./motion"
 
-export type RevealListOptions = {
-  y?: number
-  duration?: number
-  ease?: string
-  threshold?: number
-  rootMargin?: string
-}
+export function setupRevealList(root: HTMLElement) {
+  if (prefersReducedMotion() || typeof IntersectionObserver === "undefined") return
 
-const DEFAULTS: Required<RevealListOptions> = {
-  y: 18,
-  duration: 0.8,
-  ease: "power3.out",
-  threshold: 0.18,
-  rootMargin: "0px 0px -12% 0px",
-}
-
-/**
- * Reveal items individually as they enter the viewport.
- * Targets: descendants with [data-reveal-item]
- */
-export function setupRevealList(root: HTMLElement, options: RevealListOptions = {}) {
-  const opts = { ...DEFAULTS, ...options }
-
-  const items = Array.from(root.querySelectorAll<HTMLElement>("[data-reveal-item]"))
-  if (items.length === 0) return () => {}
-
-  gsap.set(items, { autoAlpha: 0, y: opts.y })
-
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue
-        const el = e.target as HTMLElement
-        io.unobserve(el)
-
-        gsap.killTweensOf(el)
-        gsap.to(el, {
-          autoAlpha: 1,
-          y: 0,
-          duration: opts.duration,
-          ease: opts.ease,
-          clearProps: "willChange",
-        })
-      }
-    },
-    {
-      root: null,
-      rootMargin: opts.rootMargin,
-      threshold: opts.threshold,
+  const context = gsap.context(() => {}, root)
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      observer.unobserve(entry.target)
+      context.add(() => {
+        gsap.fromTo(
+          entry.target,
+          { opacity: 0.75, y: 10 },
+          { opacity: 1, y: 0, duration: 0.48, ease: "power3.out", clearProps: "opacity,transform" },
+        )
+      })
     }
-  )
+  }, { rootMargin: "0px 0px 6% 0px" })
 
-  for (const el of items) io.observe(el)
+  root.querySelectorAll("[data-reveal-item]").forEach((item) => observer.observe(item))
 
   return () => {
-    io.disconnect()
-    gsap.killTweensOf(items)
+    observer.disconnect()
+    context.revert()
   }
 }
-

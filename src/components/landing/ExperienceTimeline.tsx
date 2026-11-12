@@ -1,90 +1,79 @@
-import * as React from "react"
-import { prefersReducedMotion } from "@/lib/motion"
-import { setupReveal } from "@/lib/gsap-reveal"
+import { useEffect, useRef } from "react"
+import { setupRevealList } from "@/lib/gsap-reveal-list"
 
-export type TimelineItem = {
-  range: string
-  title: string
-  org: string
-  location?: string
-  description: string
-}
+const experience = [
+  {
+    org: "Kronhos ERP",
+    title: "Full Stack Developer",
+    period: "2025–2026 · 6 months",
+    engagement: "Professional experience",
+    location: "Ambato, Ecuador",
+    contributions: [
+      { action: "Built and integrated REST APIs", detail: "with Java and Spring Boot for the ERP frontend." },
+      { action: "Worked with SQL databases", detail: "as part of backend and frontend feature development." },
+      { action: "Created Power BI dashboards", detail: "and analyzed data for reporting." },
+    ],
+    stack: ["Java", "Spring Boot", "SQL", "Power BI"],
+  },
+  {
+    org: "EEASA",
+    title: "Backend Developer",
+    period: "2025",
+    engagement: "Freelance project",
+    location: "Ambato, Ecuador",
+    contributions: [
+      { action: "Refactored a Spring Boot system", detail: "used to manage electricity meter incidents." },
+      { action: "Updated the incident entities", detail: "and refined the rules used to validate incident data." },
+    ],
+    stack: ["Spring Boot"],
+  },
+] as const
 
-export function ExperienceTimeline({ items }: Readonly<{ items: TimelineItem[] }>) {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
+export function ExperienceTimeline() {
+  const listRef = useRef<HTMLOListElement>(null)
 
-  React.useEffect(() => {
-    if (prefersReducedMotion()) return
-    const root = rootRef.current
-    if (!root) return
-    return setupReveal(root, { y: 12, stagger: 0.06 })
+  useEffect(() => {
+    const list = listRef.current
+    if (list) return setupRevealList(list)
   }, [])
 
-  if (!items.length) return null
-
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 pb-20">
-      <div
-        ref={rootRef}
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/2 p-8 backdrop-blur md:p-12"
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-45">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[22px_22px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_60%)]" />
-        </div>
+    <section id="experience" aria-labelledby="experience-heading" className="mx-auto w-full max-w-6xl scroll-mt-22 px-6 pb-12 pt-4 sm:pb-16 sm:pt-8">
+      <h2 id="experience-heading" className="font-display text-4xl leading-none text-[#ece9e2] sm:text-5xl">
+        Experience
+      </h2>
 
-        <div className="relative">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h3 data-reveal className="text-sm font-semibold tracking-[0.25em] text-white/80">
-                EXPERIENCE
-              </h3>
-              <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
-                A quick timeline of what I’ve been building.
+      <ol ref={listRef} className="portfolio-glass mt-7 divide-y divide-white/10 rounded-2xl border border-white/12 sm:mt-8 md:backdrop-blur-xs">
+        {experience.map((role) => (
+          <li
+            key={role.org}
+            data-reveal-item
+            className="grid gap-5 px-5 py-6 sm:px-7 sm:py-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] md:gap-10 lg:px-9"
+          >
+            <div className="min-w-0">
+              <h3 className="font-display text-[1.7rem] leading-tight text-[#ece9e2] sm:text-3xl">{role.org}</h3>
+              <p className="mt-1.5 text-base font-medium text-white/85">{role.title}</p>
+              <div className="mt-3 space-y-1 text-sm leading-relaxed text-[#afb7bd]">
+                <p className="tabular-nums">{role.period}</p>
+                <p>{role.engagement} · {role.location}</p>
+              </div>
+            </div>
+
+            <div className="min-w-0">
+              <ul className="list-disc space-y-2.5 pl-4 text-sm leading-relaxed text-[#afb7bd] marker:text-[rgb(var(--accent-rgb)_/_0.8)] sm:text-base">
+                {role.contributions.map(({ action, detail }) => (
+                  <li key={action} className="pl-1">
+                    <strong className="font-semibold text-[#ece9e2]">{action}</strong>{" "}{detail}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 border-t border-white/8 pt-3 text-sm leading-relaxed text-[#afb7bd]">
+                {role.stack.join(" · ")}
               </p>
             </div>
-          </div>
-
-          <div className="mt-10">
-            <ol className="relative">
-              <span aria-hidden className="absolute left-2.5 top-0 h-full w-px bg-white/10" />
-
-              {items.map((it) => (
-                <li
-                  key={`${it.range}-${it.title}`}
-                  data-reveal
-                  className="relative grid gap-6 pb-12 pl-10 md:grid-cols-[minmax(280px,420px)_minmax(0,1fr)] md:items-start md:pb-14"
-                >
-                  {/* dot */}
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-1.5 grid h-5 w-5 place-items-center rounded-full border border-white/15 bg-black/40"
-                  >
-                    <span className="h-2.5 w-2.5 rounded-full bg-[rgb(var(--accent-rgb,52_211_153))]" />
-                  </span>
-
-                  {/* left meta */}
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold tracking-[0.22em] text-white/50">{it.range}</p>
-
-                    <p className="mt-2 text-lg font-semibold leading-snug">
-                      <span className="text-[rgb(var(--accent-rgb,52_211_153))]">{it.title}</span>
-                      {it.location ? <span className="text-white/55"> · {it.location}</span> : null}
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-white/85">{it.org}</p>
-                  </div>
-
-                  {/* right description */}
-                  <div className="min-w-0">
-                    <p className="text-sm leading-relaxed text-white/70">{it.description}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      </div>
+          </li>
+        ))}
+      </ol>
     </section>
   )
 }
