@@ -271,7 +271,7 @@ export function SkillsSection() {
 
   return (
     <section ref={rootRef} id="skills" className="portfolio-container portfolio-section" aria-labelledby="skills-heading">
-      <header>
+      <header data-section-motion="heading">
         <h2
           id="skills-heading"
           data-skills-head
@@ -298,7 +298,7 @@ export function SkillsSection() {
         </div>
       </header>
 
-      <div className="mt-7 grid gap-y-9">
+      <div data-section-motion="body" className="mt-7 grid gap-y-9">
         <div
           hidden={!showDemos && !frontend.items.length && !backend.items.length}
           className={showDemos ? "grid items-center gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:gap-x-12" : undefined}
@@ -307,7 +307,7 @@ export function SkillsSection() {
             <GroupSection title={frontend.group} items={frontend.items} />
             <GroupSection title={backend.group} items={backend.items} />
           </div>
-          <div hidden={!showDemos} className="min-w-0">
+          <div hidden={!showDemos} data-section-motion="media" className="min-w-0">
             <MicroservicesDemo />
           </div>
         </div>
@@ -319,7 +319,7 @@ export function SkillsSection() {
           <div className={showDemos ? "min-w-0 lg:col-start-2 lg:row-start-1" : undefined} hidden={!devops.items.length}>
             <GroupSection title={devops.group} items={devops.items} />
           </div>
-          <div hidden={!showDemos} className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center">
+          <div hidden={!showDemos} data-section-motion="media" className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center">
             <DeploymentDemo />
           </div>
           <div className={showDemos ? "min-w-0 lg:col-start-2 lg:row-start-2" : undefined} hidden={!databases.items.length}>

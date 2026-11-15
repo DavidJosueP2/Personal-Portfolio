@@ -323,6 +323,32 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
     scroll-margin-top: 4.75rem;
   }
 
+  [data-stack-ready] [data-stack-surface] {
+    overflow: clip;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-stack-surface] {
+      display: grid;
+    }
+
+    [data-stack-surface]:not(:has(> #services)) {
+      min-height: 100svh;
+    }
+
+    [data-stack-panel] .portfolio-section {
+      padding-block-start: max(5.5rem, 4.5vw);
+    }
+
+    [data-stack-panel] [data-service-stage] {
+      /* Leave room for the last word to reach center during the handoff. */
+      --service-stage-end: max(
+        clamp(1.5rem, 3vw, 3.5rem),
+        calc(13dvh - clamp(2.75rem, 4.5vw, 5rem))
+      );
+    }
+  }
+
   .portfolio-section-title {
     font-family: var(--font-display);
     font-size: clamp(2.5rem, 5vw, 5.5rem);

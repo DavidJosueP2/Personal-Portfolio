@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { gsap } from "gsap"
 import eeasaLogo from "@/assets/img/experience/eeasa.png"
 import kronhosLogo from "@/assets/img/experience/kronhos.png"
-import workspace from "@/assets/img/experience/workspace.webp"
+import workspace from "@/assets/img/experience/neon-me.webp"
 
 export function ExperienceTimeline() {
   const photoTrackRef = useRef<HTMLDivElement>(null)
@@ -66,7 +66,7 @@ export function ExperienceTimeline() {
       aria-labelledby="experience-heading"
       className="portfolio-container portfolio-section bg-[#f4f4f2] dark:bg-[#151514]"
     >
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[clamp(1.1rem,2.25vw,2.625rem)] leading-none font-bold tracking-[-0.035em] text-heading">
+      <header data-section-motion="heading" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[clamp(1.1rem,2.25vw,2.625rem)] leading-none font-bold tracking-[-0.035em] text-heading">
         <h2 id="experience-heading" className="font-sans! sm:order-last">Experience</h2>
         <p className="flex items-center gap-2.5 sm:gap-4">
           <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-accent-ink" />
@@ -75,7 +75,7 @@ export function ExperienceTimeline() {
       </header>
 
       <div className="mt-7 grid gap-y-10 lg:mt-0 lg:grid-cols-2 lg:gap-x-8">
-        <div ref={photoTrackRef} className="relative lg:overflow-clip lg:pt-[clamp(4rem,4.75vw,6rem)]">
+        <div ref={photoTrackRef} data-section-motion="media" className="relative lg:overflow-clip lg:pt-[clamp(4rem,4.75vw,6rem)]">
           <img
             ref={photoRef}
             src={workspace}
@@ -88,7 +88,7 @@ export function ExperienceTimeline() {
           />
         </div>
 
-        <ol role="list" className="grid max-w-[40rem] gap-14 lg:gap-[clamp(5rem,7vw,8rem)] lg:pb-[clamp(4rem,7vw,7.5rem)] xl:-mt-[0.25em]">
+        <ol role="list" data-section-motion="body" className="grid max-w-[40rem] gap-14 lg:gap-[clamp(5rem,7vw,8rem)] lg:pb-[clamp(4rem,7vw,7.5rem)] xl:-mt-[0.25em]">
           <li>
             <h3 className="flex items-center gap-2.5 text-[clamp(1.4rem,2vw,2.2rem)] leading-tight font-bold tracking-[-0.035em] text-heading">
               <img src={kronhosLogo} alt="" width={32} height={32} loading="lazy" decoding="async" className="size-7 shrink-0 rounded-sm bg-white object-contain p-0.5 sm:size-8" />

@@ -24,14 +24,16 @@ const services = [
 
 export function ServicesSection() {
   const stageRef = useRef<HTMLDivElement>(null)
+  const wordsRef = useRef<HTMLUListElement>(null)
   const selectRef = useRef<(index: number) => void>(null)
   const [active, setActive] = useState(0)
 
   useEffect(() => {
     const stage = stageRef.current
-    if (!stage) return
+    const words = wordsRef.current
+    if (!stage || !words) return
 
-    const rows = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-row]"))
+    const rows = Array.from(words.querySelectorAll<HTMLElement>("[data-service-row]"))
     const photos = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-frame]"), (frame, side) => ({
       frame,
       face: frame.querySelector<HTMLElement>("[data-service-photo]")!,
@@ -86,7 +88,7 @@ export function ServicesSection() {
     }
 
     const readPosition = () => {
-      const center = window.innerHeight / 2 - stage.getBoundingClientRect().top
+      const center = window.innerHeight / 2 - words.getBoundingClientRect().top
       const next = centers.findIndex((rowCenter) => rowCenter > center)
       if (next === -1) return rows.length - 1
       if (next === 0) return 0
@@ -173,7 +175,7 @@ export function ServicesSection() {
 
   return (
     <section id="services" aria-labelledby="services-heading" className="portfolio-container portfolio-section overflow-clip bg-[#f6f6f4] text-ink dark:bg-[#111113]">
-      <header className="flex items-center justify-between gap-4 text-[clamp(1.05rem,2.4vw,2.5rem)] font-bold leading-none tracking-[-0.035em]">
+      <header data-section-motion="heading" className="flex items-center justify-between gap-4 text-[clamp(1.05rem,2.4vw,2.5rem)] font-bold leading-none tracking-[-0.035em]">
         <p className="flex items-center gap-2.5 sm:gap-4">
           <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-[#f1c631] dark:bg-[#ffda4c]" />
           How can I help?
@@ -181,8 +183,8 @@ export function ServicesSection() {
         <h2 id="services-heading" className="font-sans! leading-none">Services</h2>
       </header>
 
-      <div ref={stageRef} className="relative isolate mt-[clamp(3.5rem,8vw,8.5rem)] mb-[clamp(1.5rem,3vw,3.5rem)] [--service-word-size:clamp(1.8rem,9.1vw,12rem)]">
-        <ul className="relative z-10 grid justify-items-center gap-[clamp(0.55rem,0.9vw,1rem)]">
+      <div ref={stageRef} data-service-stage className="relative isolate mt-[clamp(3.5rem,8vw,8.5rem)] mb-[var(--service-stage-end,clamp(1.5rem,3vw,3.5rem))] [--service-word-size:clamp(1.8rem,9.1vw,12rem)]">
+        <ul ref={wordsRef} data-section-motion="body" className="relative z-10 grid justify-items-center gap-[clamp(0.55rem,0.9vw,1rem)]">
           {services.map(({ name }, index) => (
             <li key={name} data-service-row>
               <button
@@ -204,7 +206,7 @@ export function ServicesSection() {
           ))}
         </ul>
 
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 inset-y-[max(1.375rem,calc(var(--service-word-size)*0.465))]">
+        <div aria-hidden="true" data-section-motion="media" className="pointer-events-none absolute inset-x-0 inset-y-[max(1.375rem,calc(var(--service-word-size)*0.465))]">
           <div data-service-rail className="sticky top-[50dvh] flex h-0 items-center justify-between sm:px-[clamp(0.25rem,1.45vw,1.75rem)]">
             {([0, 1] as const).map((side) => (
               <div

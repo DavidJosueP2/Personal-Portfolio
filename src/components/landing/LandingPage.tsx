@@ -11,9 +11,18 @@ import { ContactSection } from "@/components/landing/sections/ContactSection"
 import { Footer } from "@/components/landing/Footer"
 import { ExperienceTimeline } from "@/components/landing/ExperienceTimeline"
 import { prefersReducedMotion } from "@/lib/motion"
+import { setupSectionStack } from "@/lib/section-stack"
+
+const sections = [HeroSection, ExperienceTimeline, ServicesSection, ProjectsSection, SkillsSection, AboutSection, ContactSection]
 
 export function LandingPage() {
     const rootRef = useRef<HTMLDivElement>(null)
+    const sectionsRef = useRef<HTMLElement>(null)
+
+    useLayoutEffect(() => {
+        const main = sectionsRef.current
+        if (main) return setupSectionStack(main)
+    }, [])
 
     useLayoutEffect(() => {
         const root = rootRef.current
@@ -45,14 +54,16 @@ export function LandingPage() {
             <ConstellationBackground />
             <div className="relative z-10">
                 <HeaderNav />
-                <main>
-                    <HeroSection />
-                    <ExperienceTimeline />
-                    <ServicesSection />
-                    <ProjectsSection />
-                    <SkillsSection />
-                    <AboutSection />
-                    <ContactSection />
+                <main ref={sectionsRef} className="isolate">
+                    {sections.map((Section, index) => (
+                        <div key={index} data-stack-panel className="relative" style={{ zIndex: index }}>
+                            <div data-stack-entry>
+                                <div data-stack-surface>
+                                    <Section />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </main>
                 <Footer />
             </div>

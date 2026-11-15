@@ -2,15 +2,11 @@ import { Button } from "@/components/ui/shadcn/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
-import { prefersReducedMotion } from "@/lib/motion"
+import { scrollToSection } from "@/lib/section-stack"
 import { Moon, Sun, Volume2, VolumeX, Palette } from "lucide-react"
 
 import { socialLogos } from "@/assets/img/tech"
 import * as React from "react"
-
-function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion() ? "instant" : "smooth" })
-}
 
 function AccentSwatch({
   value,
@@ -76,7 +72,7 @@ function useActiveSection() {
       let bestDist = Number.POSITIVE_INFINITY
 
       for (const el of els) {
-        const rect = el.getBoundingClientRect()
+        const rect = (el.closest("[data-stack-panel]") ?? el).getBoundingClientRect()
         // distance from this section's top to our reference line
         const d = Math.abs(rect.top - y)
 
@@ -191,7 +187,7 @@ export function HeaderNav() {
         <button
           type="button"
           data-slot="home-link"
-          onClick={() => scrollToId("top")}
+          onClick={() => scrollToSection("top")}
           className="rounded-full border border-ink/10 bg-paper/65 px-3 py-2 text-xs font-semibold tracking-[0.35em] text-ink/85 backdrop-blur hover:bg-paper/85 sm:px-4"
         >
           DJB
@@ -211,7 +207,7 @@ export function HeaderNav() {
                     ? "bg-ink/10 text-ink"
                     : "text-ink/70 hover:bg-ink/5 hover:text-ink")
                 }
-                onClick={() => scrollToId(id)}
+                onClick={() => scrollToSection(id)}
               >
                 {label}
               </Button>

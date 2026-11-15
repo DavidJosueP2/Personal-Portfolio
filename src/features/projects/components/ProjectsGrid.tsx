@@ -14,7 +14,7 @@ export function ProjectsGrid({ projects }: Readonly<{ projects: Project[] }>) {
   }, [projects])
 
   return (
-    <div ref={gridRef} className="grid gap-4 md:grid-cols-12 md:gap-5">
+    <div ref={gridRef} data-section-motion="media" className="grid gap-4 md:grid-cols-12 md:gap-5">
       {projects.map((project, index) => {
         const fillsLastRow = index === projects.length - 1 && index % 2 === 0
         return (

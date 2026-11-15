@@ -33,7 +33,7 @@ export function AboutSection() {
     <section ref={rootRef} id="about" aria-labelledby="about-heading" className="portfolio-section portfolio-contrast-section">
       <div className="portfolio-container">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-end md:gap-10">
-          <div data-reveal-item>
+          <div data-reveal-item data-section-motion="heading">
             <h2 id="about-heading" className="font-display text-3xl leading-none tracking-tight text-heading sm:text-4xl">About</h2>
             <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-copy">
               <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
@@ -44,7 +44,7 @@ export function AboutSection() {
             </p>
           </div>
 
-          <div data-reveal-item className="min-w-0 max-w-[62ch] space-y-4 text-base leading-relaxed text-copy lg:text-lg">
+          <div data-reveal-item data-section-motion="body" className="min-w-0 max-w-[62ch] space-y-4 text-base leading-relaxed text-copy lg:text-lg">
             <p>
               I work mainly with Java, Spring Boot, REST APIs, microservices, and SQL, including distributed databases.
             </p>
@@ -61,6 +61,7 @@ export function AboutSection() {
               key={id}
               id={id}
               data-reveal-item
+              data-section-motion="body"
               className="min-w-0 scroll-mt-24 last:border-t last:border-ink/15 last:pt-5 md:last:border-t-0 md:last:pt-0"
             >
               <h3 className="font-display text-[1.35rem] leading-tight text-heading md:text-2xl">{heading}</h3>

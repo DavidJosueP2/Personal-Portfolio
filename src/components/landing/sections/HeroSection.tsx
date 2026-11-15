@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/shadcn/button"
-import { prefersReducedMotion } from "@/lib/motion"
+import { scrollToSection } from "@/lib/section-stack"
 import { topHeroTools, socialLogos } from "@/assets/img/tech"
 import cvPdf from "@/assets/docs/Curriculum.pdf"
 
@@ -13,10 +13,6 @@ const headlineVariants = [
 
 const readingTime = 4_800
 const openingPhrase = { index: 0, length: headlineVariants[0].text.length }
-
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion() ? "instant" : "smooth" })
-}
 
 function MaskedLine({ children, className = "" }: Readonly<{ children: ReactNode; className?: string }>) {
   return (
@@ -123,18 +119,16 @@ export function HeroSection() {
     <section id="top" aria-labelledby="home-title" className="relative overflow-hidden">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div
-          className="absolute inset-0 bg-size-[64px_64px] [--hero-grid-line:rgb(18_18_20/0.026)] dark:[--hero-grid-line:rgb(255_255_255/0.052)]"
+          className="absolute inset-0 bg-size-[64px_64px] [--hero-grid-line:rgb(18_18_20/0.016)] dark:[--hero-grid-line:rgb(255_255_255/0.023)]"
           style={{
             backgroundImage: "linear-gradient(to right, var(--hero-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--hero-grid-line) 1px, transparent 1px)",
           }}
         />
-        <div className="absolute -left-40 top-16 hidden size-96 rounded-full bg-[rgb(var(--accent-rgb,52_211_153)/0.05)] blur-3xl dark:block" />
-        <div className="absolute -right-40 bottom-0 hidden size-96 rounded-full bg-[rgb(var(--accent-rgb,52_211_153)/0.04)] blur-3xl dark:block" />
       </div>
 
       <div className="portfolio-container relative flex min-h-svh flex-col gap-3 pt-[5.5rem] pb-5 max-[360px]:pt-20 max-[360px]:pb-4 md:gap-5 md:pt-24 md:pb-8">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <h1 id="home-title" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:text-[clamp(5rem,11vw,15rem)]!">
+          <h1 id="home-title" data-section-motion="heading" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:text-[clamp(5rem,11vw,15rem)]!">
             <span className="block overflow-hidden"><span data-home-name="above" className="block pt-[0.12em] pb-[0.18em]">David</span></span>{" "}
             <span className="block overflow-hidden"><span data-home-name="below" className="block pt-[0.12em] pb-[0.18em]">Barragán</span></span>
           </h1>
@@ -174,7 +168,7 @@ export function HeroSection() {
           </MaskedLine>
         </div>
 
-        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+        <div data-section-motion="body" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
           <p className="text-[0.8125rem] leading-tight text-ink/80 sm:text-sm md:text-base">
             <MaskedLine><strong className="font-bold text-ink">Human first.</strong></MaskedLine>{" "}
             <MaskedLine>I listen closely, communicate clearly,</MaskedLine>{" "}

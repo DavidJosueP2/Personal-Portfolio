@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { setupRevealList } from "@/lib/gsap-reveal-list"
-import { prefersReducedMotion } from "@/lib/motion"
+import { scrollToSection } from "@/lib/section-stack"
 
 const links = [
   { id: "top", label: "Back to top" },
@@ -32,7 +32,7 @@ export function Footer() {
             key={id}
             type="button"
             data-slot="footer-link"
-            onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion() ? "instant" : "smooth" })}
+            onClick={() => scrollToSection(id)}
             className="min-h-10 cursor-pointer text-ink/65 underline-offset-4 hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
           >
             {label}

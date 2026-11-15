@@ -6,7 +6,7 @@ const portfolioProjects = getPortfolioProjects()
 export function ProjectsSection() {
   return (
     <section id="projects" aria-labelledby="projects-heading" className="portfolio-container portfolio-section">
-      <div className="mb-7 border-b border-ink/10 pb-5 sm:mb-8 sm:pb-6">
+      <div data-section-motion="heading" className="mb-7 border-b border-ink/10 pb-5 sm:mb-8 sm:pb-6">
         <h2 id="projects-heading" className="font-display text-4xl leading-none text-heading sm:text-5xl">
           Projects
         </h2>
