@@ -128,9 +128,11 @@ export function HeroSection() {
 
       <div className="portfolio-container relative flex min-h-svh flex-col gap-3 pt-[5.5rem] pb-5 max-[360px]:pt-20 max-[360px]:pb-4 md:gap-5 md:pt-24 md:pb-8">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <h1 id="home-title" data-section-motion="heading" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:text-[clamp(5rem,11vw,15rem)]!">
+          <h1 id="home-title" data-section-motion="heading" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:items-baseline md:text-[clamp(5rem,11vw,15rem)]!">
             <span className="block overflow-hidden"><span data-home-name="above" className="block pt-[0.12em] pb-[0.18em]">David</span></span>{" "}
-            <span className="block overflow-hidden"><span data-home-name="below" className="block pt-[0.12em] pb-[0.18em]">Barragán</span></span>
+            <span className="block overflow-hidden px-[0.07em]">
+              <span data-home-name="below" className="font-serif-italic block pt-[0.12em] pb-[0.18em] tracking-[-0.025em]">Barragán</span>
+            </span>
           </h1>
 
           <p className="mt-1 text-xs font-bold tracking-[0.22em] uppercase text-ink/85 md:mt-3 md:text-sm">
@@ -170,7 +172,7 @@ export function HeroSection() {
 
         <div data-section-motion="body" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
           <p className="text-[0.8125rem] leading-tight text-ink/80 sm:text-sm md:text-base">
-            <MaskedLine><strong className="font-bold text-ink">Human first.</strong></MaskedLine>{" "}
+            <MaskedLine><em className="font-serif-italic text-[1.12em] text-ink">Human first.</em></MaskedLine>{" "}
             <MaskedLine>I listen closely, communicate clearly,</MaskedLine>{" "}
             <MaskedLine>and build better with others.</MaskedLine>
           </p>

@@ -281,7 +281,7 @@ export function SkillsSection() {
         </h2>
         <p data-skills-head className="mt-2 max-w-prose text-sm text-ink/70">
           What I don’t know, I{" "}
-          <span className="text-accent-ink">learn</span>. What I learn, I perfect.
+          <em className="font-serif-italic text-accent-ink">learn</em>. What I learn, I perfect.
         </p>
         <div className="mt-4 flex items-center gap-2">
           <label className="text-sm text-ink/70" htmlFor="skills-search">

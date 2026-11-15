@@ -107,6 +107,12 @@ h6 {
   font-family: var(--font-display);
 }
 
+.font-serif-italic {
+  font-family: "Apparel", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
 /* If some components use these utility-ish classes, keep them consistent too */
 .prose :is(h1, h2) {
   font-family: var(--font-display, serif);

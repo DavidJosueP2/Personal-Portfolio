@@ -1,5 +1,6 @@
 import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
+import { createWebGLAurora } from "./aurora/aurora-webgl"
 
 type Star = {
   x: number
@@ -79,14 +80,6 @@ function makeVignette(ctx: CanvasRenderingContext2D, w: number, h: number, light
   return vg
 }
 
-function makeBackdrop(ctx: CanvasRenderingContext2D, h: number, light: boolean) {
-  const bg = ctx.createLinearGradient(0, 0, 0, h)
-  bg.addColorStop(0, light ? "#f7fbff" : "#0b2033")
-  bg.addColorStop(0.48, light ? "#f9fbfd" : "#0a182a")
-  bg.addColorStop(1, light ? "#fff" : "#050b19")
-  return bg
-}
-
 function drawStarAtlas(ctx: CanvasRenderingContext2D, tint: RGB, light: boolean) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   const coreR = STAR_SPRITE_CORE
@@ -133,11 +126,31 @@ function drawStarAtlas(ctx: CanvasRenderingContext2D, tint: RGB, light: boolean)
 }
 
 const AURORA_FRAME_INTERVAL = 1 / 24
+const GPU_AURORA_FRAME_INTERVAL = 1 / 30
+const AURORA_WIDTH = 256
+const AURORA_HEIGHT = 144
 const PROFILE_RADIUS = 160
 const auroraCurtains = [
-  { baseline: 0.44, rise: 0.24, bend: 0.10, center: 0.56, width: 0.30, height: 0.50, phase: 1.4, strength: 0.30, focus: 0.24 },
-  { baseline: 0.68, rise: 0.06, bend: 0.03, center: 0.66, width: 0.22, height: 0.24, phase: 2.8, strength: 0.42, focus: 0.62 },
-  { baseline: 0.55, rise: 0.25, bend: 0.25, center: 0.45, width: 0.24, height: 0.47, phase: 0.2, strength: 1, focus: 1 },
+  {
+    color: { r: 35, g: 166, b: 248 }, baseline: 0.36, rise: 0.13, center: 0.59, width: 0.44,
+    height: 0.44, amplitude: 0.04, speed: 0.14, phase: 0.8, glow: 0.32, rim: 0.08,
+  },
+  {
+    color: { r: 21, g: 232, b: 138 }, baseline: 0.49, rise: 0.25, center: 0.31, width: 0.41,
+    height: 0.41, amplitude: 0.065, speed: -0.22, phase: 0.15, glow: 0.43, rim: 0.53,
+  },
+  {
+    color: { r: 23, g: 255, b: 222 }, baseline: 0.55, rise: 0.23, center: 0.78, width: 0.33,
+    height: 0.34, amplitude: 0.073, speed: 0.26, phase: 2.2, glow: 0.34, rim: 0.66,
+  },
+  {
+    color: { r: 187, g: 255, b: 86 }, baseline: 0.55, rise: 0.17, center: 0.38, width: 0.29,
+    height: 0.21, amplitude: 0.047, speed: -0.29, phase: 4.1, glow: 0.13, rim: 0.49,
+  },
+  {
+    color: { r: 30, g: 229, b: 255 }, baseline: 0.67, rise: 0.10, center: 0.67, width: 0.40,
+    height: 0.25, amplitude: 0.037, speed: 0.18, phase: 1.45, glow: 0.16, rim: 0.22,
+  },
 ]
 
 function gaussian(distance: number) {
@@ -155,77 +168,96 @@ const haloProfile = Float32Array.from({ length: PROFILE_RADIUS * 2 + 1 }, (_, in
   return gaussian((distance + 0.11) / (distance < 0 ? 0.56 : 0.24)) * fade * fade
 })
 
+const heroTextShade = Float32Array.from({ length: AURORA_HEIGHT }, (_, row) => (
+  gaussian((row / (AURORA_HEIGHT - 1) - 0.56) / 0.105)
+))
+
 function makeAuroraPalette(accent: RGB, light: boolean) {
-  const cool = clamp((accent.g - accent.r) / 148, 0, 1)
-  const blend = (from: RGB, to: RGB, amount: number): RGB => ({
-    r: lerp(from.r, to.r, amount),
-    g: lerp(from.g, to.g, amount),
-    b: lerp(from.b, to.b, amount),
-  })
-  const halo = blend(accent, { r: 34, g: 172, b: 240 }, cool * 0.72)
-  const core = blend(accent, { r: 26, g: 255, b: 163 }, cool * 0.64)
-  const shade = { r: 8, g: 39, b: 86 }
-  return light ? { halo: blend(halo, shade, 0.23), core: blend(core, shade, 0.13) } : { halo, core }
+  const isCoolAccent = accent.g >= Math.max(accent.r, accent.b * 0.86)
+  const influence = isCoolAccent ? 0.14 : 0.72
+  const shade = light ? 0.81 : 1
+
+  return auroraCurtains.map(({ color }): RGB => ({
+    r: lerp(color.r, accent.r, influence) * shade,
+    g: lerp(color.g, accent.g, influence) * shade,
+    b: lerp(color.b, accent.b, influence) * shade,
+  }))
 }
 
 function drawAurora(
   ctx: CanvasRenderingContext2D,
   raster: ImageData,
-  palette: ReturnType<typeof makeAuroraPalette>,
+  columnLight: Float32Array,
+  palette: RGB[],
   seconds: number,
   light: boolean,
   portrait: boolean,
 ) {
   const { width, height, data } = raster
-  const { core, halo } = palette
-  const bands = auroraCurtains.map(() => ({ edge: 0, sampling: 0, glow: 0, rim: 0 }))
-  const phase = seconds * 0.19
-  const intensity = light ? 0.42 : 1
+  const intensity = light ? 0.40 : 1
+  const bands = auroraCurtains.map((curtain, index) => {
+    const age = seconds * curtain.speed
+    const phase = age + curtain.phase
+    const drift = Math.sin(age * 0.74 + curtain.phase) * 0.15 + Math.sin(age * 0.31) * 0.07
+
+    return {
+      curtain,
+      tint: palette[index],
+      phase,
+      drift,
+      center: curtain.center + drift,
+      baseline: curtain.baseline + Math.sin(phase * 0.73) * 0.047,
+      span: curtain.width * (0.88 + Math.sin(phase * 0.82) * 0.23),
+      stretch: 0.86 + Math.sin(phase * 0.64 + 0.9) * 0.19 + Math.cos(age * 0.39) * 0.08,
+    }
+  })
 
   for (let column = 0; column < width; column++) {
     const u = column / (width - 1)
-    const x = portrait ? 0.09 + u * 0.82 : u
-    const fade = 0.60 + 0.40 * Math.sin(Math.PI * u) ** 0.6
+    const x = portrait ? 0.14 + u * 0.72 : u
+    const fade = 0.56 + 0.44 * Math.sin(Math.PI * u) ** 0.6
+    const textShade = gaussian((u - 0.5) / (portrait ? 0.36 : 0.19)) * (light ? 0.12 : 0.51)
+    columnLight.fill(0)
 
-    for (let index = 0; index < bands.length; index++) {
-      const curtain = auroraCurtains[index]
-      const band = bands[index]
-      const wave = phase * (1 + index * 0.16) + curtain.phase
-      const middle = curtain.center + Math.sin(wave * 0.64) * 0.034
-      const right = 1.06 + Math.sin(wave * 0.7 + 0.7) * 0.073
-      const curl = gaussian((x - middle) / curtain.width) * curtain.rise
-        + gaussian((x - right) / 0.23) * curtain.bend
-      const folds = Math.sin(x * 13.5 + wave) * 0.032
-        + Math.sin(x * 31 - wave * 0.63) * 0.017
-        + Math.sin(x * 48 + wave * 0.4) * 0.008
-      const pockets = 0.44 + 0.46 * (0.5 + 0.5 * Math.sin(x * 22 - wave)) ** 3
-        + 0.33 * (0.5 + 0.5 * Math.cos(x * 37 + wave)) ** 4
-      const heightScale = (curtain.height + 0.045 * Math.sin(x * 9.0 + wave)) * height
+    for (const { curtain, tint, phase, drift, center, baseline, span, stretch } of bands) {
+      const foldX = x - drift + 0.065 * Math.sin(x * 7.5 - phase * 0.68)
+      const crest = gaussian((x - center) / span)
+      const folds = Math.sin(foldX * 8.7 + phase)
+        + Math.sin(foldX * 20.1 - phase * 0.73) * 0.36
+        + Math.sin(foldX * 36.8 + phase * 0.48) * 0.14
+      const edge = (baseline - crest * curtain.rise + folds * curtain.amplitude) * height
+      const thickness = Math.sin(foldX * 11.6 + phase) * 0.19 + Math.cos(foldX * 24.2 - phase * 0.58) * 0.10
+      const reach = curtain.height * (stretch + thickness) * height
+      const pockets = 0.42 + 0.46 * (0.5 + 0.5 * Math.sin(foldX * 25.2 + phase * 0.55)) ** 3
+        + 0.27 * (0.5 + 0.5 * Math.cos(foldX * 39.6 - phase)) ** 4
+      const coverage = fade * (0.27 + 0.73 * crest)
+      const glow = curtain.glow * coverage * (0.62 + pockets * 0.38)
+      const rim = curtain.rim * coverage * pockets
 
-      band.edge = (curtain.baseline - curl + folds) * height
-      band.sampling = PROFILE_RADIUS / heightScale
-      band.glow = curtain.strength * (0.66 + 0.34 * pockets) * fade
-      band.rim = curtain.strength * curtain.focus * pockets * fade
+      // Accumulate overlapping light only inside each curtain's soft profile.
+      const start = Math.max(0, Math.ceil(edge - reach))
+      const end = Math.min(height - 1, Math.floor(edge + reach))
+      const sampling = PROFILE_RADIUS / reach
+      for (let row = start, offset = start * 4; row <= end; row++, offset += 4) {
+        const sample = Math.round(PROFILE_RADIUS + (row - edge) * sampling)
+        const energy = haloProfile[sample] * glow + coreProfile[sample] * rim
+        columnLight[offset] += tint.r * energy
+        columnLight[offset + 1] += tint.g * energy
+        columnLight[offset + 2] += tint.b * energy
+        columnLight[offset + 3] += energy
+      }
     }
 
-    for (let row = 0, pixel = column * 4; row < height; row++, pixel += width * 4) {
-      let glow = 0
-      let rim = 0
-      for (const band of bands) {
-        const sample = Math.round(PROFILE_RADIUS + (row - band.edge) * band.sampling)
-        if (sample < 0 || sample > PROFILE_RADIUS * 2) continue
-        glow += haloProfile[sample] * band.glow
-        rim += coreProfile[sample] * band.rim
+    for (let row = 0, offset = 0, pixel = column * 4; row < height; row++, offset += 4, pixel += width * 4) {
+      const energy = columnLight[offset + 3]
+      if (energy < 0.002) {
+        data[pixel + 3] = 0
+        continue
       }
-
-      const glowEnergy = glow * 0.33
-      const rimEnergy = rim * 0.70
-      const energy = glowEnergy + rimEnergy
-      const mix = energy > 0 ? rimEnergy / energy : 0
-      data[pixel] = lerp(halo.r, core.r, mix)
-      data[pixel + 1] = lerp(halo.g, core.g, mix)
-      data[pixel + 2] = lerp(halo.b, core.b, mix)
-      data[pixel + 3] = (1 - Math.exp(-energy * 1.44)) * intensity * 255
+      data[pixel] = columnLight[offset] / energy
+      data[pixel + 1] = columnLight[offset + 1] / energy
+      data[pixel + 2] = columnLight[offset + 2] / energy
+      data[pixel + 3] = (1 - Math.exp(-energy * 1.44)) * (1 - heroTextShade[row] * textShade) * intensity * 255
     }
   }
 
@@ -238,11 +270,13 @@ function drawAurora(
  */
 export function ConstellationBackground() {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+  const auroraRef = React.useRef<HTMLCanvasElement | null>(null)
 
   React.useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d", { alpha: false })
+    const auroraLayer = auroraRef.current
+    if (!canvas || !auroraLayer) return
+    const ctx = canvas.getContext("2d")
     if (!ctx) return
 
     const starAtlas = document.createElement("canvas")
@@ -252,11 +286,12 @@ export function ConstellationBackground() {
     if (!atlasCtx) return
 
     const auroraCanvas = document.createElement("canvas")
-    auroraCanvas.width = 320
-    auroraCanvas.height = 180
+    auroraCanvas.width = AURORA_WIDTH
+    auroraCanvas.height = AURORA_HEIGHT
     const auroraCtx = auroraCanvas.getContext("2d")
     if (!auroraCtx) return
     const auroraRaster = auroraCtx.createImageData(auroraCanvas.width, auroraCanvas.height)
+    const auroraColumnLight = new Float32Array(auroraCanvas.height * 4)
 
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)")
     let reducedMotion = motionPreference.matches
@@ -264,22 +299,30 @@ export function ConstellationBackground() {
     const vp = resizeCanvasToViewport(canvas, ctx, MAX_BACKGROUND_DPR)
     const root = document.documentElement
     let light = root.dataset.theme === "light"
-    let backdrop = makeBackdrop(ctx, vp.height, light)
     let vignette = makeVignette(ctx, vp.width, vp.height, light)
-    const initialTint = getAccentTint(root.dataset.accent)
-    let auroraPalette = makeAuroraPalette(initialTint, light)
+    let tint = getAccentTint(root.dataset.accent)
+    let auroraPalette = makeAuroraPalette(tint, light)
     let auroraTime = 0
     let lastAuroraPaint = 0
     let auroraDirty = true
+    let renderer = createWebGLAurora(auroraLayer)
+    auroraLayer.hidden = !renderer
+    renderer?.resize(vp.width, vp.height)
+    renderer?.setAppearance(tint, light)
 
     const paintAurora = (dt: number) => {
       auroraTime += dt
-      if (auroraDirty || auroraTime - lastAuroraPaint >= AURORA_FRAME_INTERVAL - 0.001) {
-        drawAurora(auroraCtx, auroraRaster, auroraPalette, auroraTime, light, vp.width < vp.height)
+      const interval = renderer ? GPU_AURORA_FRAME_INTERVAL : AURORA_FRAME_INTERVAL
+      if (auroraDirty || auroraTime - lastAuroraPaint >= interval - 0.001) {
+        if (renderer) {
+          renderer.draw(auroraTime)
+        } else {
+          drawAurora(auroraCtx, auroraRaster, auroraColumnLight, auroraPalette, auroraTime, light, vp.width < vp.height)
+        }
         lastAuroraPaint = auroraTime
         auroraDirty = false
       }
-      ctx.drawImage(auroraCanvas, 0, 0, vp.width, vp.height)
+      if (!renderer) ctx.drawImage(auroraCanvas, 0, 0, vp.width, vp.height)
     }
 
     // Scroll -> "travel speed". We ease it to feel like a camera inertia.
@@ -298,7 +341,7 @@ export function ConstellationBackground() {
       edgeMargin: 28,
     }
 
-    let starSprites = drawStarAtlas(atlasCtx, initialTint, light)
+    let starSprites = drawStarAtlas(atlasCtx, tint, light)
 
     const stars: Star[] = []
     const visibleStarCount = () => Math.round(MAX_STARS * clamp(vp.width / 1000, 0.55, 1))
@@ -341,7 +384,7 @@ export function ConstellationBackground() {
 
     const onResize = () => {
       Object.assign(vp, resizeCanvasToViewport(canvas, ctx, MAX_BACKGROUND_DPR))
-      backdrop = makeBackdrop(ctx, vp.height, light)
+      renderer?.resize(vp.width, vp.height)
       vignette = makeVignette(ctx, vp.width, vp.height, light)
       auroraDirty = true
       starCount = visibleStarCount()
@@ -460,9 +503,7 @@ export function ConstellationBackground() {
       const zSpeed = (scroll.velocity * 0.0032 + 0.00034) * (dt * 60)
       const forward = clamp(Math.abs(scroll.velocity) / 14, 0, 1)
 
-      ctx.fillStyle = backdrop
-      ctx.fillRect(0, 0, vp.width, vp.height)
-
+      ctx.clearRect(0, 0, vp.width, vp.height)
       paintAurora(dt)
       ctx.fillStyle = vignette
       ctx.fillRect(0, 0, vp.width, vp.height)
@@ -499,19 +540,37 @@ export function ConstellationBackground() {
       const nextLight = root.dataset.theme === "light"
       if (nextLight !== light) {
         light = nextLight
-        backdrop = makeBackdrop(ctx, vp.height, light)
         vignette = makeVignette(ctx, vp.width, vp.height, light)
       } else if (!changes.some(({ attributeName }) => attributeName === "data-accent")) {
         return
       }
 
-      const tint = getAccentTint(root.dataset.accent)
+      tint = getAccentTint(root.dataset.accent)
       starSprites = drawStarAtlas(atlasCtx, tint, light)
       auroraPalette = makeAuroraPalette(tint, light)
+      renderer?.setAppearance(tint, light)
       auroraDirty = true
       drawFrame(reducedMotion ? 0 : performance.now(), 0)
     })
     appearanceObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] })
+
+    const onContextLost = (event: Event) => {
+      event.preventDefault()
+      renderer = null
+      auroraLayer.hidden = true
+      auroraDirty = true
+      if (reducedMotion && !document.hidden) drawFrame(0, 0)
+    }
+    const onContextRestored = () => {
+      renderer = createWebGLAurora(auroraLayer)
+      renderer?.resize(vp.width, vp.height)
+      renderer?.setAppearance(tint, light)
+      auroraLayer.hidden = !renderer
+      auroraDirty = true
+      if (reducedMotion && !document.hidden) drawFrame(0, 0)
+    }
+    auroraLayer.addEventListener("webglcontextlost", onContextLost)
+    auroraLayer.addEventListener("webglcontextrestored", onContextRestored)
 
     const updateAnimation = () => {
       globalThis.cancelAnimationFrame(raf)
@@ -543,16 +602,20 @@ export function ConstellationBackground() {
       appearanceObserver.disconnect()
       motionPreference.removeEventListener("change", updateAnimation)
       document.removeEventListener("visibilitychange", updateAnimation)
+      auroraLayer.removeEventListener("webglcontextlost", onContextLost)
+      auroraLayer.removeEventListener("webglcontextrestored", onContextRestored)
+      renderer?.dispose()
     }
   }, [])
 
   return (
       <div
-          className="pointer-events-none fixed inset-0"
+          className="pointer-events-none fixed inset-0 bg-[linear-gradient(#f7fbff,#f9fbfd_48%,#fff)] dark:bg-[linear-gradient(#0b2033,#0a182a_48%,#050b19)]"
           style={{ zIndex: 0, isolation: "isolate" }}
           aria-hidden
       >
-        <canvas ref={canvasRef} className="h-full w-full" />
+        <canvas ref={auroraRef} data-aurora-layer hidden className="absolute inset-0 h-full w-full" />
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
       </div>
   )
 }

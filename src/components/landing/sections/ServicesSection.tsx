@@ -178,7 +178,7 @@ export function ServicesSection() {
       <header data-section-motion="heading" className="flex items-center justify-between gap-4 text-[clamp(1.05rem,2.4vw,2.5rem)] font-bold leading-none tracking-[-0.035em]">
         <p className="flex items-center gap-2.5 sm:gap-4">
           <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-[#f1c631] dark:bg-[#ffda4c]" />
-          How can I help?
+          <span>How can I <em className="font-serif-italic">help?</em></span>
         </p>
         <h2 id="services-heading" className="font-sans! leading-none">Services</h2>
       </header>

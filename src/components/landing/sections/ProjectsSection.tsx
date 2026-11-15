@@ -11,7 +11,7 @@ export function ProjectsSection() {
           Projects
         </h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-copy sm:text-base">
-          Microservices on Azure, distributed data, and full-stack applications.
+          Microservices on Azure, <em className="font-serif-italic text-heading">distributed data</em>, and full-stack applications.
         </p>
       </div>
 

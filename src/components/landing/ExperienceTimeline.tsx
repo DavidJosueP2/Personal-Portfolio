@@ -70,7 +70,7 @@ export function ExperienceTimeline() {
         <h2 id="experience-heading" className="font-sans! sm:order-last">Experience</h2>
         <p className="flex items-center gap-2.5 sm:gap-4">
           <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-accent-ink" />
-          Full-stack development
+          <span>Full-stack <em className="font-serif-italic">development</em></span>
         </p>
       </header>
 

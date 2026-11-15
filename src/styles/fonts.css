@@ -7,6 +7,14 @@
 }
 
 @font-face {
+  font-family: "Apparel";
+  src: url("/assets/fonts/apparel-font-family/Fontspring-DEMO-apparel-regularit.otf") format("opentype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Plus Jakarta Sans";
   src: url("/assets/fonts/Plus_Jakarta_Sans/PlusJakartaSans-VariableFont_wght.ttf") format("truetype");
   font-style: normal;

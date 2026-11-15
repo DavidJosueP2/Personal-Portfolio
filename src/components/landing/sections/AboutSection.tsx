@@ -39,8 +39,12 @@ export function AboutSection() {
               <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
               Ambato, Ecuador
             </p>
-            <p className="mt-6 max-w-[26ch] text-balance font-display text-[clamp(1.875rem,4.2vw,4rem)] leading-[1.04] tracking-[-0.035em] text-heading md:mt-9">
-              I'm David Barragán, a full-stack engineer with a backend focus.
+            <p className="mt-6 max-w-[26ch] text-balance text-[clamp(1.875rem,4.2vw,4rem)] leading-[1.06] tracking-[-0.035em] text-heading md:mt-9">
+              I'm David Barragán, a{" "}
+              <em className="font-serif-italic">
+                full<span className="font-sans not-italic">-</span>stack engineer
+              </em>{" "}
+              with a backend focus.
             </p>
           </div>
 
