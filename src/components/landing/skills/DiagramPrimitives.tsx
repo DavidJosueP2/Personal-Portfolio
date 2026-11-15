@@ -67,7 +67,7 @@ export function DiagramAction({ children, busy, onClick }: Readonly<{ children: 
         type="button"
         onClick={onClick}
         aria-disabled={busy}
-        className="min-h-11 rounded-full border border-white/15 bg-[#101518]/65 text-white hover:bg-white/10 aria-disabled:cursor-wait aria-disabled:opacity-65"
+        className="min-h-11 rounded-full border border-ink/15 bg-panel/65 text-ink hover:bg-ink/10 aria-disabled:cursor-wait aria-disabled:opacity-65"
       >
         {children}
         <ArrowRight aria-hidden="true" />

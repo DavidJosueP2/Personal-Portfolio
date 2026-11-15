@@ -38,36 +38,36 @@ export function ExperienceTimeline() {
   }, [])
 
   return (
-    <section id="experience" aria-labelledby="experience-heading" className="portfolio-container scroll-mt-22 pb-12 pt-4 sm:pb-16 sm:pt-8">
-      <h2 id="experience-heading" className="font-display text-4xl leading-none text-[#ece9e2] sm:text-5xl">
+    <section id="experience" aria-labelledby="experience-heading" className="portfolio-container portfolio-section border-t border-ink/12">
+      <h2 id="experience-heading" className="portfolio-section-title text-heading">
         Experience
       </h2>
 
-      <ol ref={listRef} className="portfolio-glass mt-7 divide-y divide-white/10 rounded-2xl border border-white/12 sm:mt-8 md:backdrop-blur-xs">
+      <ol ref={listRef} className="mt-7 divide-y divide-ink/12 border-y border-ink/12 md:mt-10">
         {experience.map((role) => (
           <li
             key={role.org}
             data-reveal-item
-            className="grid gap-5 px-5 py-6 sm:px-7 sm:py-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] md:gap-10 lg:px-9"
+            className="grid gap-5 py-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-10 md:py-8"
           >
             <div className="min-w-0">
-              <h3 className="font-display text-[1.7rem] leading-tight text-[#ece9e2] sm:text-3xl">{role.org}</h3>
-              <p className="mt-1.5 text-base font-medium text-white/85">{role.title}</p>
-              <div className="mt-3 space-y-1 text-sm leading-relaxed text-[#afb7bd]">
+              <h3 className="font-display text-[clamp(1.65rem,3vw,3.25rem)] leading-tight tracking-tight text-heading">{role.org}</h3>
+              <p className="mt-1.5 text-base font-medium text-ink/85">{role.title}</p>
+              <div className="mt-3 space-y-1 text-sm leading-relaxed text-copy">
                 <p className="tabular-nums">{role.period}</p>
                 <p>{role.engagement} · {role.location}</p>
               </div>
             </div>
 
-            <div className="min-w-0">
-              <ul className="list-disc space-y-2.5 pl-4 text-sm leading-relaxed text-[#afb7bd] marker:text-[rgb(var(--accent-rgb)_/_0.8)] sm:text-base">
+            <div className="min-w-0 max-w-[68ch]">
+              <ul className="list-disc space-y-2.5 pl-4 text-sm leading-relaxed text-copy marker:text-accent-ink sm:text-base">
                 {role.contributions.map(({ action, detail }) => (
                   <li key={action} className="pl-1">
-                    <strong className="font-semibold text-[#ece9e2]">{action}</strong>{" "}{detail}
+                    <strong className="font-semibold text-heading">{action}</strong>{" "}{detail}
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 border-t border-white/8 pt-3 text-sm leading-relaxed text-[#afb7bd]">
+              <p className="mt-4 border-t border-ink/8 pt-3 text-sm leading-relaxed text-copy">
                 {role.stack.join(" · ")}
               </p>
             </div>

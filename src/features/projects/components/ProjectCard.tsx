@@ -20,13 +20,13 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
     <article
       data-reveal-item
       className={cn(
-        "portfolio-glass group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 motion-safe:transition-colors hover:border-white/20 md:backdrop-blur-xs",
+        "portfolio-glass group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-ink/10 motion-safe:transition-colors hover:border-ink/20 md:backdrop-blur-xs",
         className,
       )}
     >
       <div className="flex grow flex-col px-4 pt-5 sm:px-5 lg:px-6 lg:pt-6">
         <h3 className={cn(
-          "text-balance font-display text-[1.45rem] leading-tight text-[#ece9e2] sm:text-[1.65rem]",
+          "text-balance font-display text-[1.45rem] leading-tight text-heading sm:text-[1.65rem]",
           lead && "lg:text-[1.9rem]",
         )}>
           {demo ? (
@@ -35,14 +35,14 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
               target="_blank"
               rel="noreferrer"
               aria-label={`Visit ${project.title} live site`}
-              className="group/live inline-flex max-w-full items-start gap-2.5 rounded-sm text-inherit! hover:text-[rgb(var(--accent-rgb))]! focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[rgb(var(--accent-rgb))]"
+              className="group/live inline-flex max-w-full items-start gap-2.5 rounded-sm text-inherit! hover:text-accent-ink! focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink"
             >
               <span className="min-w-0">{project.title}</span>
-              <ArrowUpRight aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-[rgb(var(--accent-rgb))] motion-safe:transition-transform motion-safe:group-hover/live:translate-x-0.5 motion-safe:group-hover/live:-translate-y-0.5" />
+              <ArrowUpRight aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-accent-ink motion-safe:transition-transform motion-safe:group-hover/live:translate-x-0.5 motion-safe:group-hover/live:-translate-y-0.5" />
             </a>
           ) : project.title}
         </h3>
-        <p className="mt-2 max-w-[53ch] text-sm leading-relaxed text-[#afb7bd]">
+        <p className="mt-2 max-w-[53ch] text-sm leading-relaxed text-copy">
           {project.subtitle ?? project.description}
         </p>
 
@@ -63,7 +63,7 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
                 type="button"
                 data-slot="project-trigger"
                 aria-label={`View project: ${project.title}`}
-                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm text-sm font-medium text-[rgb(var(--accent-rgb)_/_0.86)] hover:text-[rgb(var(--accent-rgb))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm text-sm font-medium text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
               >
                 View project
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -79,9 +79,9 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
                       target="_blank"
                       rel="noreferrer"
                       aria-label={label === "GitHub" ? `${project.title} on GitHub` : `${project.title}: ${label} repository on GitHub`}
-                      className="inline-flex min-h-11 items-center gap-1.5 rounded-sm text-xs font-medium text-[#afb7bd]! hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-sm text-xs font-medium text-copy! hover:text-ink! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
                     >
-                      <img src={socialLogos.GitHub} width={15} height={15} alt="" className="h-3.75 w-3.75 object-contain opacity-85" />
+                      <img src={socialLogos.GitHub} width={15} height={15} alt="" className="h-3.75 w-3.75 object-contain opacity-85" data-monochrome-logo />
                       {label}
                     </a>
                   </li>
@@ -94,7 +94,7 @@ export function ProjectCard({ project, className, lead }: Readonly<Props>) {
 
       <div className="px-4 pb-4 pt-2 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
         <div className={cn(
-          "aspect-[2.08] overflow-hidden rounded-lg border border-white/12 bg-[#0c1012] md:aspect-auto",
+          "aspect-[2.08] overflow-hidden rounded-lg border border-ink/12 bg-panel md:aspect-auto",
           project.category === "microservices" ? "md:h-44 lg:h-55" : "md:h-38 lg:h-45",
         )}>
           <img

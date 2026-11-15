@@ -111,30 +111,32 @@ function getAccentTint(accent: string | undefined): RGB {
   }
 }
 
-function makeVignette(ctx: CanvasRenderingContext2D, w: number, h: number) {
+function makeVignette(ctx: CanvasRenderingContext2D, w: number, h: number, light: boolean) {
+  const edgeColor = light ? "255,255,255" : "0,0,0"
   const vg = ctx.createRadialGradient(w / 2, h / 2, h * 0.12, w / 2, h / 2, h * 0.8)
-  vg.addColorStop(0, "rgba(0,0,0,0)")
-  vg.addColorStop(1, "rgba(0,0,0,0.82)")
+  vg.addColorStop(0, `rgba(${edgeColor},0)`)
+  vg.addColorStop(1, `rgba(${edgeColor},0.82)`)
   return vg
 }
 
-function makeBackdrop(ctx: CanvasRenderingContext2D, w: number, h: number) {
+function makeBackdrop(ctx: CanvasRenderingContext2D, w: number, h: number, light: boolean) {
   const bg = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.7)
-  bg.addColorStop(0, "#0a0a10")
-  bg.addColorStop(1, "#000")
+  bg.addColorStop(0, light ? "#f8f8f8" : "#0a0a10")
+  bg.addColorStop(1, light ? "#fff" : "#000")
   return bg
 }
 
-function drawStarAtlas(ctx: CanvasRenderingContext2D, tint: RGB) {
+function drawStarAtlas(ctx: CanvasRenderingContext2D, tint: RGB, light: boolean) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   const coreR = STAR_SPRITE_CORE
+  const coreColor = light ? "12,12,14" : "255,255,255"
   return Array.from({ length: STAR_DEPTH_STEPS }, (_, index) => {
     const near = index / (STAR_DEPTH_STEPS - 1)
     const mix = 0.06 + near * 0.12
     const r = Math.round(lerp(255, tint.r, mix))
     const g = Math.round(lerp(255, tint.g, mix))
     const b = Math.round(lerp(255, tint.b, mix))
-    const color = `${r},${g},${b}`
+    const color = light ? coreColor : `${r},${g},${b}`
     const auraR = coreR * lerp(7.5, 15, near)
     const hazeR = auraR * 1.35
     const x = (index + 0.5) * STAR_TILE_SIZE
@@ -148,18 +150,18 @@ function drawStarAtlas(ctx: CanvasRenderingContext2D, tint: RGB) {
       ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
     }
 
-    ctx.globalCompositeOperation = "lighter"
+    ctx.globalCompositeOperation = light ? "source-over" : "lighter"
     const auraStrength = 0.42
     glow(hazeR, color, [[0, auraStrength * 0.22], [0.12, auraStrength * 0.12], [0.38, auraStrength * 0.06]])
     glow(auraR, color, [[0, auraStrength * 0.55], [0.18, auraStrength * 0.18], [0.55, auraStrength * 0.06]])
-    glow(coreR * 2.8, "255,255,255", [[0, 0.36], [0.32, 0.08]])
+    glow(coreR * 2.8, coreColor, [[0, 0.36], [0.32, 0.08]])
 
     ctx.globalCompositeOperation = "source-over"
     ctx.fillStyle = `rgb(${color})`
     ctx.beginPath()
     ctx.arc(x, y, coreR, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = "rgba(255,255,255,0.6)"
+    ctx.fillStyle = `rgba(${coreColor},0.6)`
     ctx.beginPath()
     ctx.arc(x - coreR * 0.18, y - coreR * 0.22, coreR * 0.28, 0, Math.PI * 2)
     ctx.fill()
@@ -251,6 +253,16 @@ function blurNebulaSprite(source: HTMLCanvasElement, blur: number) {
   ctx.filter = `blur(${blur}px)`
   ctx.drawImage(source, padding, padding)
   return sprite
+}
+
+function tintNebula(sprite: HTMLCanvasElement | undefined, light: boolean) {
+  const ctx = sprite?.getContext("2d")
+  if (!sprite || !ctx) return
+  ctx.save()
+  ctx.globalCompositeOperation = "source-in"
+  ctx.fillStyle = light ? "#111" : "#fff"
+  ctx.fillRect(0, 0, sprite.width, sprite.height)
+  ctx.restore()
 }
 
 function layerForIndex(i: number): NebulaLayer {
@@ -395,9 +407,9 @@ function drawNebulaSprites(
     ctx: CanvasRenderingContext2D,
     vp: { width: number; height: number },
     nebulas: NebulaSprite[],
-    parallaxOffset: { x: number; y: number }
+    parallaxOffset: { x: number; y: number },
+    opacityScale: number,
 ) {
-  // The sprites are white, so source-over yields the same blend on the opaque backdrop.
   for (const n of nebulas) {
     if (!n.sprite || n.opacity <= 0.0005) continue
     const { parallax } = layerFactors(n.layer)
@@ -413,12 +425,12 @@ function drawNebulaSprites(
     ctx.rotate(n.rot)
     ctx.scale(n.stretchX, n.stretchY)
 
-    ctx.globalAlpha = clamp(n.opacity, 0, 1)
+    ctx.globalAlpha = clamp(n.opacity * opacityScale, 0, 1)
     ctx.drawImage(n.sprite, -size / 2, -size / 2, size, size)
 
     if (n.innerSprite) {
       const innerSize = n.innerSprite.width * scale * 0.92
-      ctx.globalAlpha = clamp(n.opacity * 0.45, 0, 1)
+      ctx.globalAlpha = clamp(n.opacity * opacityScale * 0.45, 0, 1)
       ctx.drawImage(n.innerSprite, -innerSize / 2, -innerSize / 2, innerSize, innerSize)
     }
 
@@ -434,7 +446,7 @@ export function ConstellationBackground() {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
 
   React.useEffect(() => {
-    if (prefersReducedMotion()) return
+    const reducedMotion = prefersReducedMotion()
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -449,8 +461,10 @@ export function ConstellationBackground() {
 
     let raf = 0
     const vp = resizeCanvasToViewport(canvas, ctx, MAX_BACKGROUND_DPR)
-    let backdrop = makeBackdrop(ctx, vp.width, vp.height)
-    let vignette = makeVignette(ctx, vp.width, vp.height)
+    const root = document.documentElement
+    let light = root.dataset.theme === "light"
+    let backdrop = makeBackdrop(ctx, vp.width, vp.height, light)
+    let vignette = makeVignette(ctx, vp.width, vp.height, light)
 
     // Shared "attractor" point to create occasional soft overlap/connection
     const target = {
@@ -483,9 +497,8 @@ export function ConstellationBackground() {
     const getCohortPull = (id: number) => (cohort.includes(id) ? 1 : 0.12)
 
     chooseCohort()
-    const retargetTl = gsap.timeline({ repeat: -1 })
-    retargetTl.call(chooseCohort)
-    retargetTl.to({}, { duration: rand(10, 18) })
+    const retargetTl = reducedMotion ? null : gsap.timeline({ repeat: -1 })
+    retargetTl?.call(chooseCohort).to({}, { duration: rand(10, 18) })
 
     // Scroll -> "travel speed". We ease it to feel like a camera inertia.
     const scroll = {
@@ -504,25 +517,7 @@ export function ConstellationBackground() {
       edgeMargin: 28,
     }
 
-    // Rebuild the star textures only when the accent color changes.
-    let accentTint = getAccentTint(document.documentElement.dataset.accent)
-    let starSprites = drawStarAtlas(atlasCtx, accentTint)
-    const updateAccentTint = () => {
-      const next = getAccentTint(document.documentElement.dataset.accent)
-      if (next.r === accentTint.r && next.g === accentTint.g && next.b === accentTint.b) return
-      accentTint = next
-      starSprites = drawStarAtlas(atlasCtx, accentTint)
-    }
-
-    const accentObserver: MutationObserver | null =
-        globalThis.MutationObserver === undefined
-            ? null
-            : new MutationObserver(() => updateAccentTint())
-
-    accentObserver?.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-accent", "style", "class"],
-    })
+    let starSprites = drawStarAtlas(atlasCtx, getAccentTint(root.dataset.accent), light)
 
     const stars: Star[] = []
     const visibleStarCount = () => Math.round(MAX_STARS * clamp(vp.width / 1000, 0.55, 1))
@@ -661,14 +656,18 @@ export function ConstellationBackground() {
         const blur = n.blurPx * source.width / (n.radius * 2)
         n.sprite = blurNebulaSprite(source, blur)
         if (n.layer === 2) n.innerSprite = blurNebulaSprite(source, blur * 0.7 / 0.92)
-        startNebulaAnimation(n, vp, () => ({ opMax, opMin }), target, getCohortPull)
+        if (light) {
+          tintNebula(n.sprite, light)
+          tintNebula(n.innerSprite, light)
+        }
+        if (!reducedMotion) startNebulaAnimation(n, vp, () => ({ opMax, opMin }), target, getCohortPull)
       }
     }
 
     const onResize = () => {
       Object.assign(vp, resizeCanvasToViewport(canvas, ctx, MAX_BACKGROUND_DPR))
-      backdrop = makeBackdrop(ctx, vp.width, vp.height)
-      vignette = makeVignette(ctx, vp.width, vp.height)
+      backdrop = makeBackdrop(ctx, vp.width, vp.height, light)
+      vignette = makeVignette(ctx, vp.width, vp.height, light)
       starCount = visibleStarCount()
 
       // keep target in bounds
@@ -685,6 +684,7 @@ export function ConstellationBackground() {
         n.x = clamp(n.x, nPad, Math.max(nPad + 1, vp.width - nPad))
         n.y = clamp(n.y, nPad, Math.max(nPad + 1, vp.height - nPad))
       }
+      if (reducedMotion) drawFrame(0, 0)
     }
 
     // Track scroll velocity
@@ -700,11 +700,11 @@ export function ConstellationBackground() {
     }
 
     globalThis.addEventListener("resize", onResize)
-    globalThis.addEventListener("scroll", onScroll, { passive: true })
+    if (!reducedMotion) globalThis.addEventListener("scroll", onScroll, { passive: true })
 
     // Subtle ambient drift
     const ambient = { driftX: 0, driftY: 0 }
-    const driftTl = gsap
+    const driftTl = reducedMotion ? null : gsap
         .timeline({ repeat: -1, yoyo: true, defaults: { ease: "sine.inOut" } })
         .to(ambient, { driftX: 18, driftY: -12, duration: 6 })
         .to(ambient, { driftX: -14, driftY: 10, duration: 6 })
@@ -818,7 +818,7 @@ export function ConstellationBackground() {
       drawNebulaSprites(ctx, vp, nebulas, {
         x: ambient.driftX * 0.95 - par * 0.04,
         y: ambient.driftY * 0.95 - par * 0.035,
-      })
+      }, light ? 0.82 : 1)
       ctx.fillStyle = vignette
       ctx.fillRect(0, 0, vp.width, vp.height)
 
@@ -830,7 +830,7 @@ export function ConstellationBackground() {
       // Subtle grain
       ctx.save()
       ctx.globalAlpha = 0.035
-      ctx.fillStyle = "#fff"
+      ctx.fillStyle = light ? "#111" : "#fff"
       const gm = style.edgeMargin
       for (let i = 0; i < 45; i++) {
         ctx.fillRect(rand(gm, vp.width - gm), rand(gm, vp.height - gm), 1, 1)
@@ -850,21 +850,41 @@ export function ConstellationBackground() {
       drawFrame(time, dt)
     }
 
-    raf = globalThis.requestAnimationFrame(loop)
+    const appearanceObserver = new MutationObserver((changes) => {
+      const nextLight = root.dataset.theme === "light"
+      if (nextLight !== light) {
+        light = nextLight
+        backdrop = makeBackdrop(ctx, vp.width, vp.height, light)
+        vignette = makeVignette(ctx, vp.width, vp.height, light)
+        for (const n of nebulas) {
+          tintNebula(n.sprite, light)
+          tintNebula(n.innerSprite, light)
+        }
+      } else if (light || !changes.some(({ attributeName }) => attributeName === "data-accent")) {
+        return
+      }
+
+      starSprites = drawStarAtlas(atlasCtx, getAccentTint(root.dataset.accent), light)
+      drawFrame(reducedMotion ? 0 : performance.now(), 0)
+    })
+    appearanceObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] })
+
+    drawFrame(reducedMotion ? 0 : performance.now(), 0)
+    if (!reducedMotion) raf = globalThis.requestAnimationFrame(loop)
 
     return () => {
       globalThis.removeEventListener("resize", onResize)
       globalThis.removeEventListener("scroll", onScroll)
       globalThis.cancelAnimationFrame(raf)
-      accentObserver?.disconnect()
-      retargetTl.kill()
+      appearanceObserver.disconnect()
+      retargetTl?.kill()
       for (const n of nebulas) {
         n.tl?.kill()
         n.driftTween?.kill()
         n.breatheTween?.kill()
       }
       gsap.killTweensOf(nebulas)
-      driftTl.kill()
+      driftTl?.kill()
     }
   }, [])
 

@@ -18,7 +18,7 @@ const PopoverContent = React.forwardRef<
       sideOffset={sideOffset}
       collisionPadding={12}
       className={cn(
-        "z-[100] w-72 rounded-2xl border border-white/12 bg-black/75 p-4 text-white shadow-[0_12px_48px_rgba(0,0,0,0.65)] backdrop-blur",
+        "z-[100] w-72 rounded-2xl border border-ink/12 bg-paper/75 p-4 text-ink shadow-[0_12px_48px_rgba(0,0,0,0.65)] backdrop-blur",
         "outline-none",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -29,7 +29,7 @@ const PopoverContent = React.forwardRef<
       {...props}
     >
       {props.children}
-      <PopoverPrimitive.Arrow className="fill-black/75" />
+      <PopoverPrimitive.Arrow className="fill-paper/75" />
     </PopoverPrimitive.Content>
   </PopoverPrimitive.Portal>
 ))

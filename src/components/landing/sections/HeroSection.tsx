@@ -11,7 +11,7 @@ function scrollToId(id: string) {
 
 function HeroBackdrop({ leftGlowClass, rightGlowClass }: Readonly<{ leftGlowClass: string; rightGlowClass: string }>) {
   return (
-    <div className="pointer-events-none absolute inset-0">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden dark:block">
       {/* subtle grid/backplate */}
       <div className="absolute inset-0 opacity-45 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-size-[64px_64px]" />
       <div className="absolute inset-0 opacity-90 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_55%)]" />
@@ -143,15 +143,15 @@ export function HeroSection() {
           <div className="mx-auto max-w-4xl text-center">
             <p
               data-hero
-              className="flex items-center justify-center gap-3 text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)/0.8)]"
+              className="flex items-center justify-center gap-3 text-xs font-semibold tracking-[0.35em] text-accent-ink"
             >
-              <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/25 font-mono text-[11px] tracking-[0.02em] text-white/75">
+              <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-ink/10 bg-paper/25 font-mono text-[11px] tracking-[0.02em] text-ink/75">
                 &lt;/&gt;
               </span>
               <span>SOFTWARE ENGINEER</span>
             </p>
 
-            <h1 data-hero className="mt-6 text-4xl font-bold leading-[1.03] text-white md:text-7xl">
+            <h1 data-hero className="mt-6 text-[clamp(2rem,10vw,3.2rem)]! font-bold leading-[1.03] text-ink">
               {/* Línea 1: fija */}
               <span className="block">David Barragán</span>
 
@@ -159,11 +159,11 @@ export function HeroSection() {
               <span className="mt-1 block text-center">
                 {/* Mobile-first: fluido, permite wrap */}
                 <span className="md:hidden">
-                  <span className="text-white">who builds </span>
-                  <span ref={accentWordRef} className="text-[rgb(var(--accent-rgb,52_211_153))]">
+                  <span className="text-ink">who builds </span>
+                  <span ref={accentWordRef} className="text-accent-ink">
                     {h.accent}
                   </span>
-                  <span ref={tailWordRef} className="text-white">
+                  <span ref={tailWordRef} className="text-ink">
                     {` ${h.tail}`}
                   </span>
                 </span>
@@ -175,12 +175,12 @@ export function HeroSection() {
 
                   {/* Texto real (encima), siempre centrado */}
                   <span className="absolute inset-0 inline-flex items-baseline justify-center gap-x-4">
-                    <span className="text-white">who builds</span>
+                    <span className="text-ink">who builds</span>
                     <span>
-                      <span ref={accentWordRef} className="text-[rgb(var(--accent-rgb,52_211_153))]">
+                      <span ref={accentWordRef} className="text-accent-ink">
                         {h.accent}
                       </span>
-                      <span ref={tailWordRef} className="text-white">
+                      <span ref={tailWordRef} className="text-ink">
                         {` ${h.tail}`}
                       </span>
                     </span>
@@ -189,14 +189,14 @@ export function HeroSection() {
               </span>
             </h1>
 
-            <p data-hero className="mx-auto mt-6 max-w-2xl text-pretty text-sm text-white/75 md:text-base">
+            <p data-hero className="mx-auto mt-6 max-w-2xl text-pretty text-sm text-ink/75 md:text-base">
               Full Stack Developer. Loving Cloud, Microservices, Spring Boot &amp; React Native.
             </p>
 
             <div data-hero className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Button
                 type="button"
-                className="rounded-full bg-white/10 text-white hover:bg-white/15"
+                className="rounded-full bg-ink/10 text-ink hover:bg-ink/15"
                 onClick={() => scrollToId("projects")}
               >
                 View Projects
@@ -206,7 +206,7 @@ export function HeroSection() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
+                  className="rounded-full border-ink/20 bg-transparent text-ink/85 hover:bg-ink/5 hover:text-ink"
                 >
                   CV
                 </Button>
@@ -221,7 +221,7 @@ export function HeroSection() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
+                  className="rounded-full border-ink/20 bg-transparent text-ink/85 hover:bg-ink/5 hover:text-ink"
                 >
                   <img src={socialLogos.LinkedIn} alt="" aria-hidden className="h-4 w-4 object-contain" />
                   <span className="ml-2">LinkedIn</span>
@@ -231,15 +231,16 @@ export function HeroSection() {
               {/* GitHub button removed */}
             </div>
 
-            <div data-hero className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            <div data-hero className="mt-8 flex flex-wrap items-center justify-center gap-4">
               {topHeroTools.map((t) => (
-                <div
+                <img
                   key={t.name}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/10"
+                  src={t.src}
+                  alt={t.name}
                   title={t.name}
-                >
-                  <img src={t.src} alt={t.name} className="h-5 w-5 object-contain" loading="lazy" />
-                </div>
+                  className="size-6 object-contain"
+                  loading="lazy"
+                />
               ))}
             </div>
 

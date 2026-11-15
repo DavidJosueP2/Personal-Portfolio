@@ -5,7 +5,7 @@ type CarouselProps = {
   images: Array<{ src: string; alt: string }>
 }
 
-const controlClassName = "grid h-11 w-11 cursor-pointer place-items-center rounded-lg border border-white/15 bg-[#111214] text-white/85 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+const controlClassName = "grid h-11 w-11 cursor-pointer place-items-center rounded-lg border border-ink/15 bg-panel text-ink/85 hover:bg-ink/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
 
 export function Carousel({ images }: Readonly<CarouselProps>) {
   const [index, setIndex] = useState(0)
@@ -31,7 +31,7 @@ export function Carousel({ images }: Readonly<CarouselProps>) {
         }
       }}
     >
-      <div className="aspect-[4/3] overflow-hidden rounded-lg border border-white/10 bg-[#090b0d]">
+      <div className="aspect-[4/3] overflow-hidden rounded-lg border border-ink/10 bg-panel">
         <img key={image.src} src={image.src} alt={image.alt} decoding="async" className="h-full w-full object-contain" />
       </div>
 
@@ -44,7 +44,7 @@ export function Carousel({ images }: Readonly<CarouselProps>) {
             aria-label="Choose screenshot"
             value={activeIndex}
             onChange={(event) => setIndex(Number(event.target.value))}
-            className="min-h-11 rounded-lg border border-white/15 bg-[#111214] px-3 text-sm tabular-nums text-white/85 [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))]"
+            className="min-h-11 min-w-20 rounded-lg border border-ink/15 bg-panel py-2 pl-3 pr-7 text-sm tabular-nums text-ink/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
           >
             {images.map(({ src }, position) => (
               <option key={src} value={position}>{position + 1} / {count}</option>

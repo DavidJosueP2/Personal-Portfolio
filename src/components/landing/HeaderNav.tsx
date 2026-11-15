@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/shadcn/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
-import { Volume2, VolumeX, Palette } from "lucide-react"
+import { Moon, Sun, Volume2, VolumeX, Palette } from "lucide-react"
 
 import { socialLogos } from "@/assets/img/tech"
 import * as React from "react"
@@ -33,8 +33,8 @@ function AccentSwatch({
       style={style}
       className={
         "h-7 w-7 rounded-md border transition " +
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 " +
-        (selected ? "border-white/80 ring-2 ring-white/20" : "border-white/15 hover:border-white/45")
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 " +
+        (selected ? "border-ink/80 ring-2 ring-ink/20" : "border-ink/15 hover:border-ink/45")
       }
       aria-label={`Set accent to ${value}`}
       aria-pressed={selected}
@@ -45,6 +45,7 @@ function AccentSwatch({
 const SECTIONS = [
   { id: "top", label: "Top" },
   { id: "experience", label: "Experience" },
+  { id: "services", label: "Services" },
   { id: "projects", label: "Projects" },
   { id: "skills", label: "Skills" },
   { id: "about", label: "About & Certificates" },
@@ -136,20 +137,20 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
         <button
           type="button"
           data-slot="accent-trigger"
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 hover:bg-white/5"
+          className="inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-ink/10 bg-paper/20 hover:bg-ink/5 sm:w-auto sm:px-3"
           aria-label="Pick accent color"
           title="Accent"
         >
-          <Palette className="h-4 w-4 text-white/70" />
+          <Palette className="h-4 w-4 text-ink/70" />
           <span
             aria-hidden
-            className="h-2.5 w-2.5 rounded-full ring-1 ring-white/15"
+            className="hidden h-2.5 w-2.5 rounded-full ring-1 ring-ink/15 sm:block"
             style={{ backgroundColor: dotColor[accent] }}
           />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 max-w-[calc(100vw-24px)]">
-        <p className="text-xs font-semibold tracking-[0.25em] text-white/70">ACCENT</p>
+        <p className="text-xs font-semibold tracking-[0.25em] text-ink/70">ACCENT</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <AccentSwatch value="lime" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#bef264" }} />
           <AccentSwatch value="emerald" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#34d399" }} />
@@ -158,8 +159,8 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
           <AccentSwatch value="amber" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fbbf24" }} />
           <AccentSwatch value="red" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fb7185" }} />
         </div>
-        <p className="mt-3 text-xs text-white/55">
-          Current: <span className="font-semibold text-white">{accent}</span>
+        <p className="mt-3 text-xs text-ink/65">
+          Current: <span className="font-semibold text-ink">{accent}</span>
         </p>
       </PopoverContent>
     </Popover>
@@ -170,7 +171,20 @@ export function HeaderNav() {
   const rootRef = React.useRef<HTMLDivElement | null>(null)
   const { enabled, toggle } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
+  const [light, setLight] = React.useState(() => document.documentElement.dataset.theme === "light")
   const active = useActiveSection()
+
+  function toggleTheme() {
+    const nextLight = !light
+    const theme = nextLight ? "light" : "dark"
+    document.documentElement.dataset.theme = theme
+    setLight(nextLight)
+    try {
+      localStorage.setItem("portfolio:theme", theme)
+    } catch {
+      // The theme still applies for this visit if storage is unavailable.
+    }
+  }
 
   React.useEffect(() => {
     const root = rootRef.current
@@ -194,13 +208,13 @@ export function HeaderNav() {
           type="button"
           data-slot="home-link"
           onClick={() => scrollToId("top")}
-          className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs font-semibold tracking-[0.35em] text-white/85 backdrop-blur hover:bg-black/45"
+          className="rounded-full border border-ink/10 bg-paper/65 px-3 py-2 text-xs font-semibold tracking-[0.35em] text-ink/85 backdrop-blur hover:bg-paper/85 sm:px-4"
         >
           DJB
         </button>
 
         <nav aria-label="Main navigation" className="hidden items-center min-[880px]:flex">
-          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur lg:gap-2">
+          <div className="flex items-center gap-1 rounded-full border border-ink/10 bg-paper/65 px-2 py-2 backdrop-blur lg:gap-2">
             {SECTIONS.filter((s) => s.id !== "top").map(({ label, id }) => (
               <Button
                 key={id}
@@ -208,10 +222,10 @@ export function HeaderNav() {
                 variant="ghost"
                 aria-current={active === id ? "location" : undefined}
                 className={
-                  "h-9 rounded-full px-2 transition lg:px-3 " +
+                  "h-9 rounded-full px-2 text-xs transition lg:px-3 lg:text-sm " +
                   (active === id
-                    ? "bg-white/10 text-white"
-                    : "text-white/70 hover:bg-white/5 hover:text-white")
+                    ? "bg-ink/10 text-ink"
+                    : "text-ink/70 hover:bg-ink/5 hover:text-ink")
                 }
                 onClick={() => scrollToId(id)}
               >
@@ -221,25 +235,36 @@ export function HeaderNav() {
           </div>
         </nav>
 
-        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur sm:gap-2 sm:px-3">
+        <div className="flex items-center gap-1 rounded-full border border-ink/10 bg-paper/65 px-2 py-2 backdrop-blur sm:gap-2 sm:px-3">
+          <button
+            type="button"
+            data-slot="theme-toggle"
+            onClick={toggleTheme}
+            aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
+            title={light ? "Dark mode" : "Light mode"}
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-ink/10 bg-paper/20 text-ink/85 hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
+          >
+            {light ? <Moon aria-hidden="true" className="size-4" /> : <Sun aria-hidden="true" className="size-4" />}
+          </button>
+
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a
             href="https://github.com/DavidJosueP2"
             target="_blank"
             rel="noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/20 hover:bg-white/5"
+            className="grid h-9 w-9 place-items-center rounded-full border border-ink/10 bg-paper/20 hover:bg-ink/5"
             aria-label="GitHub"
             title="GitHub"
           >
-            <img src={socialLogos.GitHub} alt="" aria-hidden className="h-4 w-4 object-contain" />
+            <img src={socialLogos.GitHub} alt="" aria-hidden className="h-4 w-4 object-contain" data-monochrome-logo />
           </a>
 
           <a
             href="https://www.linkedin.com/in/david-barragan-dev"
             target="_blank"
             rel="noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/20 hover:bg-white/5"
+            className="grid h-9 w-9 place-items-center rounded-full border border-ink/10 bg-paper/20 hover:bg-ink/5"
             aria-label="LinkedIn"
             title="LinkedIn"
           >
@@ -248,36 +273,16 @@ export function HeaderNav() {
 
           <button
             type="button"
+            data-slot="audio-toggle"
             onClick={toggle}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 p-0 align-middle leading-none hover:bg-white/5"
-            style={{ padding: 0, background: "rgba(0,0,0,0.2)" }}
+            className="inline-flex size-9 items-center justify-center rounded-full border border-ink/10 bg-paper/20 p-0 align-middle leading-none text-ink/70 hover:bg-ink/5"
             aria-label={enabled ? "Mute" : "Unmute"}
             title={enabled ? "Mute" : "Unmute"}
           >
             {enabled ? (
-              <Volume2
-                className="block"
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  color: "rgba(255,255,255,0.7)",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: 2,
-                }}
-              />
+              <Volume2 aria-hidden="true" className="size-[18px]" />
             ) : (
-              <VolumeX
-                className="block"
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  color: "rgba(255,255,255,0.55)",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: 2,
-                }}
-              />
+              <VolumeX aria-hidden="true" className="size-[18px]" />
             )}
           </button>
         </div>

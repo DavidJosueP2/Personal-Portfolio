@@ -5,12 +5,12 @@ const portfolioProjects = getPortfolioProjects()
 
 export function ProjectsSection() {
   return (
-    <section id="projects" aria-labelledby="projects-heading" className="portfolio-container scroll-mt-7 py-16 sm:py-20">
-      <div className="mb-7 border-b border-white/10 pb-5 sm:mb-8 sm:pb-6">
-        <h2 id="projects-heading" className="font-display text-4xl leading-none text-[#ece9e2] sm:text-5xl">
+    <section id="projects" aria-labelledby="projects-heading" className="portfolio-container portfolio-section">
+      <div className="mb-7 border-b border-ink/10 pb-5 sm:mb-8 sm:pb-6">
+        <h2 id="projects-heading" className="font-display text-4xl leading-none text-heading sm:text-5xl">
           Projects
         </h2>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#afb7bd] sm:text-base">
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-copy sm:text-base">
           Microservices on Azure, distributed data, and full-stack applications.
         </p>
       </div>

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react"
 import { BookOpen, Code2, Cpu, GraduationCap, MapPin } from "lucide-react"
-import { prefersReducedMotion } from "@/lib/motion"
-import { setupReveal } from "@/lib/gsap-reveal"
+import { setupRevealList } from "@/lib/gsap-reveal-list"
 
 const background = [
   {
@@ -27,52 +26,51 @@ export function AboutSection() {
 
   useEffect(() => {
     const root = rootRef.current
-    if (!root || prefersReducedMotion()) return
-    return setupReveal(root, { y: 14, stagger: 0.07 })
+    if (root) return setupRevealList(root)
   }, [])
 
   return (
-    <section ref={rootRef} id="about" aria-labelledby="about-heading" className="portfolio-container scroll-mt-7 py-20">
-      <div className="portfolio-glass rounded-3xl border border-white/10 p-5 sm:p-8 md:p-10 md:backdrop-blur-xs">
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-start md:gap-8 lg:gap-10">
-          <div data-reveal>
-            <h2 id="about-heading" className="font-display text-4xl leading-none text-[#ece9e2] lg:text-5xl">About</h2>
-            <p className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-[rgb(var(--accent-rgb,52_211_153))] sm:text-sm">
+    <section ref={rootRef} id="about" aria-labelledby="about-heading" className="portfolio-section portfolio-contrast-section">
+      <div className="portfolio-container">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-end md:gap-10">
+          <div data-reveal-item>
+            <h2 id="about-heading" className="font-display text-3xl leading-none tracking-tight text-heading sm:text-4xl">About</h2>
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-copy">
               <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
               Ambato, Ecuador
             </p>
-          </div>
-
-          <div data-reveal className="min-w-0 space-y-2.5 text-sm leading-relaxed text-white/75">
-            <p className="text-lg font-medium leading-snug text-[#ece9e2] sm:text-xl">
+            <p className="mt-6 max-w-[26ch] text-balance font-display text-[clamp(1.875rem,4.2vw,4rem)] leading-[1.04] tracking-[-0.035em] text-heading md:mt-9">
               I'm David Barragán, a full-stack engineer with a backend focus.
             </p>
-            <p className="max-w-[67ch]">
+          </div>
+
+          <div data-reveal-item className="min-w-0 max-w-[62ch] space-y-4 text-base leading-relaxed text-copy lg:text-lg">
+            <p>
               I work mainly with Java, Spring Boot, REST APIs, microservices, and SQL, including distributed databases.
             </p>
-            <p className="max-w-[67ch]">
+            <p>
               I care about clean architecture, validation, automated testing, and CI/CD.
               On the frontend, I build fast interfaces where motion is used with intention.
             </p>
           </div>
         </div>
 
-        <div className="mt-7 grid gap-x-8 gap-y-6 border-t border-white/12 pt-6 md:grid-cols-2 lg:mt-9 lg:gap-x-10 lg:pt-8">
+        <div className="mt-9 grid gap-x-10 gap-y-7 border-t border-ink/15 pt-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:pt-8 lg:mt-12">
           {background.map(({ id, heading, entries }) => (
             <div
               key={id}
               id={id}
-              data-reveal
-              className="min-w-0 scroll-mt-24 last:border-t last:border-white/12 last:pt-5 md:last:border-l md:last:border-t-0 md:last:pl-8 md:last:pt-0 lg:last:pl-10"
+              data-reveal-item
+              className="min-w-0 scroll-mt-24 last:border-t last:border-ink/15 last:pt-5 md:last:border-t-0 md:last:pt-0"
             >
-              <h3 className="font-display text-[1.35rem] leading-tight text-[#ece9e2] sm:text-2xl">{heading}</h3>
-              <ul className="mt-2 divide-y divide-white/10">
+              <h3 className="font-display text-[1.35rem] leading-tight text-heading md:text-2xl">{heading}</h3>
+              <ul className="mt-2 max-w-[62ch] divide-y divide-ink/12">
                 {entries.map(({ title, detail, icon: Icon }) => (
                   <li key={title} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2.5 py-3.5 last:pb-0 sm:gap-3">
-                    <Icon aria-hidden="true" className="mt-0.5 size-[1.125rem] text-[rgb(var(--accent-rgb,52_211_153)_/_0.82)]" />
+                    <Icon aria-hidden="true" className="mt-0.5 size-[1.125rem] text-copy" />
                     <div className="min-w-0 text-sm leading-snug">
-                      <p className="font-semibold text-white/90">{title}</p>
-                      <p className="mt-1 text-white/70">{detail}</p>
+                      <p className="font-semibold text-ink/90">{title}</p>
+                      <p className="mt-1 text-ink/70">{detail}</p>
                     </div>
                   </li>
                 ))}

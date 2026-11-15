@@ -128,11 +128,11 @@ function SkillChip({ icon }: Readonly<{ icon: SkillIcon }>) {
   return (
     <div
       data-skill-chip
-      className="flex min-h-16 min-w-0 items-center gap-3 rounded-2xl border border-white/12 bg-[#101518]/60 px-3 py-3 transition-colors hover:bg-white/7 sm:px-4"
+      className="flex min-h-16 min-w-0 items-center gap-3 rounded-2xl border border-ink/12 bg-panel/60 px-3 py-3 transition-colors hover:bg-ink/7 sm:px-4"
       title={displayName(icon.name)}
     >
-      <img src={icon.src} alt="" className="size-7 shrink-0 object-contain sm:size-8" loading="lazy" />
-      <span className="min-w-0 text-sm font-semibold leading-snug text-white/85">{displayName(icon.name)}</span>
+      <img src={icon.src} alt="" className="size-7 shrink-0 object-contain sm:size-8" loading="lazy" data-monochrome-logo={icon.name === "GitHub" ? "" : undefined} />
+      <span className="min-w-0 text-sm font-semibold leading-snug text-ink/85">{displayName(icon.name)}</span>
     </div>
   )
 }
@@ -143,8 +143,8 @@ function GroupSection({ title, items }: Readonly<{ title: GroupKey; items: Skill
   return (
     <div className="@container min-w-0">
       <div className="flex items-center justify-between gap-4">
-        <h3 className="text-sm font-semibold tracking-[0.12em] text-white/80">{title}</h3>
-        <span className="text-xs text-white/50">{items.length}</span>
+        <h3 className="text-sm font-semibold tracking-[0.12em] text-ink/80">{title}</h3>
+        <span className="text-xs text-ink/65">{items.length}</span>
       </div>
       <div className="mt-3 grid gap-2.5 min-[390px]:grid-cols-2 @min-[31rem]:grid-cols-3 @min-[58rem]:grid-cols-4">
         {items.map((i) => (
@@ -270,21 +270,21 @@ export function SkillsSection() {
   const showDemos = filter.length === 0
 
   return (
-    <section ref={rootRef} id="skills" className="portfolio-container py-20" aria-labelledby="skills-heading">
+    <section ref={rootRef} id="skills" className="portfolio-container portfolio-section" aria-labelledby="skills-heading">
       <header>
         <h2
           id="skills-heading"
           data-skills-head
-          className="text-3xl font-extrabold text-white md:text-4xl"
+          className="text-3xl font-extrabold text-ink md:text-4xl"
         >
-          <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Skills</span>
+          <span className="text-accent-ink">Skills</span>
         </h2>
-        <p data-skills-head className="mt-2 max-w-prose text-sm text-white/70">
+        <p data-skills-head className="mt-2 max-w-prose text-sm text-ink/70">
           What I don’t know, I{" "}
-          <span className="text-[rgb(var(--accent-rgb,52_211_153))]">learn</span>. What I learn, I perfect.
+          <span className="text-accent-ink">learn</span>. What I learn, I perfect.
         </p>
         <div className="mt-4 flex items-center gap-2">
-          <label className="text-sm text-white/70" htmlFor="skills-search">
+          <label className="text-sm text-ink/70" htmlFor="skills-search">
             Filter
           </label>
           <input
@@ -292,7 +292,7 @@ export function SkillsSection() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Spring, Java, Laravel, ..."
-            className="h-10 w-full max-w-72 rounded-full border border-white/10 bg-black/30 px-4 text-sm text-white/85 outline-none placeholder:text-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgb(var(--accent-rgb,52_211_153)_/_0.18)]"
+            className="h-10 w-full max-w-72 rounded-full border border-ink/15 bg-paper/50 px-4 text-sm text-ink/85 outline-none placeholder:text-ink/65 focus-visible:ring-2 focus-visible:ring-accent-ink"
             type="text"
           />
         </div>
@@ -330,12 +330,12 @@ export function SkillsSection() {
         <GroupSection title={tools.group} items={tools.items} />
       </div>
 
-      <p role="status" className="mt-5 text-xs text-white/55">
-        Showing <span className="font-semibold text-white/75">{shown}</span> technologies
+      <p role="status" className="mt-5 text-xs text-ink/65">
+        Showing <span className="font-semibold text-ink/75">{shown}</span> technologies
         {filter ? (
           <>
             {" "}
-            matching <span className="font-semibold text-white/75">“{filter}”</span>
+            matching <span className="font-semibold text-ink/75">“{filter}”</span>
           </>
         ) : null}
         .

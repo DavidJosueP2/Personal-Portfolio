@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where([data-theme="dark"] *));
 
 :root {
   font-family: var(--font-sans);
@@ -10,9 +10,20 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: dark;
+  --ui-paper: #000;
+  --ui-ink: #fff;
+  --ui-heading: #ece9e2;
+  --ui-copy: #afb7bd;
+  --ui-panel: #101518;
+  --ui-control: #1a1a1a;
+  --ui-glass: rgb(15 19 21 / 0.64);
+  --ui-error: #fda4af;
+  --ui-accent-ink: rgb(var(--accent-rgb, 52 211 153));
+  --section-paper: #f4f4f2;
+  --section-ink: #171717;
+  color: var(--ui-ink);
+  background-color: var(--ui-paper);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -54,17 +65,17 @@
 
 a {
   font-weight: 500;
-  color: rgb(var(--accent-rgb, 52 211 153));
+  color: var(--ui-accent-ink);
   text-decoration: inherit;
 }
 a:hover {
-  color: rgb(var(--accent-rgb, 52 211 153) / 0.9);
+  color: color-mix(in oklab, var(--ui-accent-ink) 86%, var(--ui-ink));
 }
 
 /* selection should match chosen accent */
 ::selection {
   background: rgb(var(--accent-rgb, 52 211 153) / 0.32);
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--ui-ink);
 }
 
 body {
@@ -112,7 +123,7 @@ body button:not([data-slot]):not(.shadcn-reset) {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--ui-control);
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -126,17 +137,19 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
   outline: 4px auto rgb(var(--accent-rgb, 52 211 153) / 0.35);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: rgb(var(--accent-rgb, 52 211 153) / 0.9);
-  }
-  body button:not([data-slot]):not(.shadcn-reset) {
-    background-color: #f9f9f9;
-  }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ui-paper: #fff;
+  --ui-ink: #121214;
+  --ui-heading: #161616;
+  --ui-copy: #4d4d51;
+  --ui-panel: #f8f8f8;
+  --ui-control: #ededed;
+  --ui-glass: rgb(255 255 255 / 0.74);
+  --ui-error: #9f1239;
+  --ui-accent-ink: color-mix(in oklab, rgb(var(--accent-rgb, 52 211 153)) 46%, #101014);
+  --section-paper: #141414;
+  --section-ink: #f3f3f0;
 }
 
 @theme static {
@@ -145,6 +158,13 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
 }
 
 @theme inline {
+  --color-paper: var(--ui-paper);
+  --color-ink: var(--ui-ink);
+  --color-heading: var(--ui-heading);
+  --color-copy: var(--ui-copy);
+  --color-panel: var(--ui-panel);
+  --color-error-ink: var(--ui-error);
+  --color-accent-ink: var(--ui-accent-ink);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -185,7 +205,7 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-.dark {
+:root[data-theme="dark"] {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -224,7 +244,7 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-paper text-ink;
     font-family: var(--font-sans);
   }
 
@@ -266,9 +286,9 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
   /* Use the runtime RGB accent for modern browsers */
   html {
     --primary: rgb(var(--accent-rgb, 52 211 153));
-    --ring: rgb(var(--accent-rgb, 52 211 153));
+    --ring: var(--ui-accent-ink);
     --accent: rgb(var(--accent-rgb, 52 211 153) / 0.12);
-    --accent-foreground: oklch(0.985 0 0);
+    --accent-foreground: var(--ui-ink);
 
     /* accent helpers */
     --accent-glow-strong: rgb(var(--accent-rgb, 52 211 153) / 0.24);
@@ -277,7 +297,7 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
     --accent-text: rgb(var(--accent-rgb, 52 211 153) / 0.8);
   }
 
-  .dark {
+  :root[data-theme="dark"] {
     --primary: rgb(var(--accent-rgb, 52 211 153));
     --ring: rgb(var(--accent-rgb, 52 211 153));
     --accent: rgb(var(--accent-rgb, 52 211 153) / 0.14);
@@ -295,21 +315,43 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
 @layer components {
   .portfolio-container {
     width: 100%;
-    max-width: 80rem;
-    margin-inline: auto;
-    padding-inline: clamp(1rem, 1.5vw, 1.25rem);
+    padding-inline: clamp(0.75rem, 1.4vw, 1.75rem);
+  }
+
+  .portfolio-section {
+    padding-block: clamp(2.75rem, 4.5vw, 5rem);
+    scroll-margin-top: 4.75rem;
+  }
+
+  .portfolio-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 5vw, 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+  }
+
+  .portfolio-contrast-section {
+    --ui-ink: var(--section-ink);
+    --ui-heading: var(--section-ink);
+    --ui-copy: color-mix(in srgb, var(--section-ink) 72%, var(--section-paper));
+    background-color: var(--section-paper);
+    color: var(--section-ink);
   }
 
   .portfolio-glass {
-    background-color: rgb(15 19 21 / 0.64);
+    background-color: var(--ui-glass);
     background-image:
-      radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+      radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ui-ink) 4%, transparent) 1px, transparent 1px),
       radial-gradient(ellipse at 50% 15%, rgb(var(--accent-rgb, 52 211 153) / 0.065), transparent 75%);
     background-size: 22px 22px, 100% 100%;
   }
 }
 
 @layer utilities {
+  [data-theme="light"] [data-monochrome-logo] {
+    filter: invert(1);
+  }
+
   .matrix-glow {
     text-shadow:
       0 0 10px rgba(var(--matrix-accent, 0 255 170) / 0.35),
