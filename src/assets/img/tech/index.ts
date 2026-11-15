@@ -1,4 +1,5 @@
 import Azure from "./azure.png"
+import AWS from "./AWS.svg"
 import Docker from "./Docker.png"
 import GitHub from "./GitHub.png"
 import LinkedIn from "./LinkedIn.png"
@@ -23,6 +24,7 @@ export const topHeroTools = [
   { name: "Spring", src: Spring },
   { name: "Kubernetes", src: Kubernetes },
   { name: "Azure", src: Azure },
+  { name: "AWS", src: AWS },
 ] as const
 
 export const socialLogos = {

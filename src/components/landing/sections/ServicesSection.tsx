@@ -177,7 +177,7 @@ export function ServicesSection() {
     <section id="services" aria-labelledby="services-heading" className="portfolio-container portfolio-section overflow-clip bg-[#f6f6f4] text-ink dark:bg-[#111113]">
       <header data-section-motion="heading" className="flex items-center justify-between gap-4 text-[clamp(1.05rem,2.4vw,2.5rem)] font-bold leading-none tracking-[-0.035em]">
         <p className="flex items-center gap-2.5 sm:gap-4">
-          <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-[#f1c631] dark:bg-[#ffda4c]" />
+          <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-[rgb(var(--accent-rgb,52_211_153))]" />
           <span>How can I <em className="font-serif-italic">help?</em></span>
         </p>
         <h2 id="services-heading" className="font-sans! leading-none">Services</h2>
@@ -198,7 +198,7 @@ export function ServicesSection() {
                 onFocus={(event) => {
                   if (event.currentTarget.matches(":focus-visible")) selectRef.current?.(index)
                 }}
-                className="block min-h-11 cursor-pointer rounded-sm px-1 font-sans text-[length:var(--service-word-size)] leading-[0.93] font-bold tracking-[-0.04em] text-heading aria-pressed:text-[#9c6d00] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-[1.02] dark:aria-pressed:text-[#ffda4c]"
+                className={`block min-h-11 cursor-pointer rounded-sm px-1 text-[length:var(--service-word-size)] leading-[0.93] text-heading aria-pressed:text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-[1.02] ${index % 2 === 0 ? "font-sans font-bold tracking-[-0.04em]" : "font-serif-italic tracking-[-0.025em]"}`}
               >
                 {name}
               </button>

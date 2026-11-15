@@ -93,10 +93,10 @@ function HeroTagline() {
   const inProgress = typed.length < text.length
 
   return (
-    <p ref={textRef} className="mt-1 text-base font-medium leading-tight text-ink md:text-xl">
+    <p ref={textRef} className="mt-1 max-w-full text-base font-medium leading-tight text-ink md:text-xl">
       <MaskedLine>
         <span className="sr-only">who builds {text}</span>
-        <span aria-hidden="true" className="inline-grid max-w-full text-left">
+        <span aria-hidden="true" className="inline-grid max-w-full place-items-center text-center text-balance">
           {headlineVariants.map(({ text }) => (
             <span key={text} className="invisible col-start-1 row-start-1 select-none">
               who builds {text}
@@ -106,7 +106,7 @@ function HeroTagline() {
             who builds{" "}
             <span className="text-accent-ink">{accent.slice(0, typed.length)}</span>
             {text.slice(accent.length, typed.length)}
-            {inProgress && <span className="ml-0.5 inline-block h-[0.9em] w-px bg-accent-ink align-[-0.1em]" />}
+            {inProgress && <span className="relative inline-block h-[0.9em] w-0 align-[-0.1em] after:absolute after:inset-y-0 after:left-0.5 after:w-px after:bg-accent-ink" />}
           </span>
         </span>
       </MaskedLine>
@@ -128,10 +128,10 @@ export function HeroSection() {
 
       <div className="portfolio-container relative flex min-h-svh flex-col gap-3 pt-[5.5rem] pb-5 max-[360px]:pt-20 max-[360px]:pb-4 md:gap-5 md:pt-24 md:pb-8">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <h1 id="home-title" data-section-motion="heading" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:items-baseline md:text-[clamp(5rem,11vw,15rem)]!">
-            <span className="block overflow-hidden"><span data-home-name="above" className="block pt-[0.12em] pb-[0.18em]">David</span></span>{" "}
+          <h1 id="home-title" tabIndex={-1} data-section-motion="heading" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:items-baseline md:text-[clamp(5rem,11vw,15rem)]!">
+            <span className="block overflow-hidden"><span data-home-name className="block pt-[0.12em] pb-[0.18em]">David</span></span>{" "}
             <span className="block overflow-hidden px-[0.07em]">
-              <span data-home-name="below" className="font-serif-italic block pt-[0.12em] pb-[0.18em] tracking-[-0.025em]">Barragán</span>
+              <span data-home-name className="font-serif-italic block pt-[0.12em] pb-[0.18em] tracking-[-0.025em]">Barragán</span>
             </span>
           </h1>
 
