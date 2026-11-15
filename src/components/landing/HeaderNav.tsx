@@ -2,14 +2,14 @@ import { Button } from "@/components/ui/shadcn/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
+import { prefersReducedMotion } from "@/lib/motion"
 import { Moon, Sun, Volume2, VolumeX, Palette } from "lucide-react"
 
 import { socialLogos } from "@/assets/img/tech"
 import * as React from "react"
-import { gsap } from "gsap"
 
 function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+  document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion() ? "instant" : "smooth" })
 }
 
 function AccentSwatch({
@@ -168,7 +168,6 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
 }
 
 export function HeaderNav() {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
   const { enabled, toggle } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
   const [light, setLight] = React.useState(() => document.documentElement.dataset.theme === "light")
@@ -186,24 +185,9 @@ export function HeaderNav() {
     }
   }
 
-  React.useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        root,
-        { y: -16, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 0.8, ease: "power2.out" }
-      )
-    }, root)
-
-    return () => ctx.revert()
-  }, [])
-
   return (
-    <header className="fixed left-0 right-0 top-0 z-50">
-      <div ref={rootRef} className="portfolio-container flex items-center justify-between gap-2 py-4 sm:gap-4">
+    <header className="fixed left-0 right-0 top-0 z-50 overflow-clip">
+      <div data-home-navigation className="portfolio-container flex items-center justify-between gap-2 py-4 sm:gap-4">
         <button
           type="button"
           data-slot="home-link"

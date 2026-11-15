@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { gsap } from "gsap"
 import clinic from "@/assets/img/projects/clinic/preview.webp"
 import moderation from "@/assets/img/projects/moderation/preview.webp"
@@ -22,258 +22,212 @@ const services = [
   { name: "devops", images: [cloudQuality, devopsConsole] },
 ] as const
 
-type ServiceMotion = {
-  activate: (index: number, previous: number) => void
-  drift: (offset: number) => void
-}
-
 export function ServicesSection() {
   const stageRef = useRef<HTMLDivElement>(null)
-  const selected = useRef(0)
-  const pointerOnWord = useRef(false)
-  const motion = useRef<ServiceMotion>(null)
+  const selectRef = useRef<(index: number) => void>(null)
   const [active, setActive] = useState(0)
-
-  const select = useCallback((index: number, replay = false) => {
-    const previous = selected.current
-    if (previous === index && !replay) return
-    if (previous !== index) {
-      selected.current = index
-      setActive(index)
-    }
-    motion.current?.activate(index, previous)
-  }, [])
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage) return
-
-    const words = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-word]"))
-    const lettering = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-lettering]"))
-    const frames = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-frame]"))
-    const photographs = stage.querySelectorAll<HTMLElement>("[data-service-photo]")
-    const wide = window.matchMedia("(min-width: 48rem)")
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const follow = { duration: 0.54, ease: "power3.out" }
-    const photos = Array.from(photographs, (element, side) => ({
-      element,
-      restingAngle: side === 0 ? -8 : 7,
-      direction: side === 0 ? -1 : 1,
-      x: gsap.quickTo(element, "x", follow),
-      y: gsap.quickTo(element, "y", follow),
-      rotation: gsap.quickTo(element, "rotation", follow),
-    }))
-    let lastOffset = 0
-
-    function drift(offset: number) {
-      if (reduced.matches) return
-      const progress = gsap.utils.clamp(-1, 1, offset)
-      if (Math.abs(progress - lastOffset) < 0.018) return
-      lastOffset = progress
-
-      for (const photo of photos) {
-        photo.x(progress * photo.direction * 6)
-        photo.y(progress * (photo.direction < 0 ? 10 : 7))
-        photo.rotation(photo.restingAngle - progress * photo.direction * 4)
-      }
-    }
-
-    function place(index: number, animate: boolean) {
-      if (!stage) return
-      gsap.killTweensOf(frames)
-      if (!wide.matches) {
-        gsap.set(frames, { clearProps: "transform" })
-        return
-      }
-
-      const area = stage.getBoundingClientRect()
-      const word = words[index].getBoundingClientRect()
-      const gap = Math.max(18, Math.min(38, area.width * 0.018))
-      const framesBounds = frames.map((frame) => ({ width: frame.offsetWidth, height: frame.offsetHeight }))
-
-      frames.forEach((frame, side) => {
-        const { width, height } = framesBounds[side]
-        const left = side === 0 ? word.left - width - gap : word.right + gap
-        const x = gsap.utils.clamp(8, area.width - width - 8, left - area.left)
-        const y = word.top + (word.height - height) / 2 - area.top + (side === 0 ? -9 : 10)
-        if (animate && !reduced.matches) {
-          gsap.to(frame, { x, y, duration: side === 0 ? 0.59 : 0.67, ease: "power3.out" })
-        } else {
-          gsap.set(frame, { x, y })
-        }
-      })
-    }
-
-    const resetMotion = () => {
-      lastOffset = 0
-      for (const photo of photos) {
-        photo.x.tween.pause()
-        photo.y.tween.pause()
-        photo.rotation.tween.pause()
-        gsap.set(photo.element, { x: 0, y: 0, rotation: photo.restingAngle })
-      }
-      gsap.killTweensOf(lettering)
-      gsap.set(lettering, { clearProps: "transform,opacity" })
-      place(selected.current, false)
-    }
-
-    motion.current = {
-      activate(index, previous) {
-        if (index !== previous) place(index, true)
-        if (reduced.matches) return
-
-        const direction = index < previous ? -1 : 1
-        gsap.fromTo(lettering[index], {
-          yPercent: direction * 12,
-          scaleY: 0.9,
-          opacity: 0.7,
-        }, {
-          yPercent: 0,
-          scaleY: 1,
-          opacity: 1,
-          duration: 0.46,
-          ease: "power3.out",
-          overwrite: true,
-          clearProps: "transform,opacity",
-        })
-
-        const word = words[index].getBoundingClientRect()
-        const center = window.innerHeight / 2
-        drift((word.top + word.height / 2 - center) / Math.max(1, center * 0.54))
-      },
-      drift,
-    }
-
-    resetMotion()
-    reduced.addEventListener("change", resetMotion)
-    const resize = new ResizeObserver(() => place(selected.current, false))
-    resize.observe(stage)
-    words.forEach((word) => resize.observe(word))
-
-    return () => {
-      resize.disconnect()
-      reduced.removeEventListener("change", resetMotion)
-      gsap.killTweensOf(frames)
-      gsap.killTweensOf(lettering)
-      gsap.killTweensOf(photographs)
-      motion.current = null
-    }
-  }, [])
 
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
 
-    const rows = Array.from(stage.querySelectorAll<HTMLButtonElement>("[data-service-option]"))
-    let frame = 0
+    const rows = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-row]"))
+    const photos = Array.from(stage.querySelectorAll<HTMLElement>("[data-service-frame]"), (frame, side) => ({
+      frame,
+      face: frame.querySelector<HTMLElement>("[data-service-photo]")!,
+      images: frame.querySelectorAll<HTMLImageElement>("img"),
+      direction: side === 0 ? -1 : 1,
+    }))
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const easeFlip = gsap.parseEase("sine.inOut")
+    const progress = { position: 0 }
+    let centers: number[] = []
+    let shown = 0
+    let target = 0
+    let frameRequest = 0
+    let settleTimer = 0
 
-    const selectAtCenter = () => {
-      frame = 0
-      const focused = document.activeElement
-      const center = window.innerHeight / 2
-      const offsets = rows.map((row) => {
-        const { top, height } = row.getBoundingClientRect()
-        return top + height / 2 - center
-      })
-
-      if (!pointerOnWord.current && !(stage.contains(focused) && focused?.matches(":focus-visible"))) {
-        let nearest = -1
-        let distance = center * 0.44
-        offsets.forEach((offset, index) => {
-          if (Math.abs(offset) < distance) {
-            nearest = index
-            distance = Math.abs(offset)
-          }
+    const draw = () => {
+      const { position } = progress
+      const index = Math.round(position)
+      if (index !== shown) {
+        photos.forEach(({ images }) => {
+          images[shown].dataset.active = "false"
+          images[index].dataset.active = "true"
         })
-        if (nearest >= 0) select(nearest)
+        shown = index
+        setActive(index)
       }
+      if (reduced.matches) return
 
-      motion.current?.drift(offsets[selected.current] / Math.max(1, center * 0.54))
+      const segment = position - Math.floor(position)
+      const flip = easeFlip(gsap.utils.clamp(0, 1, (segment - 0.18) / 0.64))
+      // The next image takes over edge-on, on the opposite side of the same turn.
+      const angle = (segment < 0.5 ? flip : flip - 1) * 180
+
+      for (const { frame, face, direction } of photos) {
+        const sway = Math.sin(position * 1.55 + direction)
+        const rise = Math.cos(position * 1.35 + direction)
+        frame.style.transform = `translate3d(${sway * 4}px,${rise * 7}px,0) rotateZ(${sway * 2}deg)`
+        face.style.transform = `rotateY(${direction * angle}deg)`
+      }
+    }
+    const follow = gsap.quickTo(progress, "position", { duration: 0.38, ease: "power2.out", onUpdate: draw })
+
+    const seek = (position: number, immediate = false) => {
+      if (immediate || reduced.matches) {
+        follow.tween.pause()
+        progress.position = position
+        draw()
+      } else if (position !== target) {
+        follow(position, progress.position)
+      }
+      target = position
     }
 
-    const scheduleSelection = () => {
-      if (!frame) frame = window.requestAnimationFrame(selectAtCenter)
+    const readPosition = () => {
+      const center = window.innerHeight / 2 - stage.getBoundingClientRect().top
+      const next = centers.findIndex((rowCenter) => rowCenter > center)
+      if (next === -1) return rows.length - 1
+      if (next === 0) return 0
+      return next - 1 + (center - centers[next - 1]) / (centers[next] - centers[next - 1])
     }
 
-    const stopSelection = () => {
-      window.removeEventListener("scroll", scheduleSelection)
-      window.removeEventListener("resize", scheduleSelection)
-      window.cancelAnimationFrame(frame)
-      frame = 0
+    const measure = () => {
+      centers = rows.map((row) => row.offsetTop + row.offsetHeight / 2)
     }
 
-    const visibility = new IntersectionObserver((entries) => {
-      if (entries.at(-1)?.isIntersecting) {
-        window.addEventListener("scroll", scheduleSelection, { passive: true })
-        window.addEventListener("resize", scheduleSelection)
-        scheduleSelection()
+    const syncScroll = (immediate = false) => {
+      window.clearTimeout(settleTimer)
+      const position = readPosition()
+      const nearest = Math.round(position)
+      seek(reduced.matches ? nearest : position, immediate)
+      // Finish the turn if scrolling stops between two word centers.
+      if (!reduced.matches && position !== nearest) {
+        settleTimer = window.setTimeout(() => seek(nearest), 180)
+      }
+    }
+
+    const onScroll = () => {
+      if (frameRequest) return
+      frameRequest = window.requestAnimationFrame(() => {
+        frameRequest = 0
+        syncScroll()
+      })
+    }
+    const onResize = () => {
+      measure()
+      syncScroll(true)
+    }
+    const stop = () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onResize)
+      window.cancelAnimationFrame(frameRequest)
+      window.clearTimeout(settleTimer)
+      frameRequest = 0
+      follow.tween.pause()
+    }
+    const resetTransforms = () => {
+      for (const { frame, face } of photos) {
+        frame.style.removeProperty("transform")
+        face.style.removeProperty("transform")
+      }
+    }
+    const onMotionPreference = () => {
+      resetTransforms()
+      window.clearTimeout(settleTimer)
+      seek(Math.round(target), true)
+    }
+
+    selectRef.current = (index) => {
+      window.cancelAnimationFrame(frameRequest)
+      window.clearTimeout(settleTimer)
+      frameRequest = 0
+      seek(index)
+    }
+
+    const size = new ResizeObserver(measure)
+    size.observe(stage)
+    const visibility = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        onResize()
+        window.addEventListener("scroll", onScroll, { passive: true })
+        window.addEventListener("resize", onResize)
       } else {
-        stopSelection()
+        stop()
       }
     })
     visibility.observe(stage)
+    reduced.addEventListener("change", onMotionPreference)
 
     return () => {
       visibility.disconnect()
-      stopSelection()
+      size.disconnect()
+      reduced.removeEventListener("change", onMotionPreference)
+      selectRef.current = null
+      stop()
+      follow.tween.kill()
+      resetTransforms()
     }
-  }, [select])
+  }, [])
 
   return (
     <section id="services" aria-labelledby="services-heading" className="portfolio-container portfolio-section overflow-clip bg-[#f6f6f4] text-ink dark:bg-[#111113]">
       <header className="flex items-center justify-between gap-4 text-[clamp(1.05rem,2.4vw,2.5rem)] font-bold leading-none tracking-[-0.035em]">
         <p className="flex items-center gap-2.5 sm:gap-4">
-          <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-[rgb(var(--accent-rgb,52_211_153))]" />
+          <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-[#f1c631] dark:bg-[#ffda4c]" />
           How can I help?
         </p>
         <h2 id="services-heading" className="font-sans! leading-none">Services</h2>
       </header>
 
-      <div ref={stageRef} className="relative isolate pb-3 pt-[clamp(3.5rem,8vw,8.5rem)] md:pb-8">
-        <ul className="grid justify-items-center gap-[clamp(0.15rem,0.68vw,0.8rem)]">
+      <div ref={stageRef} className="relative isolate mt-[clamp(3.5rem,8vw,8.5rem)] mb-[clamp(1.5rem,3vw,3.5rem)] [--service-word-size:clamp(1.8rem,9.1vw,12rem)]">
+        <ul className="relative z-10 grid justify-items-center gap-[clamp(0.55rem,0.9vw,1rem)]">
           {services.map(({ name }, index) => (
-            <li key={name} className="relative z-10">
+            <li key={name} data-service-row>
               <button
                 type="button"
                 data-slot="service-word"
-                data-service-option
                 aria-pressed={active === index}
-                onPointerEnter={(event) => {
-                  if (event.pointerType !== "mouse" && event.pointerType !== "pen") return
-                  pointerOnWord.current = true
-                  select(index, true)
+                onPointerMove={(event) => {
+                  if (event.pointerType === "mouse" || event.pointerType === "pen") selectRef.current?.(index)
                 }}
-                onPointerLeave={() => { pointerOnWord.current = false }}
-                onClick={() => select(index)}
-                onFocus={(event) => select(index, event.currentTarget.matches(":focus-visible"))}
-                className="block cursor-pointer rounded-sm px-1 font-sans text-[clamp(2.6rem,10vw,12rem)] font-bold leading-[0.93] tracking-[-0.04em] text-heading focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink aria-pressed:text-accent-ink motion-safe:transition-colors motion-safe:duration-300"
+                onClick={() => selectRef.current?.(index)}
+                onFocus={(event) => {
+                  if (event.currentTarget.matches(":focus-visible")) selectRef.current?.(index)
+                }}
+                className="block min-h-11 cursor-pointer rounded-sm px-1 font-sans text-[length:var(--service-word-size)] leading-[0.93] font-bold tracking-[-0.04em] text-heading aria-pressed:text-[#9c6d00] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-[1.02] dark:aria-pressed:text-[#ffda4c]"
               >
-                <span data-service-word className="block">
-                  <span data-service-lettering className="block">{name}</span>
-                </span>
+                {name}
               </button>
             </li>
           ))}
         </ul>
 
-        <div aria-hidden="true" className="pointer-events-none mx-auto grid w-full max-w-80 grid-cols-2 gap-6 px-3 pt-9 md:absolute md:inset-0 md:block md:max-w-none md:p-0">
-          {([0, 1] as const).map((side) => (
-            <div key={side} data-service-frame className="relative w-full md:absolute md:top-0 md:left-0 md:w-[clamp(5.5rem,12vw,14rem)]">
-              <div data-service-photo className="relative aspect-[3/2] overflow-hidden rounded-[5px] bg-panel shadow-[0_13px_34px_-13px_rgb(0_0_0/0.36)]">
-                {services.map(({ name, images }, index) => (
-                  <img
-                    key={name}
-                    src={images[side]}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    data-active={index === active}
-                    className="absolute inset-0 size-full object-cover opacity-0 data-[active=true]:opacity-100 motion-safe:transition-opacity motion-safe:duration-300 motion-safe:ease-out"
-                  />
-                ))}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 inset-y-[max(1.375rem,calc(var(--service-word-size)*0.465))]">
+          <div data-service-rail className="sticky top-[50dvh] flex h-0 items-center justify-between sm:px-[clamp(0.25rem,1.45vw,1.75rem)]">
+            {([0, 1] as const).map((side) => (
+              <div
+                key={side}
+                data-service-frame
+                className={`w-[clamp(2.5rem,12.2vw,14.5rem)] shrink-0 [perspective:650px] ${side === 0 ? "-rotate-6" : "rotate-6"}`}
+              >
+                <div data-service-photo className="relative aspect-square overflow-hidden rounded-[4px] bg-panel shadow-[0_12px_28px_-11px_rgb(0_0_0/0.4)] [backface-visibility:hidden] sm:aspect-[3/2]">
+                  {services.map(({ name, images }, index) => (
+                    <img
+                      key={name}
+                      src={images[side]}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      data-active={index === 0}
+                      className="invisible absolute inset-0 size-full object-cover data-[active=true]:visible"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

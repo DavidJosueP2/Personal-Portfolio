@@ -1,79 +1,121 @@
 import { useEffect, useRef } from "react"
-import { setupRevealList } from "@/lib/gsap-reveal-list"
-
-const experience = [
-  {
-    org: "Kronhos ERP",
-    title: "Full Stack Developer",
-    period: "2025–2026 · 6 months",
-    engagement: "Professional experience",
-    location: "Ambato, Ecuador",
-    contributions: [
-      { action: "Built and integrated REST APIs", detail: "with Java and Spring Boot for the ERP frontend." },
-      { action: "Worked with SQL databases", detail: "as part of backend and frontend feature development." },
-      { action: "Created Power BI dashboards", detail: "and analyzed data for reporting." },
-    ],
-    stack: ["Java", "Spring Boot", "SQL", "Power BI"],
-  },
-  {
-    org: "EEASA",
-    title: "Backend Developer",
-    period: "2025",
-    engagement: "Freelance project",
-    location: "Ambato, Ecuador",
-    contributions: [
-      { action: "Refactored a Spring Boot system", detail: "used to manage electricity meter incidents." },
-      { action: "Updated the incident entities", detail: "and refined the rules used to validate incident data." },
-    ],
-    stack: ["Spring Boot"],
-  },
-] as const
+import { gsap } from "gsap"
+import eeasaLogo from "@/assets/img/experience/eeasa.png"
+import kronhosLogo from "@/assets/img/experience/kronhos.png"
+import workspace from "@/assets/img/experience/workspace.webp"
 
 export function ExperienceTimeline() {
-  const listRef = useRef<HTMLOListElement>(null)
+  const photoTrackRef = useRef<HTMLDivElement>(null)
+  const photoRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
-    const list = listRef.current
-    if (list) return setupRevealList(list)
+    const track = photoTrackRef.current
+    const photo = photoRef.current
+    if (!track || !photo || typeof IntersectionObserver === "undefined") return
+
+    const motion = gsap.matchMedia()
+    motion.add("(min-width: 64rem) and (prefers-reduced-motion: no-preference)", () => {
+      const follow = gsap.quickTo(photo, "y", { duration: 0.55, ease: "power2.out" })
+      let frame = 0
+      let previousY = 0
+
+      const update = () => {
+        frame = 0
+        const { top, height } = track.getBoundingClientRect()
+        const travel = Math.max(0, height - photo.offsetTop - photo.offsetHeight)
+        const y = gsap.utils.clamp(0, travel, (window.innerHeight * 0.23 - top) * 0.9)
+        if (Math.abs(y - previousY) < 0.5) return
+        previousY = y
+        follow(y)
+      }
+
+      function schedule() {
+        if (!frame) frame = window.requestAnimationFrame(update)
+      }
+
+      function stop() {
+        window.removeEventListener("scroll", schedule)
+        window.removeEventListener("resize", schedule)
+        window.cancelAnimationFrame(frame)
+        frame = 0
+      }
+
+      const visibility = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          window.addEventListener("scroll", schedule, { passive: true })
+          window.addEventListener("resize", schedule)
+          schedule()
+        } else {
+          stop()
+        }
+      })
+      visibility.observe(track)
+
+      return () => {
+        visibility.disconnect()
+        stop()
+      }
+    })
+
+    return () => motion.revert()
   }, [])
 
   return (
-    <section id="experience" aria-labelledby="experience-heading" className="portfolio-container portfolio-section border-t border-ink/12">
-      <h2 id="experience-heading" className="portfolio-section-title text-heading">
-        Experience
-      </h2>
+    <section
+      id="experience"
+      aria-labelledby="experience-heading"
+      className="portfolio-container portfolio-section bg-[#f4f4f2] dark:bg-[#151514]"
+    >
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[clamp(1.1rem,2.25vw,2.625rem)] leading-none font-bold tracking-[-0.035em] text-heading">
+        <h2 id="experience-heading" className="font-sans! sm:order-last">Experience</h2>
+        <p className="flex items-center gap-2.5 sm:gap-4">
+          <span aria-hidden="true" className="size-[0.74em] shrink-0 rounded-[0.11em] bg-accent-ink" />
+          Full-stack development
+        </p>
+      </header>
 
-      <ol ref={listRef} className="mt-7 divide-y divide-ink/12 border-y border-ink/12 md:mt-10">
-        {experience.map((role) => (
-          <li
-            key={role.org}
-            data-reveal-item
-            className="grid gap-5 py-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-10 md:py-8"
-          >
-            <div className="min-w-0">
-              <h3 className="font-display text-[clamp(1.65rem,3vw,3.25rem)] leading-tight tracking-tight text-heading">{role.org}</h3>
-              <p className="mt-1.5 text-base font-medium text-ink/85">{role.title}</p>
-              <div className="mt-3 space-y-1 text-sm leading-relaxed text-copy">
-                <p className="tabular-nums">{role.period}</p>
-                <p>{role.engagement} · {role.location}</p>
-              </div>
-            </div>
+      <div className="mt-7 grid gap-y-10 lg:mt-0 lg:grid-cols-2 lg:gap-x-8">
+        <div ref={photoTrackRef} className="relative lg:overflow-clip lg:pt-[clamp(4rem,4.75vw,6rem)]">
+          <img
+            ref={photoRef}
+            src={workspace}
+            alt=""
+            width={960}
+            height={640}
+            loading="lazy"
+            decoding="async"
+            className="block h-auto w-full max-w-[34rem] rounded-[0.25rem] lg:w-[clamp(17rem,26vw,31rem)]"
+          />
+        </div>
 
-            <div className="min-w-0 max-w-[68ch]">
-              <ul className="list-disc space-y-2.5 pl-4 text-sm leading-relaxed text-copy marker:text-accent-ink sm:text-base">
-                {role.contributions.map(({ action, detail }) => (
-                  <li key={action} className="pl-1">
-                    <strong className="font-semibold text-heading">{action}</strong>{" "}{detail}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 border-t border-ink/8 pt-3 text-sm leading-relaxed text-copy">
-                {role.stack.join(" · ")}
-              </p>
-            </div>
+        <ol role="list" className="grid max-w-[40rem] gap-14 lg:gap-[clamp(5rem,7vw,8rem)] lg:pb-[clamp(4rem,7vw,7.5rem)] xl:-mt-[0.25em]">
+          <li>
+            <h3 className="flex items-center gap-2.5 text-[clamp(1.4rem,2vw,2.2rem)] leading-tight font-bold tracking-[-0.035em] text-heading">
+              <img src={kronhosLogo} alt="" width={32} height={32} loading="lazy" decoding="async" className="size-7 shrink-0 rounded-sm bg-white object-contain p-0.5 sm:size-8" />
+              Kronhos ERP
+            </h3>
+            <p className="mt-2 text-sm font-medium text-copy sm:text-base">
+              Full Stack Developer <span aria-hidden="true">·</span> <time dateTime="2025">2025</time>–<time dateTime="2026">2026</time> <span aria-hidden="true">·</span> 6 months
+            </p>
+            <p className="mt-5 text-[clamp(1rem,1.27vw,1.375rem)] leading-[1.45] text-pretty text-copy">
+              I built <strong className="font-semibold text-heading">frontend features for the ERP</strong> and connected them to <strong className="font-semibold text-heading">REST APIs I developed in Java and Spring Boot</strong>. I used SQL to support those workflows and built <strong className="font-semibold text-heading">Power BI dashboards</strong> for reporting and data analysis.
+            </p>
           </li>
-        ))}
-      </ol>
+
+          <li>
+            <h3 className="flex items-center gap-2.5 text-[clamp(1.4rem,2vw,2.2rem)] leading-tight font-bold tracking-[-0.035em] text-heading">
+              <img src={eeasaLogo} alt="" width={32} height={32} loading="lazy" decoding="async" className="size-7 shrink-0 rounded-sm bg-white object-contain p-0.5 sm:size-8" />
+              EEASA
+            </h3>
+            <p className="mt-2 text-sm font-medium text-copy sm:text-base">
+              Backend Developer <span aria-hidden="true">·</span> <time dateTime="2025">2025</time>
+            </p>
+            <p className="mt-5 text-[clamp(1rem,1.27vw,1.375rem)] leading-[1.45] text-pretty text-copy">
+              I refactored the <strong className="font-semibold text-heading">Spring Boot backend</strong> used to manage electricity meter incidents. I updated the <strong className="font-semibold text-heading">incident data model and validation rules</strong>.
+            </p>
+          </li>
+        </ol>
+      </div>
     </section>
   )
 }
