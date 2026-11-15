@@ -141,7 +141,7 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
 
 @theme static {
   --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: "Fraunces", Georgia, serif;
+  --font-serif: "Gloock", Georgia, serif;
 }
 
 @theme inline {
@@ -293,6 +293,13 @@ body button:not([data-slot]):not(.shadcn-reset):focus-visible {
 }
 
 @layer components {
+  .portfolio-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 1.5vw, 1.25rem);
+  }
+
   .portfolio-glass {
     background-color: rgb(15 19 21 / 0.64);
     background-image:

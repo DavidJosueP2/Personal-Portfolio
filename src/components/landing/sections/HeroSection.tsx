@@ -137,7 +137,7 @@ export function HeroSection() {
 
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="relative mx-auto flex min-h-svh w-full max-w-6xl items-center justify-center px-6 py-24">
+      <div className="portfolio-container relative flex min-h-svh items-center justify-center py-24">
         <div ref={rootRef} className="w-full">
           <HeroBackdrop leftGlowClass={leftGlowClass} rightGlowClass={rightGlowClass} />
           <div className="mx-auto max-w-4xl text-center">

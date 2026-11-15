@@ -36,7 +36,7 @@ export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer ref={rootRef} className="mx-auto w-full max-w-6xl px-6 pb-10 pt-8">
+    <footer ref={rootRef} className="portfolio-container pb-10 pt-8">
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] px-6 py-5 backdrop-blur">
         {/* subtle grid + glow */}
         <div className="pointer-events-none absolute inset-0 opacity-60">

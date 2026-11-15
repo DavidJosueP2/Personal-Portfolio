@@ -32,7 +32,7 @@ export function AboutSection() {
   }, [])
 
   return (
-    <section ref={rootRef} id="about" aria-labelledby="about-heading" className="mx-auto w-full max-w-6xl scroll-mt-7 px-6 py-20">
+    <section ref={rootRef} id="about" aria-labelledby="about-heading" className="portfolio-container scroll-mt-7 py-20">
       <div className="portfolio-glass rounded-3xl border border-white/10 p-5 sm:p-8 md:p-10 md:backdrop-blur-xs">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-start md:gap-8 lg:gap-10">
           <div data-reveal>

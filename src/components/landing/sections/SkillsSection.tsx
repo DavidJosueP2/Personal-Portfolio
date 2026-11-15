@@ -1,5 +1,6 @@
 import * as React from "react"
 import { gsap } from "gsap"
+import { DeploymentDemo } from "@/components/landing/skills/DeploymentDemo"
 import { MicroservicesDemo } from "@/components/landing/skills/MicroservicesDemo"
 import { prefersReducedMotion } from "@/lib/motion"
 
@@ -140,12 +141,12 @@ function GroupSection({ title, items }: Readonly<{ title: GroupKey; items: Skill
   if (items.length === 0) return null
 
   return (
-    <div className="mt-7">
+    <div className="@container min-w-0">
       <div className="flex items-center justify-between gap-4">
         <h3 className="text-sm font-semibold tracking-[0.12em] text-white/80">{title}</h3>
         <span className="text-xs text-white/50">{items.length}</span>
       </div>
-      <div className="mt-3 grid gap-2.5 min-[390px]:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-3 grid gap-2.5 min-[390px]:grid-cols-2 @min-[31rem]:grid-cols-3 @min-[58rem]:grid-cols-4">
         {items.map((i) => (
           <SkillChip key={`${title}:${i.name}`} icon={i} />
         ))}
@@ -204,8 +205,7 @@ export function SkillsSection() {
 
     const io = new IntersectionObserver(
       (entries) => {
-        const e = entries[0]
-        if (!e?.isIntersecting) return
+        if (!entries.some((entry) => entry.isIntersecting)) return
         play()
         io.disconnect()
 
@@ -229,10 +229,10 @@ export function SkillsSection() {
           })
         }
       },
-      { root: null, rootMargin: "0px 0px -18% 0px", threshold: 0.12 }
+      { root: null, rootMargin: "0px 0px -56px 0px", threshold: 0.12 }
     )
 
-    io.observe(root)
+    io.observe(header[0] ?? root)
 
     return () => {
       io.disconnect()
@@ -265,11 +265,15 @@ export function SkillsSection() {
   }, [query])
 
   const shown = grouped.reduce((acc, g) => acc + g.items.length, 0)
+  const [frontend, backend, devops, databases, tools] = grouped
+  const filter = query.trim()
+  const showDemos = filter.length === 0
 
   return (
-    <section ref={rootRef} id="skills" className="mx-auto grid w-full max-w-6xl gap-y-6 px-6 py-20 lg:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:gap-y-4">
-      <div>
+    <section ref={rootRef} id="skills" className="portfolio-container py-20" aria-labelledby="skills-heading">
+      <header>
         <h2
+          id="skills-heading"
           data-skills-head
           className="text-3xl font-extrabold text-white md:text-4xl"
         >
@@ -279,14 +283,7 @@ export function SkillsSection() {
           What I don’t know, I{" "}
           <span className="text-[rgb(var(--accent-rgb,52_211_153))]">learn</span>. What I learn, I perfect.
         </p>
-      </div>
-
-      <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start lg:pt-3">
-        <MicroservicesDemo />
-      </div>
-
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
           <label className="text-sm text-white/70" htmlFor="skills-search">
             Filter
           </label>
@@ -299,22 +296,50 @@ export function SkillsSection() {
             type="text"
           />
         </div>
+      </header>
 
-        {grouped.map((g) => (
-          <GroupSection key={g.group} title={g.group} items={g.items} />
-        ))}
+      <div className="mt-7 grid gap-y-9">
+        <div
+          hidden={!showDemos && !frontend.items.length && !backend.items.length}
+          className={showDemos ? "grid items-center gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:gap-x-12" : undefined}
+        >
+          <div className="grid min-w-0 gap-7">
+            <GroupSection title={frontend.group} items={frontend.items} />
+            <GroupSection title={backend.group} items={backend.items} />
+          </div>
+          <div hidden={!showDemos} className="min-w-0">
+            <MicroservicesDemo />
+          </div>
+        </div>
 
-        <p className="mt-5 text-xs text-white/55">
-          Showing <span className="font-semibold text-white/75">{shown}</span> technologies
-          {query.trim().length ? (
-            <>
-              {" "}
-              matching <span className="font-semibold text-white/75">“{query.trim()}”</span>
-            </>
-          ) : null}
-          .
-        </p>
+        <div
+          hidden={!showDemos && !devops.items.length && !databases.items.length}
+          className={showDemos ? "grid items-start gap-y-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] lg:grid-rows-[auto_auto] lg:gap-x-12" : "space-y-7"}
+        >
+          <div className={showDemos ? "min-w-0 lg:col-start-2 lg:row-start-1" : undefined} hidden={!devops.items.length}>
+            <GroupSection title={devops.group} items={devops.items} />
+          </div>
+          <div hidden={!showDemos} className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center">
+            <DeploymentDemo />
+          </div>
+          <div className={showDemos ? "min-w-0 lg:col-start-2 lg:row-start-2" : undefined} hidden={!databases.items.length}>
+            <GroupSection title={databases.group} items={databases.items} />
+          </div>
+        </div>
+
+        <GroupSection title={tools.group} items={tools.items} />
       </div>
+
+      <p role="status" className="mt-5 text-xs text-white/55">
+        Showing <span className="font-semibold text-white/75">{shown}</span> technologies
+        {filter ? (
+          <>
+            {" "}
+            matching <span className="font-semibold text-white/75">“{filter}”</span>
+          </>
+        ) : null}
+        .
+      </p>
     </section>
   )
 }

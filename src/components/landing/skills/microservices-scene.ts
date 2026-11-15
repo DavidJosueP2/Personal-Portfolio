@@ -4,15 +4,13 @@ import {
   OctahedronGeometry, OrthographicCamera, QuadraticBezierCurve3, Scene, TubeGeometry,
   Vector3, WebGLRenderer,
 } from "three"
+import { CAMERA_POSITION, CAMERA_TARGET_Y, diagramColors } from "./diagram-geometry"
 import {
-  BOARD, CAMERA_HEIGHT, CAMERA_POSITION, CAMERA_TARGET_Y, DATABASE_LAYERS, NODE_BASE, NODE_BODY,
+  BOARD, CAMERA_HEIGHT, DATABASE_LAYERS, NODE_BASE, NODE_BODY,
   VIEW_HEIGHT, VIEW_WIDTH, activeNodeAt, boardGrid, databaseLinks, entryLink, nodes, packetPosition, routes,
 } from "./microservices-flow"
 
-export function createRequestScene(canvas: HTMLCanvasElement) {
-  const context = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "low-power" })
-  if (!context) return null
-
+export function createRequestScene(canvas: HTMLCanvasElement, context: WebGL2RenderingContext) {
   const renderer = new WebGLRenderer({ canvas, context, alpha: true, antialias: true })
   const scene = new Scene()
   const initialHalfWidth = CAMERA_HEIGHT * VIEW_WIDTH / VIEW_HEIGHT / 2
@@ -32,9 +30,9 @@ export function createRequestScene(canvas: HTMLCanvasElement) {
   }
 
   const accent = new Color()
-  const mutedEdge = new Color("#577482")
-  const mutedWire = new Color("#3b6171")
-  const body = new Color("#20343d")
+  const mutedEdge = new Color(diagramColors.nodeEdge)
+  const mutedWire = new Color(diagramColors.wire)
+  const body = new Color("#233238")
   const material = (color: Color | string) => retain(new MeshStandardMaterial({ color, roughness: 0.75 }))
 
   function addBox(
@@ -51,12 +49,12 @@ export function createRequestScene(canvas: HTMLCanvasElement) {
     scene.add(mesh)
   }
 
-  const boardEdge = retain(new LineBasicMaterial({ color: "#47606d" }))
-  addBox(0, 0, BOARD, material("#101b24"), boardEdge)
+  const boardEdge = retain(new LineBasicMaterial({ color: diagramColors.boardEdge }))
+  addBox(0, 0, BOARD, material(diagramColors.boardTop), boardEdge)
   const gridPoints = boardGrid.flatMap(([start, end]) => [new Vector3(...start), new Vector3(...end)])
   const grid = new LineSegments(
     retain(new BufferGeometry().setFromPoints(gridPoints)),
-    retain(new LineBasicMaterial({ color: "#304553", transparent: true, opacity: 0.58 })),
+    retain(new LineBasicMaterial({ color: diagramColors.grid, transparent: true, opacity: 0.56 })),
   )
   scene.add(grid)
 
@@ -164,4 +162,4 @@ export function createRequestScene(canvas: HTMLCanvasElement) {
   }
 }
 
-export type RequestScene = NonNullable<ReturnType<typeof createRequestScene>>
+export type RequestScene = ReturnType<typeof createRequestScene>

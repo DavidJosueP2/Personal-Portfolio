@@ -5,7 +5,7 @@ const portfolioProjects = getPortfolioProjects()
 
 export function ProjectsSection() {
   return (
-    <section id="projects" aria-labelledby="projects-heading" className="mx-auto w-full max-w-6xl scroll-mt-7 px-6 py-16 sm:py-20">
+    <section id="projects" aria-labelledby="projects-heading" className="portfolio-container scroll-mt-7 py-16 sm:py-20">
       <div className="mb-7 border-b border-white/10 pb-5 sm:mb-8 sm:pb-6">
         <h2 id="projects-heading" className="font-display text-4xl leading-none text-[#ece9e2] sm:text-5xl">
           Projects

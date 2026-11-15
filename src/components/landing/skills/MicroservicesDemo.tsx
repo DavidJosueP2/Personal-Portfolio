@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight } from "lucide-react"
 import { gsap } from "gsap"
-import { Button } from "@/components/ui/shadcn/button"
 import { useAccentTheme } from "@/context/accent-theme"
 import { prefersReducedMotion } from "@/lib/motion"
+import { DiagramAction } from "./DiagramPrimitives"
 import { RequestDiagram } from "./RequestDiagram"
-import { activeNodeAt, packetPosition, projectPoint, routes } from "./microservices-flow"
+import { activeNodeAt, packetPosition, projectPoint, routes, serviceName } from "./microservices-flow"
 import type { RequestScene } from "./microservices-scene"
 
 type Phase = "idle" | "loading" | "running" | "complete"
@@ -25,7 +24,7 @@ export function MicroservicesDemo() {
   const [webGL, setWebGL] = useState(false)
   const [phase, setPhase] = useState<Phase>("idle")
   const [replica, setReplica] = useState<number | null>(null)
-  const [activeNode, setActiveNode] = useState(0)
+  const [activeNode, setActiveNode] = useState(-1)
 
   useEffect(() => {
     const diagram = diagramRef.current
@@ -35,7 +34,9 @@ export function MicroservicesDemo() {
     const syncPlayback = () => {
       timelineRef.current?.paused(!inView.current || document.hidden)
     }
-    const observer = new IntersectionObserver(([entry]) => {
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries.at(-1)
+      if (!entry) return
       inView.current = entry.isIntersecting
       syncPlayback()
     })
@@ -86,20 +87,24 @@ export function MicroservicesDemo() {
     const canvas = canvasRef.current
     if (canvas && !sceneRef.current && !noWebGL.current) {
       const controller = new AbortController()
-      pendingLoad.current = controller
-      setPhase("loading")
       try {
-        const { createRequestScene } = await import("./microservices-scene")
-        if (controller.signal.aborted) return
-        sceneRef.current = createRequestScene(canvas)
-        noWebGL.current = !sceneRef.current
-        setWebGL(Boolean(sceneRef.current))
+        const context = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "low-power" })
+        if (context) {
+          pendingLoad.current = controller
+          setPhase("loading")
+          const { createRequestScene } = await import("./microservices-scene")
+          if (controller.signal.aborted) return
+          if (!context.isContextLost()) {
+            sceneRef.current = createRequestScene(canvas, context)
+            setWebGL(true)
+          }
+        }
       } catch {
         if (controller.signal.aborted) return
-        noWebGL.current = true
       } finally {
         if (pendingLoad.current === controller) pendingLoad.current = null
       }
+      noWebGL.current = !sceneRef.current
     }
 
     const playhead = { progress: 0 }
@@ -142,23 +147,12 @@ export function MicroservicesDemo() {
 
   const status = busy ? "Sending a simulated request."
     : phase === "complete" && replica !== null
-      ? `Response received through Trips ${replica + 1} and PostgreSQL ${replica + 1}.`
+      ? `Response received through ${serviceName(replica)} and PostgreSQL ${replica + 1}.`
       : ""
 
   return (
-    <div aria-label="Microservices" role="group" className="mx-auto w-full max-w-96 min-w-0">
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          onClick={sendRequest}
-          aria-disabled={busy}
-          className="min-h-11 rounded-full border border-white/15 bg-black/25 text-white hover:bg-white/10 aria-disabled:cursor-wait aria-disabled:opacity-65"
-        >
-          Send request
-          <ArrowRight aria-hidden="true" />
-        </Button>
-      </div>
-      <div className="mt-2 text-[rgb(var(--accent-rgb,52_211_153))]">
+    <div aria-label="Microservices" role="group" className="mx-auto w-full max-w-72 min-w-0 sm:max-w-80 2xl:max-w-[21rem]">
+      <div className="text-[rgb(var(--accent-rgb,52_211_153))]">
         <RequestDiagram
           canvasRef={canvasRef}
           diagramRef={diagramRef}
@@ -168,6 +162,7 @@ export function MicroservicesDemo() {
           activeReplica={replica}
         />
       </div>
+      <DiagramAction onClick={sendRequest} busy={busy}>Send request</DiagramAction>
       <p role="status" className="sr-only">{status}</p>
     </div>
   )

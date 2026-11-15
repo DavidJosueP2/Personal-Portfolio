@@ -1,5 +1,11 @@
 # React + TypeScript + Vite
 
+## Contact form
+
+Set `VITE_CONTACT_FORM_ENDPOINT` to the public submission URL in `.env.local` for local development and in the hosting environment before building. A [Formspree form endpoint](https://help.formspree.io/articles/building-your-form/building-an-html-form) can receive these messages in its dashboard.
+
+The form posts `name` and `message` as multipart data and requests a JSON response. The endpoint should return a successful JSON response or HTTP 204. Use a public URL without embedded credentials.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

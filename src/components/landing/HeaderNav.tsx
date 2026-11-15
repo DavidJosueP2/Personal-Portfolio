@@ -135,6 +135,7 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
       <PopoverTrigger asChild>
         <button
           type="button"
+          data-slot="accent-trigger"
           className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 hover:bg-white/5"
           aria-label="Pick accent color"
           title="Accent"
@@ -188,9 +189,10 @@ export function HeaderNav() {
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50">
-      <div ref={rootRef} className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+      <div ref={rootRef} className="portfolio-container flex items-center justify-between gap-2 py-4 sm:gap-4">
         <button
           type="button"
+          data-slot="home-link"
           onClick={() => scrollToId("top")}
           className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs font-semibold tracking-[0.35em] text-white/85 backdrop-blur hover:bg-black/45"
         >
@@ -219,7 +221,7 @@ export function HeaderNav() {
           </div>
         </nav>
 
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur sm:gap-2 sm:px-3">
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a

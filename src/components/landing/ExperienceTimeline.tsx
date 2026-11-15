@@ -38,7 +38,7 @@ export function ExperienceTimeline() {
   }, [])
 
   return (
-    <section id="experience" aria-labelledby="experience-heading" className="mx-auto w-full max-w-6xl scroll-mt-22 px-6 pb-12 pt-4 sm:pb-16 sm:pt-8">
+    <section id="experience" aria-labelledby="experience-heading" className="portfolio-container scroll-mt-22 pb-12 pt-4 sm:pb-16 sm:pt-8">
       <h2 id="experience-heading" className="font-display text-4xl leading-none text-[#ece9e2] sm:text-5xl">
         Experience
       </h2>
