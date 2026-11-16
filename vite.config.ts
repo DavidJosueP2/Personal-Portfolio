@@ -18,6 +18,14 @@ export default defineConfig({
       },
     },
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        home: path.resolve(__dirname, "index.html"),
+        contact: path.resolve(__dirname, "contact/index.html"),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

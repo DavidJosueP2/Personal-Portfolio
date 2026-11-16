@@ -59,6 +59,7 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
   const transitions = surfaces.slice(0, -1).map((surface, index) => {
     const panel = panels[index]
     const incoming = panels[index + 1]
+    const enteringContact = incoming.querySelector("#contact") !== null
     const incomingEntry = incoming.querySelector<HTMLElement>("[data-stack-entry]")!
     const items = Array.from(surface.querySelectorAll<HTMLElement>("[data-section-motion]"), (element) => ({
       element,
@@ -73,17 +74,17 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
       const travel = active ? distance * progress ** 2 * (3 - 2 * progress) : 0
       const lift = active ? distance * 0.12 * Math.sin(Math.PI * progress) ** 2 : 0
       const covered = travel * 0.25
-      const retreat = active ? gsap.utils.clamp(0, 1, (progress - 0.20) / 0.60) : 0
-      const scale = 1 - 0.06 * retreat ** 2 * (3 - 2 * retreat)
+      const retreat = active && enteringContact ? gsap.utils.clamp(0, 1, (progress - 0.12) / 0.68) : 0
+      const depth = retreat ** 2 * (3 - 2 * retreat)
 
       incomingEntry.style.translate = lift ? `0 ${-lift}px` : ""
       // Keep the cut at the incoming edge and increase coverage as the page scrolls.
       // At the end the outgoing surface is above the viewport, so it can reset.
       surface.style.translate = active ? `0 ${covered - lift}px` : ""
-      surface.style.clipPath = covered ? `inset(0 0 ${covered}px 0)` : ""
+      surface.style.clipPath = covered ? `inset(0 0 ${covered}px 0${depth ? ` round ${depth * 32}px` : ""})` : ""
       // Scale around the cut line so the panels still meet as the outgoing one recedes.
       surface.style.transformOrigin = retreat ? `center calc(100% - ${covered}px)` : ""
-      surface.style.scale = retreat ? String(scale) : ""
+      surface.style.scale = depth ? String(1 - 0.06 * depth) : ""
       for (const { element, travel: amount } of items) {
         const offset = travel * amount
         element.style.translate = offset ? `0 ${offset}px` : ""
