@@ -222,7 +222,7 @@ export function HeaderNav() {
             onClick={toggleTheme}
             aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
             title={light ? "Dark mode" : "Light mode"}
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-ink/10 bg-paper/20 text-ink/85 hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
+            className="hidden size-9 shrink-0 place-items-center rounded-full border border-ink/10 bg-paper/20 text-ink/85 hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
           >
             {light ? <Moon aria-hidden="true" className="size-4" /> : <Sun aria-hidden="true" className="size-4" />}
           </button>
