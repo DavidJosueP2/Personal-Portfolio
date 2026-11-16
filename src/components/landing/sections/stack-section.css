@@ -1,14 +1,40 @@
 .tech-stack {
+  --tech-paper: #000;
   --tech-ink: #f4f2ed;
   --tech-secondary: #aeaca7;
   --tech-accent: rgb(var(--accent-rgb, 52 211 153));
-  background: #000;
+  --tech-exit-room: clamp(11rem, 32svh, 21rem);
+  position: relative;
+  isolation: isolate;
+  background: var(--tech-paper);
   color: var(--tech-ink);
   min-block-size: 100svh;
-  padding: clamp(6.5rem, 15svh, 10rem) clamp(1.25rem, 4.8vw, 6rem) clamp(3rem, 7svh, 6rem);
+  padding: clamp(6.5rem, 15svh, 10rem) clamp(1.25rem, 4.8vw, 6rem);
+  padding-block-end: calc(clamp(3rem, 7svh, 6rem) + var(--tech-exit-room));
 }
 
+.tech-stack-trace {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tech-stack-trace path {
+  stroke: var(--tech-accent);
+  stroke-width: clamp(2.5rem, 4.9vw, 5.8rem);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+}
+
+.tech-stack-trace-compact { display: none; }
+
 .tech-stack-inner {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: clamp(2.75rem, 6.4vw, 8rem);
@@ -32,14 +58,12 @@
   word-spacing: 0.035em;
 }
 
-.tech-stack-title-mask {
-  display: block;
-  overflow: clip;
-  padding: 0.09em 0.04em 0.12em;
-  margin: -0.09em -0.04em -0.12em;
+.tech-stack-intro,
+.tech-stack-chapter-heading {
+  mix-blend-mode: difference;
 }
 
-[data-tech-intro-line] { display: block; }
+.tech-stack-heading > :is(span, em) { display: block; }
 .tech-stack-heading em { color: var(--tech-accent); letter-spacing: -0.045em; }
 
 .tech-stack-index {
@@ -79,50 +103,60 @@
 }
 
 .tech-stack-chapter {
+  position: relative;
   min-block-size: clamp(16rem, 41svh, 25rem);
+  padding-block-start: clamp(0.9rem, 3svh, 1.75rem);
   padding-block-end: clamp(2rem, 6svh, 4.5rem);
   scroll-margin-block-start: clamp(6.25rem, 28svh, 19rem);
 }
 
 .tech-stack-chapter:last-child { min-block-size: auto; }
 
-.tech-stack-rule {
-  block-size: 1px;
-  background: #343434;
-}
-
-[data-tech-rule] {
-  display: block;
-  block-size: 1px;
-  background: var(--tech-accent);
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
 .tech-stack-chapter-heading {
-  margin-block: clamp(0.9rem, 3svh, 1.75rem) 0.4rem;
-  overflow: clip;
+  position: relative;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin-block-end: 0.4rem;
+  padding-block: 0.08em 0.14em;
   font-size: clamp(2.65rem, 4.55vw, 6rem);
   font-weight: 550;
   line-height: 1;
   letter-spacing: -0.055em;
 }
 
-[data-tech-type] {
-  display: block;
-  position: relative;
-  padding-block: 0.08em 0.14em;
+.tech-stack-word { display: inline-flex; white-space: nowrap; }
+
+[data-tech-letter] {
+  display: inline-grid;
+  align-items: baseline;
 }
 
-[data-tech-tint] {
-  position: absolute;
-  inset: 0;
-  padding-block: inherit;
+[data-tech-letter] > span {
+  grid-area: 1 / 1;
+}
+
+.tech-stack-letter-serif {
   color: var(--tech-accent);
-  clip-path: inset(0 100% 0 0);
+  opacity: 0;
+}
+
+[data-tech-letter][data-turned] > span:first-child,
+.tech-stack:not([data-tech-motion]) [data-active="true"] [data-tech-letter] > span:first-child { opacity: 0; }
+
+[data-tech-letter][data-turned] > .tech-stack-letter-serif,
+.tech-stack:not([data-tech-motion]) [data-active="true"] .tech-stack-letter-serif { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-tech-letter] > span { transition: opacity 90ms linear; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tech-letter] > span { transition: none; }
+  .tech-stack-trace path { stroke-dashoffset: 0 !important; }
 }
 
 .tech-stack-tools {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(0.7rem, 1.75svh, 1rem) clamp(0.55rem, 1.6vw, 1.5rem);
@@ -153,6 +187,10 @@
 }
 
 @media (max-width: 760px) {
+  .tech-stack { --tech-exit-room: clamp(8rem, 23svh, 13rem); }
+  .tech-stack-trace path { stroke-width: clamp(1.13rem, 5.8vw, 1.95rem); }
+  .tech-stack-trace-wide { display: none; }
+  .tech-stack-trace-compact { display: initial; }
   .tech-stack-inner { grid-template-columns: minmax(0, 1fr); gap: clamp(3.4rem, 9svh, 5rem); }
   .tech-stack-intro { position: static; }
   .tech-stack-heading { font-size: clamp(3.45rem, 12vw, 6.7rem); }
