@@ -1,0 +1,37 @@
+@font-face {
+  font-family: "KH Teka Trial";
+  src: url("../../fonts-local/KH-Teka-Trial/KH Teka Trial/WOFF2/KHTekaTRIAL-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "KH Teka Trial";
+  src: url("../../fonts-local/KH-Teka-Trial/KH Teka Trial/WOFF2/KHTekaTRIAL-Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "KH Teka Trial";
+  src: url("../../fonts-local/KH-Teka-Trial/KH Teka Trial/WOFF2/KHTekaTRIAL-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "KH Teka Trial";
+  src: url("../../fonts-local/KH-Teka-Trial/KH Teka Trial/WOFF2/KHTekaTRIAL-Black.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+html:root {
+  --font-sans: "KH Teka Trial", system-ui, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-mono: var(--font-sans);
+}

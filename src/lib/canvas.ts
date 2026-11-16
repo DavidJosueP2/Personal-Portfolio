@@ -16,8 +16,8 @@ export function rand(min: number, max: number) {
   return Math.random() * (max - min) + min
 }
 
-export function resizeCanvasToViewport(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-  const dpr = Math.max(1, window.devicePixelRatio || 1)
+export function resizeCanvasToViewport(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, maxDpr = Infinity) {
+  const dpr = Math.min(Math.max(1, window.devicePixelRatio || 1), maxDpr)
   const width = window.innerWidth
   const height = window.innerHeight
 

@@ -1,0 +1,54 @@
+@media (prefers-reduced-motion: no-preference) {
+  .contact-invitation {
+    view-transition-name: contact-invitation;
+  }
+
+  ::view-transition {
+    background: #0b0b0a;
+  }
+
+  ::view-transition-group(root),
+  ::view-transition-group(contact-invitation),
+  ::view-transition-group(contact-page) {
+    animation: none;
+  }
+
+  ::view-transition-group(contact-invitation) { z-index: 1; }
+  ::view-transition-group(contact-page) { z-index: 2; }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(contact-invitation),
+  ::view-transition-new(contact-invitation) {
+    animation: none;
+  }
+
+  html[data-page="contact"]::view-transition-new(contact-page) {
+    animation: contact-page-enter 860ms cubic-bezier(0.65, 0, 0.24, 1) both;
+  }
+
+  html[data-page="contact"]::view-transition-old(root) {
+    animation: contact-background-exit 860ms cubic-bezier(0.65, 0, 0.24, 1) both;
+  }
+
+  html[data-page="contact"]::view-transition-old(contact-invitation) {
+    animation: contact-content-exit 790ms cubic-bezier(0.45, 0.06, 0.28, 1) both;
+  }
+
+  html[data-page="home"]::view-transition-old(contact-page) {
+    animation: contact-page-enter 560ms cubic-bezier(0.65, 0, 0.24, 1) reverse both;
+  }
+
+  @keyframes contact-page-enter {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes contact-background-exit {
+    to { transform: translateY(-4%); }
+  }
+
+  @keyframes contact-content-exit {
+    to { transform: translateY(-20svh); }
+  }
+}
