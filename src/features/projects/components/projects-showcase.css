@@ -4,6 +4,11 @@
   --project-muted: #5a5850;
   --project-gutter: clamp(1.5rem, 3vw, 3.5rem);
   --project-image-width: clamp(23rem, 31vw, 42rem);
+  --project-title-size: clamp(1.12rem, 1.85vw, 2.25rem);
+  --project-title-line-height: 1.15;
+  --project-link-height: 2.75rem;
+  --project-caption-height: max(var(--project-link-height), calc(var(--project-title-size) * var(--project-title-line-height) * 2 + 1px));
+  --project-lower-space: clamp(7.5rem, 17svh, 10.5rem);
   --project-stage-height: max(100svh, 43rem);
   --project-extra-space: calc(var(--project-stage-height) * 0.2);
   --ui-ink: var(--project-ink);
@@ -12,7 +17,8 @@
   isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--project-image-width) minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(clamp(7.5rem, 17svh, 10.5rem), auto);
+  /* Reserve two title lines using space above Selected and the controls. */
+  grid-template-rows: auto auto minmax(calc(var(--project-lower-space) + var(--project-link-height) - var(--project-caption-height)), auto);
   align-content: start;
   gap: clamp(1.15rem, 2.7svh, 1.9rem) clamp(2rem, 5vw, 6rem);
   min-block-size: calc(var(--project-stage-height) + var(--project-extra-space));
@@ -136,14 +142,14 @@
   text-wrap: pretty;
 }
 
-.project-caption { margin-block-start: 0.85rem; }
-.project-caption > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 0.75rem; }
+.project-caption { min-block-size: var(--project-caption-height); margin-block-start: 0.85rem; }
+.project-caption > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 0.75rem; }
 
 .project-caption h3 {
   max-width: 100%;
   font-family: var(--font-sans);
-  font-size: clamp(1.12rem, 1.85vw, 2.25rem);
-  line-height: 1.15;
+  font-size: var(--project-title-size);
+  line-height: var(--project-title-line-height);
   font-weight: 650;
   letter-spacing: -0.04em;
   text-wrap: balance;
@@ -164,7 +170,7 @@
 
 .project-gallery-link {
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: var(--project-link-height);
   align-items: center;
   gap: 0.35rem;
   font-size: 0.82rem;
@@ -224,6 +230,7 @@
   .project-spread {
     --project-gutter: clamp(1rem, 4vw, 2.5rem);
     --project-image-width: min(calc(100% - var(--project-gutter) * 2), 37rem);
+    --project-title-size: clamp(1.2rem, 4.6vw, 1.75rem);
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     row-gap: 0;
@@ -243,8 +250,7 @@
 
   .project-feature { grid-area: 2 / 1; margin-block-start: clamp(5.1rem, 18vw, 6.8rem); }
   .project-preview-anchor { width: min(100%, 37rem); margin-inline: auto; }
-  .project-caption { width: min(100%, 37rem); min-block-size: 3.85rem; margin-inline: auto; }
-  .project-caption h3 { font-size: clamp(1.2rem, 4.6vw, 1.75rem); }
+  .project-caption { width: min(100%, 37rem); min-block-size: max(3.85rem, var(--project-caption-height)); margin-inline: auto; }
 
   .project-controls {
     grid-area: 3 / 1;
