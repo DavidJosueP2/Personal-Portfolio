@@ -1,253 +1,196 @@
-import * as React from "react"
-import { gsap } from "gsap"
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import { ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/shadcn/button"
-import { useAccentTheme } from "@/context/accent-theme"
-import { prefersReducedMotion } from "@/lib/motion"
+import { scrollToSection } from "@/lib/section-stack"
 import { topHeroTools, socialLogos } from "@/assets/img/tech"
 import cvPdf from "@/assets/docs/Curriculum.pdf"
 
-function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+const headlineVariants = [
+  { accent: "products", tail: "people love." },
+  { accent: "microservices", tail: "done right." },
+  { accent: "systems", tail: "from backend to UI." },
+].map(({ accent, tail }) => ({ accent, text: `${accent} ${tail}` }))
+
+const readingTime = 4_800
+const openingPhrase = { index: 0, length: headlineVariants[0].text.length }
+
+function MaskedLine({ children, className = "" }: Readonly<{ children: ReactNode; className?: string }>) {
+  return (
+    <span className={`block overflow-hidden py-[0.12em] focus-within:overflow-visible ${className}`}>
+      <span data-home-line className="block">{children}</span>
+    </span>
+  )
 }
 
-function HeroBackdrop({ leftGlowClass, rightGlowClass }: Readonly<{ leftGlowClass: string; rightGlowClass: string }>) {
+function HeroTagline() {
+  const textRef = useRef<HTMLParagraphElement>(null)
+  const [typed, setTyped] = useState(openingPhrase)
+
+  useEffect(() => {
+    const text = textRef.current
+    if (!text) return
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
+    let phrase = openingPhrase
+    let erasing = true
+    let delay = readingTime
+    let visible = false
+    let timer = 0
+
+    const schedule = () => {
+      window.clearTimeout(timer)
+      if (!visible || document.hidden || reduced.matches) return
+
+      timer = window.setTimeout(() => {
+        if (erasing) {
+          const length = phrase.length - 1
+          if (length === 0) {
+            phrase = { index: (phrase.index + 1) % headlineVariants.length, length: 0 }
+            erasing = false
+            delay = 160
+          } else {
+            phrase = { ...phrase, length }
+            delay = 32
+          }
+        } else {
+          phrase = { ...phrase, length: phrase.length + 1 }
+          erasing = phrase.length === headlineVariants[phrase.index].text.length
+          delay = erasing ? readingTime : 58
+        }
+
+        setTyped(phrase)
+        schedule()
+      }, delay)
+    }
+
+    const onMotionSetting = () => {
+      if (reduced.matches) {
+        phrase = { ...phrase, length: headlineVariants[phrase.index].text.length }
+        erasing = true
+        delay = readingTime
+        setTyped(phrase)
+      }
+      schedule()
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      visible = entries.at(-1)?.isIntersecting ?? false
+      schedule()
+    }, { threshold: 0.5 })
+
+    observer.observe(text)
+    document.addEventListener("visibilitychange", schedule)
+    reduced.addEventListener("change", onMotionSetting)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener("visibilitychange", schedule)
+      reduced.removeEventListener("change", onMotionSetting)
+      window.clearTimeout(timer)
+    }
+  }, [])
+
+  const { accent, text } = headlineVariants[typed.index]
+  const inProgress = typed.length < text.length
+
   return (
-    <div className="pointer-events-none absolute inset-0">
-      {/* subtle grid/backplate */}
-      <div className="absolute inset-0 opacity-45 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-size-[64px_64px]" />
-      <div className="absolute inset-0 opacity-90 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_55%)]" />
-      <div className={leftGlowClass} />
-      <div className={rightGlowClass} />
-    </div>
+    <p ref={textRef} className="mt-1 max-w-full text-base font-medium leading-tight text-ink md:text-xl">
+      <MaskedLine>
+        <span className="sr-only">who builds {text}</span>
+        <span aria-hidden="true" className="inline-grid max-w-full place-items-center text-center text-balance">
+          {headlineVariants.map(({ text }) => (
+            <span key={text} className="invisible col-start-1 row-start-1 select-none">
+              who builds {text}
+            </span>
+          ))}
+          <span data-hero-typed className="col-start-1 row-start-1">
+            who builds{" "}
+            <span className="text-accent-ink">{accent.slice(0, typed.length)}</span>
+            {text.slice(accent.length, typed.length)}
+            {inProgress && <span className="relative inline-block h-[0.9em] w-0 align-[-0.1em] after:absolute after:inset-y-0 after:left-0.5 after:w-px after:bg-accent-ink" />}
+          </span>
+        </span>
+      </MaskedLine>
+    </p>
   )
 }
 
 export function HeroSection() {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
-  const accentWordRef = React.useRef<HTMLSpanElement | null>(null)
-  const tailWordRef = React.useRef<HTMLSpanElement | null>(null)
-  const { accent } = useAccentTheme()
-
-  // Only rotate the highlighted word + the ending phrase (keeps it readable)
-  const headlineVariants = React.useMemo(
-    () => [
-      { accent: "products", tail: "people love." },
-      { accent: "microservices", tail: "done right." },
-      { accent: "systems", tail: "from backend to UI." },
-    ],
-    []
-  )
-
-  const [headlineIndex, setHeadlineIndex] = React.useState(0)
-
-  React.useEffect(() => {
-    const id = globalThis.setInterval(() => {
-      setHeadlineIndex((i) => (i + 1) % headlineVariants.length)
-    }, 8200)
-
-    return () => globalThis.clearInterval(id)
-  }, [headlineVariants.length])
-
-  // Smooth transition on the changing words (more "premium" motion)
-  React.useLayoutEffect(() => {
-    if (prefersReducedMotion()) return
-
-    const a = accentWordRef.current
-    const t = tailWordRef.current
-    if (!a || !t) return
-
-    // ensure deterministic start state
-    gsap.set([a, t], { willChange: "transform,opacity,filter", transformOrigin: "50% 50%" })
-
-    const ctx = gsap.context(() => {
-      gsap.killTweensOf([a, t])
-
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
-
-      // OUT
-      tl.to(
-        [a, t],
-        {
-          duration: 0.38,
-          autoAlpha: 0,
-          y: 10,
-          skewY: 2,
-          filter: "blur(6px)",
-          ease: "power2.in",
-          stagger: 0.03,
-        },
-        0
-      )
-        // snap back position while invisible
-        .set([a, t], { y: -10, skewY: 0 }, ">")
-        // IN
-        .to(
-          [a, t],
-          {
-            duration: 0.65,
-            autoAlpha: 1,
-            y: 0,
-            filter: "blur(0px)",
-            ease: "power3.out",
-            stagger: 0.03,
-          },
-          "<+0.02"
-        )
-        // subtle settle
-        .to(
-          [a, t],
-          {
-            duration: 0.35,
-            y: 0,
-            ease: "sine.out",
-            clearProps: "filter,skewY,willChange",
-          },
-          "<+0.25"
-        )
-
-      return tl
-    })
-
-    return () => ctx.revert()
-  }, [headlineIndex])
-
-  React.useLayoutEffect(() => {
-    if (prefersReducedMotion()) return
-    const root = rootRef.current
-    if (!root) return
-
-    const ctx = gsap.context(() => {
-      gsap.set("[data-hero]", { autoAlpha: 0, y: 12 })
-
-      gsap
-        .timeline({ defaults: { ease: "power2.out" } })
-        .to("[data-hero]", { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.08 })
-    }, root)
-
-    return () => ctx.revert()
-  }, [])
-
-  const h = headlineVariants[headlineIndex]
-
-  const leftGlowClass =
-    "absolute -left-32 top-24 h-96 w-96 rounded-full blur-3xl " +
-    "bg-[rgb(var(--accent-rgb,52_211_153)_/_0.10)]"
-
-  const rightGlowClass =
-    "absolute -right-40 bottom-0 h-[28rem] w-[28rem] rounded-full blur-3xl " +
-    "bg-[rgb(var(--accent-rgb,52_211_153)_/_0.08)]"
-
   return (
-    <section id="top" className="relative overflow-hidden">
-      <div className="relative mx-auto flex min-h-svh w-full max-w-6xl items-center justify-center px-6 py-24">
-        <div ref={rootRef} className="w-full">
-          <HeroBackdrop leftGlowClass={leftGlowClass} rightGlowClass={rightGlowClass} />
-          <div className="mx-auto max-w-4xl text-center">
-            <p
-              data-hero
-              className="text-xs font-semibold tracking-[0.35em] text-[rgb(var(--accent-rgb,52_211_153)/0.8)]"
-            >
-              <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-black/25 font-mono text-[11px] tracking-[0.02em] text-white/75">
-                &lt;/&gt;
-              </span>{" "}
-              WAKE UP, DAVID BARRAGÁN
-            </p>
+    <section id="top" aria-labelledby="home-title" className="relative overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div
+          className="absolute inset-0 bg-size-[64px_64px] [--hero-grid-line:rgb(18_18_20/0.016)] dark:[--hero-grid-line:rgb(255_255_255/0.023)]"
+          style={{
+            backgroundImage: "linear-gradient(to right, var(--hero-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--hero-grid-line) 1px, transparent 1px)",
+          }}
+        />
+      </div>
 
-            <h1 data-hero className="mt-6 text-4xl font-black leading-[1.03] text-white md:text-7xl">
-              {/* Línea 1: fija */}
-              <span className="block">Software Engineer</span>
+      <div className="portfolio-container relative flex min-h-svh flex-col gap-3 pt-[5.5rem] pb-5 max-[360px]:pt-20 max-[360px]:pb-4 md:gap-5 md:pt-24 md:pb-8">
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <h1 id="home-title" tabIndex={-1} data-section-motion="heading" className="flex flex-col items-center justify-center gap-x-[0.16em] font-sans! text-[clamp(3.35rem,15.4vw,5.4rem)]! leading-[0.84]! font-bold tracking-[-0.04em] text-ink md:flex-row md:items-baseline md:text-[clamp(5rem,11vw,15rem)]!">
+            <span className="block overflow-hidden"><span data-home-name className="block pt-[0.12em] pb-[0.18em]">David</span></span>{" "}
+            <span className="block overflow-hidden px-[0.07em]">
+              <span data-home-name className="font-serif-italic block pt-[0.12em] pb-[0.18em] tracking-[-0.025em]">Barragán</span>
+            </span>
+          </h1>
 
-              {/* Línea 2: dinámica */}
-              <span className="mt-1 block text-center">
-                {/* Mobile-first: fluido, permite wrap */}
-                <span className="md:hidden">
-                  <span className="text-white">who builds </span>
-                  <span ref={accentWordRef} className="text-[rgb(var(--accent-rgb,52_211_153))]">
-                    {h.accent}
-                  </span>
-                  <span ref={tailWordRef} className="text-white">
-                    {` ${h.tail}`}
-                  </span>
-                </span>
+          <p className="mt-1 text-xs font-bold tracking-[0.22em] uppercase text-ink/85 md:mt-3 md:text-sm">
+            <MaskedLine>Software Engineer</MaskedLine>
+          </p>
+          <HeroTagline />
+          <p className="mt-3 max-w-full text-sm leading-snug text-ink/75 md:mt-4 md:text-base">
+            <MaskedLine>Full Stack Developer. Loving Cloud,</MaskedLine>{" "}
+            <MaskedLine>Microservices, Spring Boot &amp; React Native.</MaskedLine>
+          </p>
 
-                {/* Desktop+: 2 líneas estables, centradas, sin salto por cambio de longitud */}
-                <span className="relative hidden whitespace-nowrap md:block">
-                  {/* Ghost: reserva ancho para la variante más larga, pero no se ve */}
-                  <span className="invisible select-none">who builds microservices done right.</span>
-
-                  {/* Texto real (encima), siempre centrado */}
-                  <span className="absolute inset-0 inline-flex items-baseline justify-center gap-x-4">
-                    <span className="text-white">who builds</span>
-                    <span>
-                      <span ref={accentWordRef} className="text-[rgb(var(--accent-rgb,52_211_153))]">
-                        {h.accent}
-                      </span>
-                      <span ref={tailWordRef} className="text-white">
-                        {` ${h.tail}`}
-                      </span>
-                    </span>
-                  </span>
-                </span>
-              </span>
-            </h1>
-
-            <p data-hero className="mx-auto mt-6 max-w-2xl text-pretty text-sm text-white/75 md:text-base">
-              Product-grade frontend, reliable backend, and motion that never compromises performance.
-            </p>
-
-            <div data-hero className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                type="button"
-                className="rounded-full bg-white/10 text-white hover:bg-white/15"
-                onClick={() => scrollToId("projects")}
-              >
+          <MaskedLine className="mt-3 p-1 md:mt-5">
+            <span className="flex flex-wrap items-center justify-center gap-2.5">
+              <Button type="button" className="min-h-10 rounded-full bg-ink px-3 text-xs text-paper hover:bg-ink/85 min-[361px]:px-5 min-[361px]:text-sm" onClick={() => scrollToSection("projects")}>
                 View Projects
               </Button>
+              <Button asChild variant="outline" className="min-h-10 rounded-full border-ink/20 bg-transparent px-3 text-xs text-ink/85! hover:bg-ink/5 hover:text-ink! min-[361px]:px-4 min-[361px]:text-sm">
+                <a href={cvPdf} target="_blank" rel="noreferrer">CV</a>
+              </Button>
+              <Button asChild variant="outline" className="min-h-10 rounded-full border-ink/20 bg-transparent px-3 text-xs text-ink/85! hover:bg-ink/5 hover:text-ink! min-[361px]:px-4 min-[361px]:text-sm">
+                <a href="https://www.linkedin.com/in/david-barragan-dev" target="_blank" rel="noreferrer">
+                  <img src={socialLogos.LinkedIn} alt="" className="size-4 object-contain" />
+                  LinkedIn
+                </a>
+              </Button>
+            </span>
+          </MaskedLine>
 
-              <a href={cvPdf} target="_blank" rel="noreferrer" className="inline-flex">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
-                >
-                  CV
-                </Button>
-              </a>
-
-              <a
-                href="https://www.linkedin.com/in/david-barragan-dev"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full border-white/20 bg-transparent text-white/85 hover:bg-white/5 hover:text-white"
-                >
-                  <img src={socialLogos.LinkedIn} alt="" aria-hidden className="h-4 w-4 object-contain" />
-                  <span className="ml-2">LinkedIn</span>
-                </Button>
-              </a>
-
-              {/* GitHub button removed */}
-            </div>
-
-            <div data-hero className="mt-8 flex flex-wrap items-center justify-center gap-2">
-              {topHeroTools.map((t) => (
-                <div
-                  key={t.name}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/10"
-                  title={t.name}
-                >
-                  <img src={t.src} alt={t.name} className="h-5 w-5 object-contain" loading="lazy" />
-                </div>
+          <MaskedLine className="mt-3 md:mt-4">
+            <span className="flex items-center justify-center gap-3.5">
+              {topHeroTools.map(({ name, src }) => (
+                <img key={name} src={src} alt={name} title={name} className="size-5 object-contain md:size-6" />
               ))}
-            </div>
+            </span>
+          </MaskedLine>
+        </div>
 
-            <p data-hero className="mt-7 text-xs text-white/55">
-              Current accent: <span className="font-semibold text-white">{accent}</span>
-            </p>
+        <div data-section-motion="body" className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+          <p className="text-[0.8125rem] leading-tight text-ink/80 sm:text-sm md:text-base">
+            <MaskedLine><em className="font-serif-italic text-[1.12em] text-ink">Human first.</em></MaskedLine>{" "}
+            <MaskedLine>I listen closely, communicate clearly,</MaskedLine>{" "}
+            <MaskedLine>and build better with others.</MaskedLine>
+          </p>
+
+          <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap text-xs font-semibold text-ink/85 sm:gap-5 sm:text-sm">
+            <MaskedLine>Ecuador</MaskedLine>
+            <span aria-hidden="true" className="h-3.5 w-px bg-ink/25" />
+            <MaskedLine className="-m-1 p-1">
+              <button
+                type="button"
+                data-slot="explore-home"
+                onClick={() => scrollToSection("experience")}
+                className="group inline-flex min-h-10 cursor-pointer items-center gap-1.5 text-ink hover:text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
+              >
+                Scroll to explore
+                <ArrowDown aria-hidden="true" className="size-3.5 motion-safe:transition-transform motion-safe:group-hover:translate-y-0.5" />
+              </button>
+            </MaskedLine>
           </div>
         </div>
       </div>

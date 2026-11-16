@@ -1,9 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-page="home">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/sun_star.png" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/src/styles/contact-transition.css" />
+    <link rel="preload" href="/assets/fonts/Plus_Jakarta_Sans/PlusJakartaSans-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/assets/fonts/apparel-font-family/Fontspring-DEMO-apparel-regularit.otf" as="font" type="font/otf" crossorigin />
+    <style>
+      :root { --intro-paper: #080a0d; }
+      @media (prefers-reduced-motion: no-preference) {
+        @view-transition { navigation: auto; }
+        html:has(#root:empty) { background-color: var(--intro-paper); }
+      }
+    </style>
+    <script>
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual"
+      if (location.hash && performance.getEntriesByType("navigation")[0]?.type === "reload") {
+        history.replaceState(history.state, "", location.pathname + location.search)
+      }
+    </script>
     <title>David Barragán | Software Engineer</title>
   </head>
   <body>

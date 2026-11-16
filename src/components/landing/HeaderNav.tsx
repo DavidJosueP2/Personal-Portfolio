@@ -1,16 +1,11 @@
-import { Button } from "@/components/ui/shadcn/button"
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react"
+import { ArrowUpRight, Palette, Volume2, VolumeX } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
-import { Volume2, VolumeX, Palette } from "lucide-react"
-
 import { socialLogos } from "@/assets/img/tech"
-import * as React from "react"
-import { gsap } from "gsap"
-
-function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
-}
+import { PortfolioLink } from "./PortfolioLink"
+import "./site-chrome.css"
 
 function AccentSwatch({
   value,
@@ -21,7 +16,7 @@ function AccentSwatch({
   value: Accent
   current: Accent
   onSelect: (v: Accent) => void
-  style: React.CSSProperties
+  style: CSSProperties
 }>) {
   const selected = value === current
 
@@ -33,8 +28,8 @@ function AccentSwatch({
       style={style}
       className={
         "h-7 w-7 rounded-md border transition " +
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 " +
-        (selected ? "border-white/80 ring-2 ring-white/20" : "border-white/15 hover:border-white/45")
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 " +
+        (selected ? "border-ink/80 ring-2 ring-ink/20" : "border-ink/15 hover:border-ink/45")
       }
       aria-label={`Set accent to ${value}`}
       aria-pressed={selected}
@@ -43,85 +38,73 @@ function AccentSwatch({
 }
 
 const SECTIONS = [
-  { id: "top", label: "Top" },
-  { id: "about", label: "About" },
+  { id: "experience", label: "Experience" },
+  { id: "services", label: "Services" },
   { id: "projects", label: "Projects" },
-  { id: "skills", label: "Skills" },
-  { id: "certs", label: "Certificates" },
-  { id: "contact", label: "Contact" },
+  { id: "about", label: "About" },
 ] as const
 
-function useActiveSection(sectionIds: readonly string[]) {
-  const [active, setActive] = React.useState<string>(sectionIds[0] ?? "")
+function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScroll: boolean) {
+  const [surface, setSurface] = useState({ id: "", light: false })
 
-  React.useEffect(() => {
-    const els = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter(isHTMLElement)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || !followScroll) return
 
-    if (els.length === 0) return
+    const selector = "[data-stack-surface] > section[id]"
+    const panels = Array.from(document.querySelectorAll<HTMLElement>(selector)).reverse()
+    let frame = 0
+    let lastId = ""
+    let lastLight = false
+    const update = () => {
+      frame = 0
+      const { left, top, width, height } = nav.getBoundingClientRect()
+      const x = left + width / 2
+      const y = top + height / 2
+      if (y < 0 || y >= innerHeight) return
 
-    const getNavHeight = () => {
-      // header padding + nav height; keep it stable even if fonts load
-      const header = document.querySelector<HTMLElement>("header")
-      return (header?.getBoundingClientRect().height ?? 0) + 8
-    }
-
-    const pickActive = () => {
-      const offset = getNavHeight()
-      const y = offset + 8 // a line just below the header
-
-      let bestId = active
-      let bestDist = Number.POSITIVE_INFINITY
-
-      for (const el of els) {
-        const rect = el.getBoundingClientRect()
-        // distance from this section's top to our reference line
-        const d = Math.abs(rect.top - y)
-
-        // Only consider sections that are in view-ish
-        // (either their top is above the line but bottom below it, or top below line but not too far)
-        const intersectsLine = rect.top <= y && rect.bottom >= y
-        const closeEnough = rect.top >= y && rect.top <= y + 240
-
-        if (intersectsLine || closeEnough) {
-          if (d < bestDist) {
-            bestDist = d
-            bestId = el.id
-          }
-        }
+      // Hit-test the painted panels, including their scroll transforms and clipping.
+      let section: HTMLElement | null = null
+      for (const element of document.elementsFromPoint(x, y)) {
+        section = element.closest<HTMLElement>(selector)
+        if (section) break
       }
-
-      if (bestId) setActive(bestId)
+      // During a page transition the browser can hide the live panels from hit-testing.
+      section ??= panels.find((panel) => {
+        const bounds = panel.getBoundingClientRect()
+        return x >= bounds.left && x < bounds.right && y >= bounds.top && y < bounds.bottom
+      }) ?? null
+      const id = section?.id ?? ""
+      const light = section?.hasAttribute("data-nav-light") ?? false
+      if (id === lastId && light === lastLight) return
+      lastId = id
+      lastLight = light
+      setSurface({ id, light })
+    }
+    const requestUpdate = () => {
+      if (!frame) frame = requestAnimationFrame(update)
     }
 
-    // Initial pick + on scroll/resize
-    pickActive()
-
-    const onScroll = () => pickActive()
-    const onResize = () => pickActive()
-
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("resize", onResize)
-
-    // Also observe size changes (images/fonts) that can move sections.
-    const ro = new ResizeObserver(() => pickActive())
-    ro.observe(document.body)
+    update()
+    window.addEventListener("scroll", requestUpdate, { passive: true })
+    window.addEventListener("resize", requestUpdate)
+    const size = new ResizeObserver(requestUpdate)
+    size.observe(nav)
+    size.observe(document.body)
 
     return () => {
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("resize", onResize)
-      ro.disconnect()
+      window.removeEventListener("scroll", requestUpdate)
+      window.removeEventListener("resize", requestUpdate)
+      cancelAnimationFrame(frame)
+      size.disconnect()
     }
-    // sectionIds is a stable literal array; els captures real DOM nodes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionIds])
+  }, [followScroll, navRef])
 
-  return active
+  return surface
 }
 
 function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; setAccent: (a: Accent) => void }>) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = useState(false)
 
   const dotColor: Record<Accent, string> = {
     lime: "#bef264",
@@ -137,20 +120,21 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 hover:bg-white/5"
+          data-slot="accent-trigger"
+          className="site-header-icon"
           aria-label="Pick accent color"
           title="Accent"
         >
-          <Palette className="h-4 w-4 text-white/70" />
+          <Palette aria-hidden="true" className="size-4" />
           <span
             aria-hidden
-            className="h-2.5 w-2.5 rounded-full ring-1 ring-white/15"
+            className="hidden size-1.5 rounded-full sm:block"
             style={{ backgroundColor: dotColor[accent] }}
           />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 max-w-[calc(100vw-24px)]">
-        <p className="text-xs font-semibold tracking-[0.25em] text-white/70">ACCENT</p>
+        <p className="text-xs font-semibold tracking-[0.25em] text-ink/70">ACCENT</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <AccentSwatch value="lime" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#bef264" }} />
           <AccentSwatch value="emerald" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#34d399" }} />
@@ -159,86 +143,59 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
           <AccentSwatch value="amber" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fbbf24" }} />
           <AccentSwatch value="red" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fb7185" }} />
         </div>
-        <p className="mt-3 text-xs text-white/55">
-          Current: <span className="font-semibold text-white">{accent}</span>
+        <p className="mt-3 text-xs text-ink/65">
+          Current: <span className="font-semibold text-ink">{accent}</span>
         </p>
       </PopoverContent>
     </Popover>
   )
 }
 
-export function HeaderNav() {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
+export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => void }>) {
   const { enabled, toggle } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
-  const active = useActiveSection(SECTIONS.map((s) => s.id))
-
-  React.useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        root,
-        { y: -16, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 0.8, ease: "power2.out" }
-      )
-    }, root)
-
-    return () => ctx.revert()
-  }, [])
+  const navRef = useRef<HTMLElement>(null)
+  const surface = useNavigationSurface(navRef, Boolean(onSection))
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50">
-      <div ref={rootRef} className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-        <button
-          type="button"
-          onClick={() => scrollToId("top")}
-          className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs font-semibold tracking-[0.35em] text-white/85 backdrop-blur hover:bg-black/45"
-        >
+    <header className="site-header" data-surface={surface.light ? "light" : "dark"}>
+      <div data-home-navigation className="site-header-frame">
+        <PortfolioLink section="top" onSection={onSection} aria-label="David Barragán, home" className="site-header-brand">
           DJB
-        </button>
+        </PortfolioLink>
 
-        <nav className="hidden items-center md:flex">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-2 py-2 backdrop-blur">
-            {SECTIONS.filter((s) => s.id !== "top").map(({ label, id }) => (
-              <Button
-                key={id}
-                type="button"
-                variant="ghost"
-                className={
-                  "h-9 rounded-full px-3 transition " +
-                  (active === id
-                    ? "bg-white/10 text-white"
-                    : "text-white/70 hover:bg-white/5 hover:text-white")
-                }
-                onClick={() => scrollToId(id)}
-              >
-                {label}
-              </Button>
+        <nav ref={navRef} aria-label="Main navigation" className="site-header-nav">
+          <ul>
+            {SECTIONS.map(({ label, id }, index) => (
+              <li key={id}>
+                <PortfolioLink section={id} onSection={onSection} aria-current={surface.id === id ? "location" : undefined}>
+                  {label}
+                </PortfolioLink>
+                {index < SECTIONS.length - 1 && <span aria-hidden="true">,</span>}
+              </li>
             ))}
-          </div>
+          </ul>
         </nav>
 
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-2 backdrop-blur">
+        <div className="site-header-actions">
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a
             href="https://github.com/DavidJosueP2"
             target="_blank"
             rel="noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/20 hover:bg-white/5"
+            className="site-header-icon"
             aria-label="GitHub"
             title="GitHub"
           >
-            <img src={socialLogos.GitHub} alt="" aria-hidden className="h-4 w-4 object-contain" />
+            <img src={socialLogos.GitHub} alt="" className="size-4 object-contain site-header-github" />
           </a>
 
           <a
             href="https://www.linkedin.com/in/david-barragan-dev"
             target="_blank"
             rel="noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/20 hover:bg-white/5"
+            className="site-header-icon"
             aria-label="LinkedIn"
             title="LinkedIn"
           >
@@ -247,44 +204,24 @@ export function HeaderNav() {
 
           <button
             type="button"
+            data-slot="audio-toggle"
             onClick={toggle}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 p-0 align-middle leading-none hover:bg-white/5"
-            style={{ padding: 0, background: "rgba(0,0,0,0.2)" }}
+            className="site-header-icon"
             aria-label={enabled ? "Mute" : "Unmute"}
             title={enabled ? "Mute" : "Unmute"}
           >
             {enabled ? (
-              <Volume2
-                className="block"
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  color: "rgba(255,255,255,0.7)",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: 2,
-                }}
-              />
+              <Volume2 aria-hidden="true" className="size-[18px]" />
             ) : (
-              <VolumeX
-                className="block"
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  color: "rgba(255,255,255,0.55)",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: 2,
-                }}
-              />
+              <VolumeX aria-hidden="true" className="size-[18px]" />
             )}
           </button>
+
+          <a href={onSection ? "/contact/" : "#contact-form"} className="site-header-contact">
+            Get in touch <ArrowUpRight aria-hidden="true" className="size-3.5" />
+          </a>
         </div>
       </div>
     </header>
   )
-}
-
-function isHTMLElement(el: HTMLElement | null): el is HTMLElement {
-  return el instanceof HTMLElement
 }

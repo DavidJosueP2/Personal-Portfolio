@@ -1,67 +1,87 @@
-import * as React from "react"
-import { prefersReducedMotion } from "@/lib/motion"
-import { setupReveal } from "@/lib/gsap-reveal"
+import { useEffect, useRef } from "react"
+import { BookOpen, Code2, Cpu, GraduationCap, MapPin } from "lucide-react"
+import { setupRevealList } from "@/lib/gsap-reveal-list"
+
+const background = [
+  {
+    id: "education",
+    heading: "Education",
+    entries: [
+      { title: "Software Engineering", detail: "Technical University of Ambato, 7th semester.", icon: GraduationCap },
+      { title: "Continuous Learning", detail: "Certifications, self-driven projects, and hands-on building.", icon: BookOpen },
+    ],
+  },
+  {
+    id: "certs",
+    heading: "Certificates",
+    entries: [
+      { title: "Spring Boot Programming Course", detail: "Udemy · 2025", icon: Code2 },
+      { title: "ESP32 Microcontroller Programming Course", detail: "Technical University of Ambato · 2025", icon: Cpu },
+    ],
+  },
+]
 
 export function AboutSection() {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
+  const rootRef = useRef<HTMLElement>(null)
 
-  React.useEffect(() => {
-    if (prefersReducedMotion()) return
+  useEffect(() => {
     const root = rootRef.current
-    if (!root) return
-    return setupReveal(root, { y: 14, stagger: 0.08 })
+    if (root) return setupRevealList(root)
   }, [])
 
   return (
-    <section id="about" className="mx-auto w-full max-w-6xl px-6 py-20">
-      <div
-        ref={rootRef}
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/2 p-8 backdrop-blur md:p-12"
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-50">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[22px_22px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_55%)]" />
-        </div>
+    <section ref={rootRef} id="about" data-nav-light aria-labelledby="about-heading" className="portfolio-section portfolio-contrast-section">
+      <div className="portfolio-container">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-end md:gap-10">
+          <div data-reveal-item data-section-motion="heading">
+            <h2 id="about-heading" className="font-display text-3xl leading-none tracking-tight text-heading sm:text-4xl">About</h2>
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-copy">
+              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+              Ambato, Ecuador
+            </p>
+            <p className="mt-6 max-w-[26ch] text-balance text-[clamp(1.875rem,4.2vw,4rem)] leading-[1.06] tracking-[-0.035em] text-heading md:mt-9">
+              I'm David Barragán, a{" "}
+              <em className="font-serif-italic">
+                full<span className="font-sans not-italic">-</span>stack engineer
+              </em>{" "}
+              with a backend focus.
+            </p>
+          </div>
 
-        <div className="relative grid gap-10 md:grid-cols-2 md:gap-12">
-          <div>
-            <h2
-              data-reveal
-              className="text-3xl font-extrabold text-white md:text-4xl"
-              style={{ fontFamily: "Gloock, Onest, system-ui" }}
-            >
-              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">About</span>
-            </h2>
-            <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
-              Ambato, Ecuador!
+          <div data-reveal-item data-section-motion="body" className="min-w-0 max-w-[62ch] space-y-4 text-base leading-relaxed text-copy lg:text-lg">
+            <p>
+              I work mainly with Java, Spring Boot, REST APIs, microservices, and SQL, including distributed databases.
             </p>
-            <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
-              I'm David Barragán — a full‑stack engineer with a{" "}
-              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">backend</span> focus.
-              I work mainly with{" "}
-              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Java</span> +{" "}
-              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">Spring Boot</span>, REST APIs, microservices, and SQL databases, , including distributed databases.
-            </p>
-            <p data-reveal className="mt-3 max-w-prose text-sm text-white/70">
-              I care about clean architecture, validations, automated testing, and{" "}
-              <span className="text-[rgb(var(--accent-rgb,52_211_153))]">CI/CD</span>.
+            <p>
+              I care about clean architecture, validation, automated testing, and CI/CD.
               On the frontend, I build fast interfaces where motion is used with intention.
             </p>
           </div>
+        </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
-            <h3 data-reveal className="text-sm font-semibold tracking-[0.25em] text-white/80">EDUCATION</h3>
-            <div data-reveal className="mt-4 space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-white/85">Software Engineering</p>
-                <p className="mt-1 text-xs text-white/60">Technical University of Ambato, 7th semester.</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white/85">Continuous Learning</p>
-                <p className="mt-1 text-xs text-white/60">Certifications, self-driven projects, and hands-on building.</p>
-              </div>
+        <div className="mt-9 grid gap-x-10 gap-y-7 border-t border-ink/15 pt-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:pt-8 lg:mt-12">
+          {background.map(({ id, heading, entries }) => (
+            <div
+              key={id}
+              id={id}
+              data-reveal-item
+              data-section-motion="body"
+              className="min-w-0 scroll-mt-24 last:border-t last:border-ink/15 last:pt-5 md:last:border-t-0 md:last:pt-0"
+            >
+              <h3 className="font-display text-[1.35rem] leading-tight text-heading md:text-2xl">{heading}</h3>
+              <ul className="mt-2 max-w-[62ch] divide-y divide-ink/12">
+                {entries.map(({ title, detail, icon: Icon }) => (
+                  <li key={title} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2.5 py-3.5 last:pb-0 sm:gap-3">
+                    <Icon aria-hidden="true" className="mt-0.5 size-[1.125rem] text-copy" />
+                    <div className="min-w-0 text-sm leading-snug">
+                      <p className="font-semibold text-ink/90">{title}</p>
+                      <p className="mt-1 text-ink/70">{detail}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

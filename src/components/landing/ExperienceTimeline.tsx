@@ -1,89 +1,95 @@
-import * as React from "react"
-import { prefersReducedMotion } from "@/lib/motion"
-import { setupReveal } from "@/lib/gsap-reveal"
+import { useEffect, useRef } from "react"
+import { gsap } from "gsap"
+import eeasaLogo from "@/assets/img/experience/eeasa.png"
+import kronhosLogo from "@/assets/img/experience/kronhos.png"
+import portrait from "@/assets/img/experience/neon-me.webp"
+import "./experience-timeline.css"
 
-export type TimelineItem = {
-  range: string
-  title: string
-  org: string
-  location?: string
-  description: string
-}
+const experience = [
+  {
+    id: "kronhos",
+    company: "Kronhos Business Solutions Cía. Ltda.",
+    logo: kronhosLogo,
+    role: "Full Stack Developer",
+    start: "2025",
+    end: "2026",
+    duration: "6 months",
+    contribution: <>
+      <p>I built <strong>ERP modules</strong> on the frontend and connected them to REST APIs I wrote in Java and Spring&nbsp;Boot.</p>
+      <p>I also <strong>improved ERP performance</strong>, helped migrate a database, and built reports and Power&nbsp;BI dashboards.</p>
+    </>,
+  },
+  {
+    id: "eeasa",
+    company: "Empresa Eléctrica Ambato Regional Centro Norte S.A.",
+    logo: eeasaLogo,
+    role: "Backend Developer",
+    start: "2025",
+    contribution: <p>I refactored the Spring&nbsp;Boot backend for <strong>electricity meter incidents</strong>, updating the data model and its validation rules.</p>,
+  },
+] as const
 
-export function ExperienceTimeline({ items }: Readonly<{ items: TimelineItem[] }>) {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
+export function ExperienceTimeline() {
+  const rootRef = useRef<HTMLElement>(null)
+  const photoRef = useRef<HTMLImageElement>(null)
 
-  React.useEffect(() => {
-    if (prefersReducedMotion()) return
+  useEffect(() => {
     const root = rootRef.current
-    if (!root) return
-    return setupReveal(root, { y: 12, stagger: 0.06 })
+    const photo = photoRef.current
+    if (!root || !photo) return
+
+    const motion = gsap.matchMedia(root)
+    motion.add("(prefers-reduced-motion: no-preference)", (context) => {
+      let disposed = false
+      void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+        if (disposed) return
+        gsap.registerPlugin(ScrollTrigger)
+        context.add(() => {
+          const panel = root.closest<HTMLElement>("[data-stack-panel]") ?? root
+          gsap.from(photo, {
+            y: 14,
+            ease: "none",
+            scrollTrigger: { trigger: panel, start: "top 75%", end: "top 12%", scrub: 0.45 },
+          })
+        })
+      }).catch((error: unknown) => console.error("Could not start the experience animation.", error))
+
+      return () => { disposed = true }
+    })
+
+    return () => motion.revert()
   }, [])
 
-  if (!items.length) return null
-
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 pb-20">
-      <div
-        ref={rootRef}
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/2 p-8 backdrop-blur md:p-12"
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-45">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[22px_22px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_60%)]" />
+    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading">
+      <div className="experience-layout" data-section-motion="body">
+        <div className="experience-opening">
+          <h2 id="experience-heading" className="experience-heading">
+            I’m David. I build <em className="font-serif-italic">web applications</em> for the work people do every day.
+          </h2>
+          <img ref={photoRef} className="experience-portrait" src={portrait} alt="" width={1536} height={1024} loading="lazy" decoding="async" />
         </div>
 
-        <div className="relative">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h3 data-reveal className="text-sm font-semibold tracking-[0.25em] text-white/80">
-                EXPERIENCE
-              </h3>
-              <p data-reveal className="mt-2 max-w-prose text-sm text-white/70">
-                A quick timeline of what I’ve been building.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-10">
-            <ol className="relative">
-              <span aria-hidden className="absolute left-2.5 top-0 h-full w-px bg-white/10" />
-
-              {items.map((it) => (
-                <li
-                  key={`${it.range}-${it.title}`}
-                  data-reveal
-                  className="relative grid gap-6 pb-12 pl-10 md:grid-cols-[minmax(280px,420px)_minmax(0,1fr)] md:items-start md:pb-14"
-                >
-                  {/* dot */}
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-1.5 grid h-5 w-5 place-items-center rounded-full border border-white/15 bg-black/40"
-                  >
-                    <span className="h-2.5 w-2.5 rounded-full bg-[rgb(var(--accent-rgb,52_211_153))]" />
-                  </span>
-
-                  {/* left meta */}
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold tracking-[0.22em] text-white/50">{it.range}</p>
-
-                    <p className="mt-2 text-lg font-semibold leading-snug">
-                      <span className="text-[rgb(var(--accent-rgb,52_211_153))]">{it.title}</span>
-                      {it.location ? <span className="text-white/55"> · {it.location}</span> : null}
+        <ol role="list" className="experience-roles">
+          {experience.map((job) => (
+            <li key={job.id}>
+              <article className="experience-entry" aria-labelledby={`experience-${job.id}`}>
+                <header className="experience-company">
+                  <img src={job.logo} alt="" width={32} height={32} loading="lazy" decoding="async" data-company={job.id} />
+                  <div>
+                    <h3 id={`experience-${job.id}`}>{job.company}</h3>
+                    <p className="experience-role">{job.role}</p>
+                    <p className="experience-date">
+                      <time dateTime={job.start}>{job.start}</time>
+                      {"end" in job && <>–<time dateTime={job.end}>{job.end}</time> · {job.duration}</>}
                     </p>
-
-                    <p className="mt-1 text-sm font-semibold text-white/85">{it.org}</p>
                   </div>
-
-                  {/* right description */}
-                  <div className="min-w-0">
-                    <p className="text-sm leading-relaxed text-white/70">{it.description}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+                </header>
+                <div className="experience-contribution">{job.contribution}</div>
+              </article>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )

@@ -1,7 +1,9 @@
 import Azure from "./azure.png"
+import AWS from "./AWS.svg"
 import Docker from "./Docker.png"
 import GitHub from "./GitHub.png"
 import LinkedIn from "./LinkedIn.png"
+import Kubernetes from "./Kubernetes (1).png"
 import ReactLogo from "./React.png"
 import Spring from "./Spring.png"
 import TypeScript from "./TypeScript.png"
@@ -17,8 +19,13 @@ export const techLogos = [
   { name: "Nest.js", src: Nest },
 ] as const
 
-// Lista SOLO para el Hero (sin Nest)
-export const topHeroTools = techLogos.filter((t) => t.name !== "Nest.js")
+export const topHeroTools = [
+  { name: "React", src: ReactLogo },
+  { name: "Spring", src: Spring },
+  { name: "Kubernetes", src: Kubernetes },
+  { name: "Azure", src: Azure },
+  { name: "AWS", src: AWS },
+] as const
 
 export const socialLogos = {
   LinkedIn,
