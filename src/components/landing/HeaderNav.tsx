@@ -45,7 +45,7 @@ const SECTIONS = [
 ] as const
 
 function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScroll: boolean) {
-  const [surface, setSurface] = useState({ id: "", light: false })
+  const [surface, setSurface] = useState({ id: "", light: false, brandLight: false, actionsLight: false, experiencePaper: false })
 
   useEffect(() => {
     const nav = navRef.current
@@ -53,9 +53,27 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
 
     const selector = "[data-stack-surface] > section[id]"
     const panels = Array.from(document.querySelectorAll<HTMLElement>(selector)).reverse()
+    const header = nav.closest(".site-header")
+    const brand = header?.querySelector(".site-header-brand")
+    const actions = header?.querySelector(".site-header-actions")
+    const circularSheet = panels.find((panel) => panel.hasAttribute("data-circular-reveal"))?.querySelector<HTMLElement>(".experience-sheet")
     let frame = 0
-    let lastId = ""
-    let lastLight = false
+    let lastSurface = ""
+
+    // Hit-test the painted panels, including their scroll transforms and clipping.
+    const sectionAt = (x: number, y: number) => {
+      for (const element of document.elementsFromPoint(x, y)) {
+        const section = element.closest<HTMLElement>(selector)
+        if (section) return section
+      }
+      return null
+    }
+    const hasLightSurface = (element: Element | null | undefined) => {
+      if (!element) return false
+      const { left, top, width, height } = element.getBoundingClientRect()
+      return sectionAt(left + width / 2, top + height / 2)?.hasAttribute("data-nav-light") ?? false
+    }
+
     const update = () => {
       frame = 0
       const { left, top, width, height } = nav.getBoundingClientRect()
@@ -63,23 +81,22 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       const y = top + height / 2
       if (y < 0 || y >= innerHeight) return
 
-      // Hit-test the painted panels, including their scroll transforms and clipping.
-      let section: HTMLElement | null = null
-      for (const element of document.elementsFromPoint(x, y)) {
-        section = element.closest<HTMLElement>(selector)
-        if (section) break
-      }
       // During a page transition the browser can hide the live panels from hit-testing.
-      section ??= panels.find((panel) => {
+      const section = sectionAt(x, y) ?? panels.find((panel) => {
         const bounds = panel.getBoundingClientRect()
         return x >= bounds.left && x < bounds.right && y >= bounds.top && y < bounds.bottom
       }) ?? null
       const id = section?.id ?? ""
       const light = section?.hasAttribute("data-nav-light") ?? false
-      if (id === lastId && light === lastLight) return
-      lastId = id
-      lastLight = light
-      setSurface({ id, light })
+      const experience = section?.hasAttribute("data-circular-reveal") ?? false
+      const circleCrossing = experience && Boolean(circularSheet?.style.clipPath)
+      const brandLight = circleCrossing ? hasLightSurface(brand) : light
+      const actionsLight = circleCrossing ? hasLightSurface(actions) : light
+      const experiencePaper = experience && !circleCrossing
+      const key = [id, light, brandLight, actionsLight, experiencePaper].join(":")
+      if (key === lastSurface) return
+      lastSurface = key
+      setSurface({ id, light, brandLight, actionsLight, experiencePaper })
     }
     const requestUpdate = () => {
       if (!frame) frame = requestAnimationFrame(update)
@@ -158,9 +175,9 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
   const surface = useNavigationSurface(navRef, Boolean(onSection))
 
   return (
-    <header className="site-header" data-surface={surface.light ? "light" : "dark"}>
+    <header className="site-header" data-surface={surface.light ? "light" : "dark"} data-experience-paper={surface.experiencePaper || undefined}>
       <div data-home-navigation className="site-header-frame">
-        <PortfolioLink section="top" onSection={onSection} aria-label="David Barragán, home" className="site-header-brand">
+        <PortfolioLink section="top" onSection={onSection} aria-label="David Barragán, home" className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
           DJB
         </PortfolioLink>
 
@@ -177,7 +194,7 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
           </ul>
         </nav>
 
-        <div className="site-header-actions">
+        <div className="site-header-actions" data-surface={surface.actionsLight ? "light" : "dark"}>
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a

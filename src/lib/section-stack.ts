@@ -11,13 +11,15 @@ const exitTravel = {
   media: 0.07,
 }
 
+const easeEdge = (progress: number) => progress * progress * (3 - 2 * progress)
+
 export function scrollToSection(id: string) {
   const section = document.getElementById(id)
   if (!section) return
 
-  const panel = section.closest<HTMLElement>("[data-stack-panel]")
-  if (activeScroller && panel) {
-    activeScroller.scrollTo(panel)
+  const panel = section.parentElement?.matches("[data-stack-surface]") ? section.closest<HTMLElement>("[data-stack-panel]") : null
+  if (activeScroller) {
+    activeScroller.scrollTo(panel ?? section)
   } else {
     section.scrollIntoView({ behavior: prefersReducedMotion() ? "instant" : "smooth" })
   }
@@ -49,42 +51,56 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
     lerp: 0.13,
     syncTouch: false,
     prevent: (node) => node.matches('[role="dialog"], textarea'),
+    virtualScroll: (input) => {
+      if (input.event.type !== "wheel" || Math.abs(input.deltaX) >= Math.abs(input.deltaY)) return true
+
+      // Preserve fine trackpad deltas and soften larger wheel steps after Lenis normalizes them.
+      const fineStep = 32
+      const step = Math.abs(input.deltaY)
+      if (step > fineStep) input.deltaY = Math.sign(input.deltaY) * (fineStep + (step - fineStep) * 0.65)
+      return true
+    },
   })
   activeScroller = lenis
-  const tick = (seconds: number) => lenis.raf(seconds * 1000)
+  let scrollTime = 0
+  const tick = (_seconds: number, elapsedMs: number) => {
+    // Keep a delayed frame from applying too much pending scroll at once.
+    scrollTime += Math.min(elapsedMs, 1000 / 30)
+    lenis.raf(scrollTime)
+  }
   const unsubscribe = lenis.on("scroll", () => ScrollTrigger.update())
   gsap.ticker.add(tick)
 
   const surfaces = panels.map((panel) => panel.querySelector<HTMLElement>("[data-stack-surface]")!)
-  const transitions = surfaces.slice(0, -1).map((surface, index) => {
+  const transitions = surfaces.slice(0, -1).flatMap((surface, index) => {
     const panel = panels[index]
     const incoming = panels[index + 1]
+    // The circular sheet paints over the outgoing panel itself.
+    if (incoming.querySelector("[data-circular-reveal]")) return []
     const enteringContact = incoming.querySelector("#contact") !== null
     const incomingEntry = incoming.querySelector<HTMLElement>("[data-stack-entry]")!
     const items = Array.from(surface.querySelectorAll<HTMLElement>("[data-section-motion]"), (element) => ({
       element,
       travel: exitTravel[element.dataset.sectionMotion as keyof typeof exitTravel] ?? 0,
     }))
-    const animationState = { progress: 0 }
-    let distance = 0
-
-    const render = () => {
-      const { progress } = animationState
-      const active = progress > 0 && progress < 1
-      const travel = active ? distance * progress ** 2 * (3 - 2 * progress) : 0
-      const lift = active ? distance * 0.12 * Math.sin(Math.PI * progress) ** 2 : 0
-      const covered = travel * 0.25
-      const retreat = active && enteringContact ? gsap.utils.clamp(0, 1, (progress - 0.12) / 0.68) : 0
-      const depth = retreat ** 2 * (3 - 2 * retreat)
+    const render = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
+      const betweenPanels = progress > 0 && progress < 1
+      // Each offset returns to zero before the handoff, in either scroll direction.
+      const travel = betweenPanels ? (end - start) * Math.sin(Math.PI * progress) ** 2 : 0
+      const lift = travel * 0.12
+      const covered = travel * 0.13
+      const retreat = gsap.utils.clamp(0, 1, (progress - 0.12) / 0.68)
+      const release = gsap.utils.clamp(0, 1, (1 - progress) / 0.1)
+      const depth = enteringContact ? easeEdge(retreat) * easeEdge(release) : 0
 
       incomingEntry.style.translate = lift ? `0 ${-lift}px` : ""
-      // Keep the cut at the incoming edge and increase coverage as the page scrolls.
-      // At the end the outgoing surface is above the viewport, so it can reset.
-      surface.style.translate = active ? `0 ${covered - lift}px` : ""
+      // Keep the cut aligned with the incoming edge as the surfaces slide past each other.
+      surface.style.translate = travel ? `0 ${covered - lift}px` : ""
       surface.style.clipPath = covered ? `inset(0 0 ${covered}px 0${depth ? ` round ${depth * 32}px` : ""})` : ""
-      // Scale around the cut line so the panels still meet as the outgoing one recedes.
-      surface.style.transformOrigin = retreat ? `center calc(100% - ${covered}px)` : ""
-      surface.style.scale = depth ? String(1 - 0.06 * depth) : ""
+      if (enteringContact) {
+        surface.style.transformOrigin = depth ? `center calc(100% - ${covered}px)` : ""
+        surface.style.scale = depth ? String(1 - 0.06 * depth) : ""
+      }
       for (const { element, travel: amount } of items) {
         const offset = travel * amount
         element.style.translate = offset ? `0 ${offset}px` : ""
@@ -95,15 +111,11 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
       trigger: incoming,
       start: () => incoming.getBoundingClientRect().top + window.scrollY - Math.min(panel.offsetHeight, window.innerHeight),
       end: "top top",
-      scrub: true,
-      animation: gsap.to(animationState, { progress: 1, ease: "none", paused: true, onUpdate: render }),
-      onRefresh: (self) => {
-        distance = self.end - self.start
-        render()
-      },
+      onUpdate: render,
+      onRefresh: render,
     })
 
-    return { surface, incomingEntry, items, trigger }
+    return [{ surface, incomingEntry, items, trigger }]
   })
 
   const revealFocus = (event: FocusEvent) => {
