@@ -126,6 +126,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
     <section
       ref={sceneRef}
       id="projects"
+      data-nav-light
       className="project-spread"
       aria-labelledby="projects-heading"
       aria-roledescription="carousel"

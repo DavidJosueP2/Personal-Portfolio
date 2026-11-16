@@ -30,7 +30,7 @@ export function AboutSection() {
   }, [])
 
   return (
-    <section ref={rootRef} id="about" aria-labelledby="about-heading" className="portfolio-section portfolio-contrast-section">
+    <section ref={rootRef} id="about" data-nav-light aria-labelledby="about-heading" className="portfolio-section portfolio-contrast-section">
       <div className="portfolio-container">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-end md:gap-10">
           <div data-reveal-item data-section-motion="heading">

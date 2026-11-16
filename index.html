@@ -16,7 +16,9 @@
     </style>
     <script>
       if ("scrollRestoration" in history) history.scrollRestoration = "manual"
-      if (location.hash) history.replaceState(history.state, "", location.pathname + location.search)
+      if (location.hash && performance.getEntriesByType("navigation")[0]?.type === "reload") {
+        history.replaceState(history.state, "", location.pathname + location.search)
+      }
     </script>
     <title>David Barragán | Software Engineer</title>
   </head>

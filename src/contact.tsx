@@ -3,6 +3,7 @@ import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
 import { ContactPage } from "@/components/contact/ContactPage"
 import { AccentThemeProvider } from "@/context/accent-theme"
+import { AmbientAudioProvider } from "@/context/ambient-audio"
 import "./index.css"
 import "./styles/fonts.css"
 
@@ -13,7 +14,9 @@ flushSync(() => {
   root.render(
     <StrictMode>
       <AccentThemeProvider>
-        <ContactPage />
+        <AmbientAudioProvider>
+          <ContactPage />
+        </AmbientAudioProvider>
       </AccentThemeProvider>
     </StrictMode>,
   )

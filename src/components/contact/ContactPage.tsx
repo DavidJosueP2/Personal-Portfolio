@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from "react"
-import { ArrowLeft, ArrowUpRight } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/shadcn/button"
+import { HeaderNav } from "@/components/landing/HeaderNav"
+import { Footer } from "@/components/landing/Footer"
 
 const endpoint = import.meta.env.VITE_CONTACT_FORM_ENDPOINT?.trim()
 const fieldClass = "w-full min-w-0 border-b border-ink/25 bg-transparent px-0 py-3 text-base text-ink outline-none transition-colors placeholder:text-ink/50 hover:border-ink/45 focus:border-accent-ink read-only:cursor-wait"
@@ -81,15 +83,9 @@ export function ContactPage() {
   const feedback = submission.state === "error" ? submission.message : submission.state === "sent" ? "Message sent." : ""
 
   return (
-    <div className="min-h-svh bg-[#0b0b0a] text-[#f4f2ec]">
-      <header className="mx-auto flex max-w-[96rem] items-center justify-between gap-4 border-b border-ink/12 px-[clamp(1.25rem,5vw,5rem)] py-4 sm:py-6">
-        <a href="/" aria-label="David Barragán, home" className="flex min-h-11 items-center text-sm font-semibold! tracking-[0.25em] text-ink! focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink">DJB</a>
-        <a href="/" className="group inline-flex min-h-11 items-center gap-2 text-sm text-ink/75! hover:text-ink! focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink">
-          <ArrowLeft aria-hidden="true" className="size-4 motion-safe:transition-transform motion-safe:group-hover:-translate-x-1" />
-          Back to portfolio
-        </a>
-      </header>
-      <main className="mx-auto grid max-w-[96rem] gap-10 px-[clamp(1.25rem,5vw,5rem)] pt-[clamp(3rem,9vw,9rem)] pb-[clamp(3rem,7vw,7rem)] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-[clamp(2.5rem,8vw,9rem)]" aria-labelledby="contact-page-title">
+    <div id="site-top" className="flex min-h-svh flex-col bg-[#0b0b0a] text-[#f4f2ec]">
+      <HeaderNav />
+      <main className="mx-auto grid w-full max-w-[96rem] flex-1 content-start gap-10 px-[clamp(1.25rem,5vw,5rem)] pt-[clamp(6.75rem,11vw,11rem)] pb-[clamp(3rem,7vw,7rem)] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-[clamp(2.5rem,8vw,9rem)]" aria-labelledby="contact-page-title">
         <div>
           <h1 id="contact-page-title" className="font-sans! text-[clamp(3.5rem,8.6vw,9rem)]! leading-[0.96]! font-semibold tracking-[-0.055em]">
             Let’s <em className="font-serif-italic">talk.</em>
@@ -97,7 +93,7 @@ export function ContactPage() {
           <p className="mt-5 max-w-[30ch] text-pretty text-base leading-relaxed text-ink/70 sm:text-lg">Tell me what you have in mind. A few details are enough to get started.</p>
         </div>
 
-        <form onSubmit={sendMessage} className="grid min-w-0 gap-6 border-t border-ink/20 pt-7 sm:gap-8 md:mt-2" method="post" action={endpoint}>
+        <form id="contact-form" onSubmit={sendMessage} className="grid min-w-0 scroll-mt-24 gap-6 border-t border-ink/20 pt-7 sm:gap-8 md:mt-2" method="post" action={endpoint}>
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-8">
             <div className="grid min-w-0 gap-1">
               <label htmlFor="contact-name" className="text-sm font-semibold">Name</label>
@@ -128,6 +124,7 @@ export function ContactPage() {
           </div>
         </form>
       </main>
+      <Footer />
     </div>
   )
 }

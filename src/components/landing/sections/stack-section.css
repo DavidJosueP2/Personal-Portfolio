@@ -1,0 +1,166 @@
+.tech-stack {
+  --tech-ink: #f4f2ed;
+  --tech-secondary: #aeaca7;
+  --tech-accent: rgb(var(--accent-rgb, 52 211 153));
+  background: #000;
+  color: var(--tech-ink);
+  min-block-size: 100svh;
+  padding: clamp(6.5rem, 15svh, 10rem) clamp(1.25rem, 4.8vw, 6rem) clamp(3rem, 7svh, 6rem);
+}
+
+.tech-stack-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(2.75rem, 6.4vw, 8rem);
+  align-items: start;
+  max-inline-size: 112rem;
+  margin-inline: auto;
+}
+
+.tech-stack-intro {
+  position: sticky;
+  top: clamp(5.75rem, 14svh, 9rem);
+  min-inline-size: 0;
+}
+
+.tech-stack-heading {
+  font-family: var(--font-sans);
+  font-size: clamp(3.5rem, 7.7vw, 10rem);
+  font-weight: 600;
+  line-height: 0.89;
+  letter-spacing: -0.06em;
+  word-spacing: 0.035em;
+}
+
+.tech-stack-title-mask {
+  display: block;
+  overflow: clip;
+  padding: 0.09em 0.04em 0.12em;
+  margin: -0.09em -0.04em -0.12em;
+}
+
+[data-tech-intro-line] { display: block; }
+.tech-stack-heading em { color: var(--tech-accent); letter-spacing: -0.045em; }
+
+.tech-stack-index {
+  margin-block-start: clamp(2.65rem, 6.3svh, 4.5rem);
+  inline-size: max-content;
+  border-inline-start: 1px solid #343434;
+}
+
+.tech-stack-index a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding-inline: 1rem 0.35rem;
+  font-size: 0.875rem;
+  color: var(--tech-secondary);
+}
+
+.tech-stack-index a::before {
+  content: "";
+  position: absolute;
+  inset-block: 22%;
+  inset-inline-start: -1px;
+  inline-size: 2px;
+  background: currentColor;
+  opacity: 0;
+}
+
+.tech-stack-index a[aria-current],
+.tech-stack-index a:hover { color: var(--tech-accent); }
+.tech-stack-index a[aria-current]::before,
+.tech-stack-index a:hover::before { opacity: 1; }
+
+.tech-stack-index a:focus-visible {
+  outline: 1px solid var(--tech-accent);
+  outline-offset: 4px;
+}
+
+.tech-stack-chapter {
+  min-block-size: clamp(16rem, 41svh, 25rem);
+  padding-block-end: clamp(2rem, 6svh, 4.5rem);
+  scroll-margin-block-start: clamp(6.25rem, 28svh, 19rem);
+}
+
+.tech-stack-chapter:last-child { min-block-size: auto; }
+
+.tech-stack-rule {
+  block-size: 1px;
+  background: #343434;
+}
+
+[data-tech-rule] {
+  display: block;
+  block-size: 1px;
+  background: var(--tech-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.tech-stack-chapter-heading {
+  margin-block: clamp(0.9rem, 3svh, 1.75rem) 0.4rem;
+  overflow: clip;
+  font-size: clamp(2.65rem, 4.55vw, 6rem);
+  font-weight: 550;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+[data-tech-type] {
+  display: block;
+  position: relative;
+  padding-block: 0.08em 0.14em;
+}
+
+[data-tech-tint] {
+  position: absolute;
+  inset: 0;
+  padding-block: inherit;
+  color: var(--tech-accent);
+  clip-path: inset(0 100% 0 0);
+}
+
+.tech-stack-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.7rem, 1.75svh, 1rem) clamp(0.55rem, 1.6vw, 1.5rem);
+}
+
+.tech-stack-tools li { min-inline-size: 0; }
+
+[data-tech-item] {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 0.9vw, 0.8rem);
+  min-block-size: 2rem;
+  color: var(--tech-secondary);
+  font-size: clamp(0.85rem, 1.03vw, 1.1rem);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+[data-tech-item] img {
+  inline-size: clamp(1.35rem, 1.8vw, 1.85rem);
+  block-size: clamp(1.35rem, 1.8vw, 1.85rem);
+  flex: none;
+  object-fit: contain;
+}
+
+@media (max-width: 1050px) {
+  .tech-stack-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .tech-stack-inner { grid-template-columns: minmax(0, 1fr); gap: clamp(3.4rem, 9svh, 5rem); }
+  .tech-stack-intro { position: static; }
+  .tech-stack-heading { font-size: clamp(3.45rem, 12vw, 6.7rem); }
+  .tech-stack-index { display: none; }
+  .tech-stack-chapter { min-block-size: clamp(14.5rem, 33svh, 20rem); }
+  .tech-stack-chapter-heading { font-size: clamp(2.25rem, 8.1vw, 4rem); }
+}
+
+@media (max-height: 550px) {
+  .tech-stack-index ul { display: grid; grid-template-columns: repeat(2, max-content); }
+}

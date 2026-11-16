@@ -1,12 +1,11 @@
-import { Button } from "@/components/ui/shadcn/button"
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react"
+import { ArrowUpRight, Palette, Volume2, VolumeX } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
-import { scrollToSection } from "@/lib/section-stack"
-import { Moon, Sun, Volume2, VolumeX, Palette } from "lucide-react"
-
 import { socialLogos } from "@/assets/img/tech"
-import * as React from "react"
+import { PortfolioLink } from "./PortfolioLink"
+import "./site-chrome.css"
 
 function AccentSwatch({
   value,
@@ -17,7 +16,7 @@ function AccentSwatch({
   value: Accent
   current: Accent
   onSelect: (v: Accent) => void
-  style: React.CSSProperties
+  style: CSSProperties
 }>) {
   const selected = value === current
 
@@ -39,84 +38,73 @@ function AccentSwatch({
 }
 
 const SECTIONS = [
-  { id: "top", label: "Top" },
   { id: "experience", label: "Experience" },
   { id: "services", label: "Services" },
   { id: "projects", label: "Projects" },
-  { id: "skills", label: "Skills" },
-  { id: "about", label: "About & Certificates" },
-  { id: "contact", label: "Contact" },
+  { id: "about", label: "About" },
 ] as const
 
-function useActiveSection() {
-  const [active, setActive] = React.useState<string>("top")
+function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScroll: boolean) {
+  const [surface, setSurface] = useState({ id: "", light: false })
 
-  React.useEffect(() => {
-    const els = SECTIONS
-      .map(({ id }) => document.getElementById(id))
-      .filter(isHTMLElement)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || !followScroll) return
 
-    if (els.length === 0) return
+    const selector = "[data-stack-surface] > section[id]"
+    const panels = Array.from(document.querySelectorAll<HTMLElement>(selector)).reverse()
+    let frame = 0
+    let lastId = ""
+    let lastLight = false
+    const update = () => {
+      frame = 0
+      const { left, top, width, height } = nav.getBoundingClientRect()
+      const x = left + width / 2
+      const y = top + height / 2
+      if (y < 0 || y >= innerHeight) return
 
-    const getNavHeight = () => {
-      // header padding + nav height; keep it stable even if fonts load
-      const header = document.querySelector<HTMLElement>("header")
-      return (header?.getBoundingClientRect().height ?? 0) + 8
-    }
-
-    const pickActive = () => {
-      const offset = getNavHeight()
-      const y = offset + 8 // a line just below the header
-
-      let bestId: string | undefined
-      let bestDist = Number.POSITIVE_INFINITY
-
-      for (const el of els) {
-        const rect = (el.closest("[data-stack-panel]") ?? el).getBoundingClientRect()
-        // distance from this section's top to our reference line
-        const d = Math.abs(rect.top - y)
-
-        // Only consider sections that are in view-ish
-        // (either their top is above the line but bottom below it, or top below line but not too far)
-        const intersectsLine = rect.top <= y && rect.bottom >= y
-        const closeEnough = rect.top >= y && rect.top <= y + 240
-
-        if (intersectsLine || closeEnough) {
-          if (d < bestDist) {
-            bestDist = d
-            bestId = el.id
-          }
-        }
+      // Hit-test the painted panels, including their scroll transforms and clipping.
+      let section: HTMLElement | null = null
+      for (const element of document.elementsFromPoint(x, y)) {
+        section = element.closest<HTMLElement>(selector)
+        if (section) break
       }
-
-      if (bestId) setActive(bestId)
+      // During a page transition the browser can hide the live panels from hit-testing.
+      section ??= panels.find((panel) => {
+        const bounds = panel.getBoundingClientRect()
+        return x >= bounds.left && x < bounds.right && y >= bounds.top && y < bounds.bottom
+      }) ?? null
+      const id = section?.id ?? ""
+      const light = section?.hasAttribute("data-nav-light") ?? false
+      if (id === lastId && light === lastLight) return
+      lastId = id
+      lastLight = light
+      setSurface({ id, light })
+    }
+    const requestUpdate = () => {
+      if (!frame) frame = requestAnimationFrame(update)
     }
 
-    // Initial pick + on scroll/resize
-    pickActive()
-
-    const onScroll = () => pickActive()
-    const onResize = () => pickActive()
-
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("resize", onResize)
-
-    // Also observe size changes (images/fonts) that can move sections.
-    const ro = new ResizeObserver(() => pickActive())
-    ro.observe(document.body)
+    update()
+    window.addEventListener("scroll", requestUpdate, { passive: true })
+    window.addEventListener("resize", requestUpdate)
+    const size = new ResizeObserver(requestUpdate)
+    size.observe(nav)
+    size.observe(document.body)
 
     return () => {
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("resize", onResize)
-      ro.disconnect()
+      window.removeEventListener("scroll", requestUpdate)
+      window.removeEventListener("resize", requestUpdate)
+      cancelAnimationFrame(frame)
+      size.disconnect()
     }
-  }, [])
+  }, [followScroll, navRef])
 
-  return active
+  return surface
 }
 
 function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; setAccent: (a: Accent) => void }>) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = useState(false)
 
   const dotColor: Record<Accent, string> = {
     lime: "#bef264",
@@ -133,14 +121,14 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
         <button
           type="button"
           data-slot="accent-trigger"
-          className="inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full border border-ink/10 bg-paper/20 hover:bg-ink/5 sm:w-auto sm:px-3"
+          className="site-header-icon"
           aria-label="Pick accent color"
           title="Accent"
         >
-          <Palette className="h-4 w-4 text-ink/70" />
+          <Palette aria-hidden="true" className="size-4" />
           <span
             aria-hidden
-            className="hidden h-2.5 w-2.5 rounded-full ring-1 ring-ink/15 sm:block"
+            className="hidden size-1.5 rounded-full sm:block"
             style={{ backgroundColor: dotColor[accent] }}
           />
         </button>
@@ -163,88 +151,51 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
   )
 }
 
-export function HeaderNav() {
+export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => void }>) {
   const { enabled, toggle } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
-  const [light, setLight] = React.useState(() => document.documentElement.dataset.theme === "light")
-  const active = useActiveSection()
-
-  function toggleTheme() {
-    const nextLight = !light
-    const theme = nextLight ? "light" : "dark"
-    document.documentElement.dataset.theme = theme
-    setLight(nextLight)
-    try {
-      localStorage.setItem("portfolio:theme", theme)
-    } catch {
-      // The theme still applies for this visit if storage is unavailable.
-    }
-  }
+  const navRef = useRef<HTMLElement>(null)
+  const surface = useNavigationSurface(navRef, Boolean(onSection))
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 overflow-clip">
-      <div data-home-navigation className="portfolio-container flex items-center justify-between gap-2 py-4 sm:gap-4">
-        <button
-          type="button"
-          data-slot="home-link"
-          onClick={() => scrollToSection("top")}
-          className="rounded-full border border-ink/10 bg-paper/65 px-3 py-2 text-xs font-semibold tracking-[0.35em] text-ink/85 backdrop-blur hover:bg-paper/85 sm:px-4"
-        >
+    <header className="site-header" data-surface={surface.light ? "light" : "dark"}>
+      <div data-home-navigation className="site-header-frame">
+        <PortfolioLink section="top" onSection={onSection} aria-label="David Barragán, home" className="site-header-brand">
           DJB
-        </button>
+        </PortfolioLink>
 
-        <nav aria-label="Main navigation" className="hidden items-center min-[880px]:flex">
-          <div className="flex items-center gap-1 rounded-full border border-ink/10 bg-paper/65 px-2 py-2 backdrop-blur lg:gap-2">
-            {SECTIONS.filter((s) => s.id !== "top").map(({ label, id }) => (
-              <Button
-                key={id}
-                type="button"
-                variant="ghost"
-                aria-current={active === id ? "location" : undefined}
-                className={
-                  "h-9 rounded-full px-2 text-xs transition lg:px-3 lg:text-sm " +
-                  (active === id
-                    ? "bg-ink/10 text-ink"
-                    : "text-ink/70 hover:bg-ink/5 hover:text-ink")
-                }
-                onClick={() => scrollToSection(id)}
-              >
-                {label}
-              </Button>
+        <nav ref={navRef} aria-label="Main navigation" className="site-header-nav">
+          <ul>
+            {SECTIONS.map(({ label, id }, index) => (
+              <li key={id}>
+                <PortfolioLink section={id} onSection={onSection} aria-current={surface.id === id ? "location" : undefined}>
+                  {label}
+                </PortfolioLink>
+                {index < SECTIONS.length - 1 && <span aria-hidden="true">,</span>}
+              </li>
             ))}
-          </div>
+          </ul>
         </nav>
 
-        <div className="flex items-center gap-1 rounded-full border border-ink/10 bg-paper/65 px-2 py-2 backdrop-blur sm:gap-2 sm:px-3">
-          <button
-            type="button"
-            data-slot="theme-toggle"
-            onClick={toggleTheme}
-            aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
-            title={light ? "Dark mode" : "Light mode"}
-            className="hidden size-9 shrink-0 place-items-center rounded-full border border-ink/10 bg-paper/20 text-ink/85 hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
-          >
-            {light ? <Moon aria-hidden="true" className="size-4" /> : <Sun aria-hidden="true" className="size-4" />}
-          </button>
-
+        <div className="site-header-actions">
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a
             href="https://github.com/DavidJosueP2"
             target="_blank"
             rel="noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-ink/10 bg-paper/20 hover:bg-ink/5"
+            className="site-header-icon"
             aria-label="GitHub"
             title="GitHub"
           >
-            <img src={socialLogos.GitHub} alt="" aria-hidden className="h-4 w-4 object-contain" data-monochrome-logo />
+            <img src={socialLogos.GitHub} alt="" className="size-4 object-contain site-header-github" />
           </a>
 
           <a
             href="https://www.linkedin.com/in/david-barragan-dev"
             target="_blank"
             rel="noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-ink/10 bg-paper/20 hover:bg-ink/5"
+            className="site-header-icon"
             aria-label="LinkedIn"
             title="LinkedIn"
           >
@@ -255,7 +206,7 @@ export function HeaderNav() {
             type="button"
             data-slot="audio-toggle"
             onClick={toggle}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-ink/10 bg-paper/20 p-0 align-middle leading-none text-ink/70 hover:bg-ink/5"
+            className="site-header-icon"
             aria-label={enabled ? "Mute" : "Unmute"}
             title={enabled ? "Mute" : "Unmute"}
           >
@@ -265,12 +216,12 @@ export function HeaderNav() {
               <VolumeX aria-hidden="true" className="size-[18px]" />
             )}
           </button>
+
+          <a href={onSection ? "/contact/" : "#contact-form"} className="site-header-contact">
+            Get in touch <ArrowUpRight aria-hidden="true" className="size-3.5" />
+          </a>
         </div>
       </div>
     </header>
   )
-}
-
-function isHTMLElement(el: HTMLElement | null): el is HTMLElement {
-  return el instanceof HTMLElement
 }
