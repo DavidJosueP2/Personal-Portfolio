@@ -1,0 +1,141 @@
+.experience {
+  --experience-ink: #efede8;
+  --experience-muted: #b8b5af;
+  --experience-accent: rgb(var(--accent-rgb, 52 211 153));
+  background: #000;
+  color: var(--experience-ink);
+  padding: clamp(6.75rem, 14svh, 9.5rem) clamp(1.25rem, 5.35vw, 7rem) clamp(5rem, 12svh, 9rem);
+}
+
+.experience-layout {
+  max-inline-size: 88rem;
+  margin-inline: auto;
+}
+
+.experience-opening {
+  display: grid;
+  grid-template-columns: minmax(0, 41rem) minmax(8rem, 12.5rem);
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem clamp(2.5rem, 7vw, 7rem);
+  margin-block-end: clamp(3.25rem, 9svh, 7rem);
+}
+
+.experience-heading {
+  font-family: var(--font-sans);
+  font-size: clamp(1.85rem, 3vw, 3.2rem);
+  font-weight: 400;
+  line-height: 1.22;
+  letter-spacing: -0.026em;
+  text-wrap: pretty;
+}
+
+.experience-heading em {
+  color: color-mix(in srgb, var(--experience-accent) 68%, var(--experience-ink));
+}
+
+.experience-portrait {
+  display: block;
+  justify-self: end;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  opacity: 0.76;
+  mask-image: linear-gradient(transparent 22%, #000 28%, #000 78%, transparent 84%);
+}
+
+.experience-roles {
+  max-inline-size: 65rem;
+  margin-inline: clamp(0rem, 9vw - 4rem, 10rem) 0;
+}
+
+.experience-entry {
+  display: grid;
+  grid-template-columns: minmax(13rem, 0.8fr) minmax(0, 1.65fr);
+  column-gap: clamp(2rem, 5vw, 5.25rem);
+  align-items: start;
+}
+
+.experience-roles > li + li {
+  margin-block-start: clamp(2.25rem, 5.6svh, 4rem);
+  padding-block-start: clamp(2.25rem, 5.6svh, 4rem);
+  border-block-start: 1px solid color-mix(in srgb, var(--experience-accent) 12%, #232220);
+}
+
+.experience-company {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.experience-company img {
+  inline-size: 100%;
+  block-size: auto;
+  margin-block-start: 0.1rem;
+  filter: brightness(0) invert(1);
+}
+
+.experience-company img[data-company="eeasa"] {
+  filter: grayscale(1) invert(1) contrast(2.6);
+}
+
+.experience-company h3 {
+  font-size: clamp(1.05rem, 1.25vw, 1.22rem);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.014em;
+}
+
+.experience-role {
+  margin-block-start: 0.4rem;
+  color: var(--experience-muted);
+  font-size: 0.94rem;
+}
+
+.experience-date {
+  margin-block-start: 0.2rem;
+  color: var(--experience-muted);
+  font-size: 0.83rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.experience-contribution {
+  max-inline-size: 65ch;
+  display: grid;
+  gap: 0.85em;
+  color: var(--experience-muted);
+  font-size: clamp(1rem, 1.25vw, 1.24rem);
+  font-weight: 400;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.experience-contribution strong {
+  color: color-mix(in srgb, var(--experience-accent) 42%, var(--experience-ink));
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  .experience-roles {
+    margin-inline: 0;
+  }
+
+  .experience-entry {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.2rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .experience-opening {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    margin-block-end: 2rem;
+  }
+
+  .experience-portrait {
+    inline-size: 5.25rem;
+  }
+}
