@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from "react"
 import { gsap } from "gsap"
 import { scrollToSection } from "@/lib/section-stack"
+import { createRosePainter, roseRoot, roseWidth, roseHeight, type RoseKind } from "./stack-rose-paint"
 import "./stack-section.css"
 
 const icons = import.meta.glob<string>("/src/assets/img/tech/*.{png,svg}", { eager: true, import: "default" })
@@ -10,6 +11,24 @@ const traceViewBox = `0 0 ${traceWidth} ${traceHeight}`
 const traceEntry = 0.78
 const traceLowerEdge = 0.89
 const traceSamples = 192
+
+const roseAnchorX = 100 * roseRoot[0] / roseWidth
+const roseAnchorY = 100 * roseRoot[1] / roseHeight
+const roses = [
+  { kind: "open", wide: 0.258, compact: 0.23, size: 218, angle: -6, phoneAngle: -14, span: 0.106, flip: true },
+  { kind: "cup", wide: 0.447, compact: 0.473, size: 198, angle: 5, phoneAngle: 3, span: 0.107, flip: false },
+  { kind: "bud", wide: 0.525, compact: 0.607, size: 162, angle: 13, phoneAngle: 24, span: 0.086, flip: true },
+  { kind: "open", wide: 0.766, compact: 0.961, size: 235, angle: -14, phoneAngle: 2, span: 0.106, flip: true },
+] satisfies {
+  kind: RoseKind
+  wide: number
+  compact: number
+  size: number
+  angle: number
+  phoneAngle: number
+  span: number
+  flip: boolean
+}[]
 
 function traceTiming(path: SVGPathElement, startY: number, sectionHeight: number, viewportHeight: number) {
   const length = path.getTotalLength()
@@ -66,8 +85,8 @@ const layers = [
   },
   {
     id: "stack-data",
-    name: "Databases",
-    tools: [tech("PostgresSQL.png", "PostgreSQL"), tech("Microsoft SQL Server.png"), tech("MySQL.png"), tech("Oracle.png")],
+    name: "Data & BI",
+    tools: [tech("PostgresSQL.png", "PostgreSQL"), tech("Microsoft SQL Server.png"), tech("MySQL.png"), tech("Oracle.png"), tech("Power BI.svg")],
   },
   {
     id: "stack-tooling",
@@ -86,14 +105,29 @@ export function StackSection() {
     const firstLine = root?.querySelector<HTMLElement>(".tech-stack-heading > span")
     if (!root || !trace || !firstLine) return
     const media = gsap.matchMedia(root)
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     const chapters = Array.from(root.querySelectorAll<HTMLElement>("[data-tech-chapter]"))
     const paths = Array.from(trace.querySelectorAll("path"))
     const curves = paths.map((path) => path.getAttribute("d") ?? "")
+    const flowers = Array.from(root.querySelectorAll<HTMLCanvasElement>("[data-tech-rose]"), (canvas, index) => ({
+      canvas,
+      ...roses[index],
+      painter: createRosePainter(canvas, roses[index].kind, index + 23),
+      anchor: 0,
+    }))
     let observer: IntersectionObserver | undefined
     let stopped = false
     let fittedGeometry = ""
     let entryY = 0
     let timing: number[] = []
+    let scrollProgress = 1
+
+    const paintFlowers = (arc: number) => {
+      for (const { painter, anchor, span } of flowers) {
+        const progress = Math.max(0, Math.min(1, (arc - anchor) / Math.min(span, 1 - anchor)))
+        painter.paint(progress)
+      }
+    }
 
     const fitTrace = () => {
       if (stopped || !trace.clientWidth || !trace.clientHeight) return
@@ -126,8 +160,29 @@ export function StackSection() {
           return (startY + position * (curveBottom - startY) + exitDepth * tail ** 2).toFixed(3)
         }))
       })
-      const visiblePath = paths.find((path) => getComputedStyle(path).display !== "none")
-      if (visiblePath) timing = traceTiming(visiblePath, startY, clientHeight, viewportHeight)
+      const compact = getComputedStyle(paths[0]).display === "none"
+      const visiblePath = paths[compact ? 1 : 0]
+      timing = traceTiming(visiblePath, startY, clientHeight, viewportHeight)
+      const length = visiblePath.getTotalLength()
+      for (const flower of flowers) {
+        const { canvas, painter } = flower
+        flower.anchor = compact ? flower.compact : flower.wide
+        const point = visiblePath.getPointAtLength(length * flower.anchor)
+        const size = compact
+          ? Math.round(Math.min(flower.size * 0.52, clientWidth * 0.28))
+          : Math.round(flower.size * Math.max(0.56, Math.min(1.13, clientWidth / 1440)))
+
+        canvas.style.width = `${size}px`
+        canvas.style.left = `${point.x}px`
+        canvas.style.top = `${point.y}px`
+        canvas.style.rotate = `${compact ? flower.phoneAngle : flower.angle}deg`
+        canvas.style.scale = !compact && flower.flip ? "-1 1" : ""
+        painter.fit(size)
+      }
+      if (reducedMotion.matches) paintFlowers(1)
+      else if (root.hasAttribute("data-tech-motion")) {
+        paintFlowers(traceProgress(scrollProgress, timing))
+      }
     }
     fitTrace()
     const traceSize = new ResizeObserver(fitTrace)
@@ -154,6 +209,7 @@ export function StackSection() {
     observeCurrentChapter()
     window.addEventListener("resize", observeCurrentChapter)
 
+    media.add("(prefers-reduced-motion: reduce)", () => paintFlowers(1))
     media.add("(prefers-reduced-motion: no-preference)", (context) => {
       let disposed = false
       void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
@@ -163,8 +219,11 @@ export function StackSection() {
           root.dataset.techMotion = ""
           const panel = root.closest<HTMLElement>("[data-stack-panel]") ?? root
           const paintTrace = ({ progress }: { progress: number }) => {
-            const offset = `${1 - traceProgress(progress, timing)}px`
+            scrollProgress = progress
+            const arc = traceProgress(progress, timing)
+            const offset = `${1 - arc}px`
             for (const path of paths) path.style.strokeDashoffset = offset
+            paintFlowers(arc)
           }
           ScrollTrigger.create({
             trigger: panel,
@@ -176,21 +235,23 @@ export function StackSection() {
           })
 
           for (const chapter of chapters) {
-            const letters = chapter.querySelectorAll<HTMLElement>("[data-tech-letter]")
+            const heading = chapter.querySelector<HTMLElement>(".tech-stack-chapter-heading")
+            if (!heading) continue
+            const letters = heading.querySelectorAll<HTMLElement>("[data-tech-letter]")
             let painted = -1
             const paintLetters = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
               const span = end - start
-              const entered = span * progress / (window.innerHeight * 0.36)
-              const leaving = span * (1 - progress) / (window.innerHeight * 0.31)
+              const entered = span * progress / (window.innerHeight * 0.38)
+              const leaving = span * (1 - progress) / (window.innerHeight * 0.23)
               const count = Math.floor(gsap.utils.clamp(0, 1, Math.min(entered, leaving)) * letters.length + 0.001)
               if (count === painted) return
               letters.forEach((letter, index) => letter.toggleAttribute("data-turned", index < count))
               painted = count
             }
             ScrollTrigger.create({
-              trigger: chapter,
-              start: "top 84%",
-              end: "bottom 17%",
+              trigger: heading,
+              start: "top 90%",
+              end: "bottom 12%",
               onUpdate: paintLetters,
               onRefresh: paintLetters,
             })
@@ -237,6 +298,19 @@ export function StackSection() {
           d="M -78 0 C 165 0 530 -1 838 17 C 1057 30 1227 80 1148 162 C 1074 240 822 214 790 292 C 761 363 1130 346 1149 454 C 1166 554 1056 631 989 685 C 890 772 932 844 1087 891 C 1194 923 1010 1007 1041 1047 C 1074 1090 1182 1061 1260 1076"
         />
       </svg>
+      <div className="tech-stack-garden" aria-hidden="true">
+        {roses.map(({ wide }) => (
+          <canvas
+            key={wide}
+            data-tech-rose
+            className="tech-stack-rose"
+            style={{
+              transformOrigin: `${roseAnchorX}% ${roseAnchorY}%`,
+              translate: `-${roseAnchorX}% -${roseAnchorY}%`,
+            }}
+          />
+        ))}
+      </div>
       <div className="tech-stack-inner">
         <header className="tech-stack-intro">
           <h2 id="stack-heading" className="tech-stack-heading">
@@ -278,7 +352,7 @@ export function StackSection() {
                           {Array.from(word, (letter, index) => (
                             <span key={index} data-tech-letter>
                               <span>{letter}</span>
-                              <span className={letter === "&" ? "tech-stack-letter-serif" : "tech-stack-letter-serif font-serif-italic"}>{letter}</span>
+                              <span className={letter === "&" ? "tech-stack-letter-serif tech-stack-letter-ampersand" : "tech-stack-letter-serif font-serif-italic"}>{letter}</span>
                             </span>
                           ))}
                         </span>

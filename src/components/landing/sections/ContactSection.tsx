@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/shadcn/button"
 
 export function ContactSection() {
   return (
-    <section id="contact" className="portfolio-container portfolio-section grid min-h-[80svh] place-items-center text-center" aria-labelledby="contact-heading">
+    <section id="contact" className="portfolio-container portfolio-section grid min-h-[80svh] place-items-center text-center" aria-labelledby="contact-heading" data-inverse-cursor-exclude>
       <div className="contact-invitation py-7">
         <h2 id="contact-heading" data-section-motion="heading" className="mx-auto max-w-[15ch] text-balance font-sans! text-[clamp(3rem,8vw,9rem)] leading-[0.95] font-semibold tracking-[-0.055em] text-heading">
           Let’s build something <em className="font-serif-italic">together.</em>

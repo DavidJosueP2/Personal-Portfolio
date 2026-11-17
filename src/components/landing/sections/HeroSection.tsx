@@ -116,7 +116,7 @@ function HeroTagline() {
 
 export function HeroSection() {
   return (
-    <section id="top" aria-labelledby="home-title" className="relative overflow-hidden">
+    <section id="top" aria-labelledby="home-title" className="relative overflow-hidden" data-inverse-cursor-exclude>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div
           className="absolute inset-0 bg-size-[64px_64px] [--hero-grid-line:rgb(18_18_20/0.016)] dark:[--hero-grid-line:rgb(255_255_255/0.023)]"

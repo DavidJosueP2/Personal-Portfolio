@@ -1,0 +1,17 @@
+.inverse-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: hidden;
+  mix-blend-mode: difference;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .inverse-cursor { display: block; }
+  .inverse-cursor[data-visible] { visibility: visible; }
+}

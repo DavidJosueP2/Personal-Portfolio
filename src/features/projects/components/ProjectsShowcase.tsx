@@ -26,6 +26,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
   const sceneRef = useRef<HTMLElement>(null)
   const mediaRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
+  const runwayRef = useRef<HTMLDivElement>(null)
   const motionRef = useRef<ReturnType<typeof createProjectSpread>>(null)
   const gestureRef = useRef<Gesture>(null)
   const suppressClick = useRef(false)
@@ -40,17 +41,18 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
     const scene = sceneRef.current
     const media = mediaRef.current
     const anchor = anchorRef.current
-    if (!scene || !media || !anchor) return
+    const runway = runwayRef.current
+    if (!scene || !media || !anchor || !runway) return
 
     const pictures = [...media.querySelectorAll<HTMLButtonElement>("[data-project-preview]")]
-    const motion = createProjectSpread(media, anchor, pictures, setActive)
+    const motion = createProjectSpread(scene, media, anchor, runway, pictures, setActive)
     motionRef.current = motion
 
     let previousWheel = -Infinity
     let wheelDistance = 0
     let wheelHandled = false
     const onWheel = (event: WheelEvent) => {
-      if (event.ctrlKey || !event.cancelable || !navigable) return
+      if (event.ctrlKey || !event.cancelable || !navigable || !motion.canInteract()) return
       const x = event.deltaX || (event.shiftKey ? event.deltaY : 0)
       const y = event.shiftKey ? 0 : event.deltaY
       if (!x || Math.abs(x) < Math.abs(y) * 1.35) return
@@ -87,7 +89,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
 
   function onPointerDown(event: PointerEvent<HTMLElement>) {
     suppressClick.current = false
-    if (!navigable || !event.isPrimary || event.button !== 0) return
+    if (!navigable || !event.isPrimary || event.button !== 0 || !motionRef.current?.canInteract()) return
     const target = event.target
     if (!(target instanceof Element) || !target.closest("[data-project-preview]")) return
     gestureRef.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, slide: null }
@@ -96,7 +98,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
   function onPointerMove(event: PointerEvent<HTMLElement>) {
     const gesture = gestureRef.current
     const motion = motionRef.current
-    if (!gesture || gesture.pointer !== event.pointerId || !motion) return
+    if (!gesture || gesture.pointer !== event.pointerId || !motion?.canInteract()) return
     const dx = event.clientX - gesture.x
     const dy = event.clientY - gesture.y
     if (gesture.slide === null) {
@@ -127,12 +129,17 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
       ref={sceneRef}
       id="projects"
       data-nav-light
-      className="project-spread"
+      className="project-scene"
       aria-labelledby="projects-heading"
       aria-roledescription="carousel"
       tabIndex={0}
       data-lenis-prevent-horizontal
       onKeyDown={onKeyDown}
+      onFocusCapture={(event) => {
+        if (event.currentTarget.contains(event.target) && event.target.matches(":focus-visible")) {
+          motionRef.current?.focusCarousel()
+        }
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={(event) => endDrag(event)}
@@ -147,106 +154,115 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
         event.stopPropagation()
       }}
     >
-      <h2 id="projects-heading" className="project-heading" data-section-motion="heading">
-        <span>Selected</span>{" "}<em className="font-serif-italic">work.</em>
-      </h2>
+      <div className="project-spread">
+        <p className="project-phrase">
+          <span><span data-project-phrase-line>Each project is a chance</span></span>{" "}
+          <span><span data-project-phrase-line>to <em className="font-serif-italic">learn, experiment</em> and</span></span>{" "}
+          <span><span data-project-phrase-line>push my limits.</span></span>
+        </p>
 
-      <div ref={mediaRef} className="project-media">
-        {projects.map(({ id, title, images }, index) => (
-          <button
-            type="button"
-            key={id}
-            data-slot="project-preview"
-            data-project-preview={id}
-            data-current={active === index}
-            aria-label={active === index ? images.cover.alt : `Show ${title}`}
-            tabIndex={-1}
-            aria-disabled={active === index}
-            onClick={() => motionRef.current?.select(index)}
-          >
-            <img
-              src={images.previewSrc ?? images.cover.src}
-              alt=""
-              width={1600}
-              height={900}
-              loading="lazy"
-              decoding="async"
-              fetchPriority={index === 0 ? "high" : index === 1 || index === projects.length - 1 ? "auto" : "low"}
-              draggable={false}
-            />
-          </button>
-        ))}
-      </div>
+        <h2 id="projects-heading" className="project-heading" data-section-motion="heading">
+          <span>Selected</span>{" "}<em className="font-serif-italic">work.</em>
+        </h2>
 
-      <div className="project-details" data-section-motion="body">
-        <dl key={project.id} className="project-swap">
-          <div>
-            <dt>Category</dt>
-            <dd>{categoryLabels[project.category]}</dd>
-          </div>
-          <div>
-            <dt>Technologies</dt>
-            <dd>
-              {technologies?.length ? (
-                <ul className="project-technologies">
-                  {technologies.map(({ name, iconSrc }) => (
-                    <li key={name} title={name}><img src={iconSrc} alt={name} width={21} height={21} /></li>
-                  ))}
-                </ul>
-              ) : project.stack.join(" · ")}
-            </dd>
-          </div>
-          {repositories.length > 0 && (
+        <div ref={mediaRef} className="project-media">
+          {projects.map(({ id, title, images }, index) => (
+            <button
+              type="button"
+              key={id}
+              data-slot="project-preview"
+              data-project-preview={id}
+              data-current={active === index}
+              aria-label={active === index ? images.cover.alt : `Show ${title}`}
+              tabIndex={-1}
+              aria-disabled={active === index}
+              onClick={() => motionRef.current?.select(index)}
+            >
+              <img
+                src={images.previewSrc ?? images.cover.src}
+                alt=""
+                width={1600}
+                height={900}
+                loading="lazy"
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : index === 1 || index === projects.length - 1 ? "auto" : "low"}
+                draggable={false}
+              />
+            </button>
+          ))}
+        </div>
+
+        <div className="project-details" data-section-motion="body">
+          <dl key={project.id} className="project-swap">
             <div>
-              <dt>Source</dt>
-              <dd className="project-repositories">
-                {repositories.map(({ href, label }) => (
-                  <a key={href} href={href} target="_blank" rel="noreferrer" aria-label={`${project.title}: ${label} repository`}>
-                    {label} <ArrowUpRight aria-hidden="true" size={13} />
-                  </a>
-                ))}
+              <dt>Category</dt>
+              <dd>{categoryLabels[project.category]}</dd>
+            </div>
+            <div>
+              <dt>Technologies</dt>
+              <dd>
+                {technologies?.length ? (
+                  <ul className="project-technologies">
+                    {technologies.map(({ name, iconSrc }) => (
+                      <li key={name} title={name}><img src={iconSrc} alt={name} width={21} height={21} /></li>
+                    ))}
+                  </ul>
+                ) : project.stack.join(" · ")}
               </dd>
             </div>
-          )}
-        </dl>
-      </div>
+            {repositories.length > 0 && (
+              <div>
+                <dt>Source</dt>
+                <dd className="project-repositories">
+                  {repositories.map(({ href, label }) => (
+                    <a key={href} href={href} target="_blank" rel="noreferrer" aria-label={`${project.title}: ${label} repository`}>
+                      {label} <ArrowUpRight aria-hidden="true" size={13} />
+                    </a>
+                  ))}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
 
-      <div className="project-feature">
-        <div ref={anchorRef} className="project-preview-anchor" aria-hidden="true" />
-        <div className="project-caption">
-          <div key={project.id} className="project-swap">
-            <h3>
-              {demo ? (
-                <a href={demo.href} aria-label={`Visit ${project.title} live site`} target="_blank" rel="noreferrer">
-                  <span>{project.title}</span><ArrowUpRight aria-hidden="true" />
-                </a>
-              ) : project.title}
-            </h3>
-            <ProjectGalleryDialog project={project}>
-              <button type="button" data-slot="project-trigger" className="project-gallery-link" aria-label={`View project: ${project.title}`}>
-                View project <ArrowRight aria-hidden="true" size={15} />
-              </button>
-            </ProjectGalleryDialog>
+        <div className="project-feature">
+          <div ref={anchorRef} className="project-preview-anchor" aria-hidden="true" />
+          <div className="project-caption">
+            <div key={project.id} className="project-swap">
+              <h3>
+                {demo ? (
+                  <a href={demo.href} aria-label={`Visit ${project.title} live site`} target="_blank" rel="noreferrer">
+                    <span>{project.title}</span><ArrowUpRight aria-hidden="true" />
+                  </a>
+                ) : project.title}
+              </h3>
+              <ProjectGalleryDialog project={project}>
+                <button type="button" data-slot="project-trigger" className="project-gallery-link" aria-label={`View project: ${project.title}`}>
+                  View project <ArrowRight aria-hidden="true" size={15} />
+                </button>
+              </ProjectGalleryDialog>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="project-summary" data-section-motion="body">
-        <p key={project.id} className="project-swap">{project.subtitle ?? project.description}</p>
-      </div>
-
-      {navigable && (
-        <div className="project-controls" data-project-controls role="group" aria-label="Project navigation">
-          <button type="button" data-slot="project-previous" aria-label="Previous project" onClick={() => motionRef.current?.step(-1)}>
-            <ArrowLeft aria-hidden="true" size={18} />
-          </button>
-          <span aria-hidden="true">{String(active + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}</span>
-          <button type="button" data-slot="project-next" aria-label="Next project" onClick={() => motionRef.current?.step(1)}>
-            <ArrowRight aria-hidden="true" size={18} />
-          </button>
+        <div className="project-summary" data-section-motion="body">
+          <p key={project.id} className="project-swap">{project.subtitle ?? project.description}</p>
         </div>
-      )}
-      <p className="sr-only" role="status">{project.title}, project {active + 1} of {projects.length}</p>
+
+        {navigable && (
+          <div className="project-controls" data-project-controls role="group" aria-label="Project navigation">
+            <button type="button" data-slot="project-previous" aria-label="Previous project" onClick={() => motionRef.current?.step(-1)}>
+              <ArrowLeft aria-hidden="true" size={18} />
+            </button>
+            <span aria-hidden="true">{String(active + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}</span>
+            <button type="button" data-slot="project-next" aria-label="Next project" onClick={() => motionRef.current?.step(1)}>
+              <ArrowRight aria-hidden="true" size={18} />
+            </button>
+          </div>
+        )}
+        <p className="sr-only" role="status">{project.title}, project {active + 1} of {projects.length}</p>
+      </div>
+      <div ref={runwayRef} className="project-runway" aria-hidden="true" />
     </section>
   )
 }

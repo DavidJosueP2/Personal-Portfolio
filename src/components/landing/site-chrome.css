@@ -18,7 +18,7 @@
   position: absolute;
   inset: 0 0 -1.15rem;
   z-index: -1;
-  background: linear-gradient(#f5f4ef 62%, transparent);
+  background: linear-gradient(var(--experience-paper, #14181e) 62%, transparent);
 }
 
 .site-header .site-header-brand[data-surface="dark"],
