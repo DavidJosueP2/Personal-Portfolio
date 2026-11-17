@@ -3,7 +3,7 @@
   --project-ink: #161612;
   --project-muted: #5a5850;
   --project-gallery-paper: #0b0b0b;
-  --project-intro-distance: clamp(38rem, 86svh, 64rem);
+  --project-intro-distance: clamp(46rem, 112svh, 80rem);
   --project-hold-distance: clamp(13rem, 32svh, 21rem);
   position: relative;
   background: var(--project-paper);
@@ -300,7 +300,7 @@
 
 @media (max-width: 899px) {
   .project-scene {
-    --project-intro-distance: clamp(28rem, 76svh, 49rem);
+    --project-intro-distance: clamp(35rem, 102svh, 64rem);
     --project-hold-distance: clamp(11rem, 27svh, 16rem);
   }
 

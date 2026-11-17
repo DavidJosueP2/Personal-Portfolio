@@ -2,101 +2,186 @@ import { useEffect, useRef } from "react"
 import { gsap } from "gsap"
 import eeasaLogo from "@/assets/img/experience/eeasa.png"
 import kronhosLogo from "@/assets/img/experience/kronhos.png"
+import angularLogo from "@/assets/img/tech/Angular.png"
+import reactLogo from "@/assets/img/tech/React.png"
+import javaLogo from "@/assets/img/tech/Java.png"
+import springLogo from "@/assets/img/tech/Spring.png"
+import oracleLogo from "@/assets/img/tech/Oracle.png"
+import sqlServerLogo from "@/assets/img/tech/Microsoft SQL Server.png"
+import azureLogo from "@/assets/img/tech/azure.png"
+import powerBiLogo from "@/assets/img/tech/Power BI.svg"
+import swaggerLogo from "@/assets/img/tech/Swagger.png"
+import openApiLogo from "@/assets/img/tech/OpenAPI.png"
+import junitLogo from "@/assets/img/tech/JUnit.png"
+import playwrightLogo from "@/assets/img/tech/Playwrite.png"
+import dockerLogo from "@/assets/img/tech/Docker.png"
+import { createExperienceVine } from "./experience-vine"
 import "./experience-timeline.css"
+
+const backend = [
+  { name: "Java", icon: javaLogo },
+  { name: "Spring Boot", icon: springLogo },
+]
 
 const experience = [
   {
     id: "kronhos",
     name: "Kronhos ERP",
     company: "Kronhos Business Solutions Cía. Ltda.",
+    focus: "ERP development and business intelligence",
     logo: kronhosLogo,
-    role: "Full Stack Developer",
-    start: "2025",
-    end: "2026",
-    duration: "6 months",
-    passages: [
-      <>I built <em className="font-serif-italic">frontend modules</em> for the ERP and connected them to REST APIs I wrote in Java and Spring Boot. I used SQL to support those workflows.</>,
-      <>I <em className="font-serif-italic">improved ERP performance</em>, helped migrate a database, and built reports and Power BI dashboards.</>,
+    start: "2025-12",
+    startLabel: "Dec 2025",
+    end: "2026-06",
+    endLabel: "Jun 2026",
+    detail: "6 months",
+    contributions: [
+      {
+        title: "Custom ERP modules.",
+        description: "Built frontend features and the backend logic that supports their business workflows.",
+      },
+      {
+        title: "REST APIs and integrations.",
+        description: "Developed Java and Spring Boot endpoints that connected ERP screens to business logic and data.",
+      },
+      {
+        title: "SQL Server and ERP performance.",
+        description: "Worked with the data behind ERP workflows, improved application performance, and supported a database migration.",
+      },
+      {
+        title: "Azure environments.",
+        description: "Worked with the servers and application environments that host the ERP on Azure.",
+      },
+      {
+        title: "Power BI reporting.",
+        description: "Built reports and dashboards that made ERP data easier to explore and use for business analysis.",
+      },
     ],
-    tech: "Java · Spring Boot · SQL · Power BI",
+    tools: [
+      ...backend,
+      { name: "SQL Server", icon: sqlServerLogo },
+      { name: "Azure", icon: azureLogo },
+      { name: "Power BI", icon: powerBiLogo },
+      { name: "Swagger", icon: swaggerLogo },
+      { name: "JUnit", icon: junitLogo },
+      { name: "Docker", icon: dockerLogo },
+    ],
   },
   {
     id: "eeasa",
     name: "EEASA",
     company: "Empresa Eléctrica Ambato Regional Centro Norte S.A.",
+    focus: "Electricity meter incidents",
     logo: eeasaLogo,
-    role: "Backend Developer",
     start: "2025",
-    passages: [
-      <>I refactored the Spring Boot backend for <em className="font-serif-italic">electricity meter incidents</em>, updating the incident data model and its validation rules.</>,
+    end: "2026",
+    detail: "Freelance project · Several months",
+    contributions: [
+      {
+        title: "Angular and React interfaces.",
+        description: "Built screens for the web application used to manage electricity meter incidents.",
+      },
+      {
+        title: "Java and Spring Boot services.",
+        description: "Refactored the backend logic that handles meter incidents and supports the frontend workflow.",
+      },
+      {
+        title: "Incident data modeling.",
+        description: "Reworked the entities the application uses to represent and store incident records.",
+      },
+      {
+        title: "Validation rules.",
+        description: "Updated the checks the system applies before accepting incident data.",
+      },
+      {
+        title: "Oracle database.",
+        description: "Handled incident records in Oracle while updating the application’s data model.",
+      },
     ],
-    tech: "Spring Boot",
+    tools: [
+      { name: "Angular", icon: angularLogo },
+      { name: "React", icon: reactLogo },
+      ...backend,
+      { name: "Oracle", icon: oracleLogo },
+      { name: "OpenAPI", icon: openApiLogo },
+      { name: "Playwright", icon: playwrightLogo },
+      { name: "Docker", icon: dockerLogo },
+    ],
   },
-] as const
+]
 
 export function ExperienceTimeline() {
   const rootRef = useRef<HTMLElement>(null)
   const sheetRef = useRef<HTMLDivElement>(null)
-  const headingRef = useRef<HTMLHeadingElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const vineRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const root = rootRef.current
     const sheet = sheetRef.current
-    const heading = headingRef.current
-    if (!root || !sheet || !heading) return
+    const content = contentRef.current
+    const canvas = vineRef.current
+    if (!root || !sheet || !content || !canvas) return
 
     const motion = gsap.matchMedia(root)
+    const vine = createExperienceVine(canvas)
+    const vineSize = new ResizeObserver(vine.fit)
+    vineSize.observe(canvas)
+    motion.add("(prefers-reduced-motion: reduce)", () => vine.paint(1))
+
     motion.add("(prefers-reduced-motion: no-preference)", (context) => {
       let disposed = false
       let reset: (() => void) | undefined
+      vine.paint(0)
 
       void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
         if (disposed) return
         gsap.registerPlugin(ScrollTrigger)
         context.add(() => {
           const panel = root.closest<HTMLElement>("[data-stack-panel]") ?? root
-          const easeHeading = gsap.parseEase("power1.out")
-          const clamp = gsap.utils.clamp(0, 1)
-          let width = 0
+          const title = content.querySelector("#experience-heading")
+          const introduction = content.querySelector(".experience-masthead p")
+          const question = content.querySelector(".experience-question")
+          const track = content.querySelector(".experience-roles")
           let originX = 0
+          let contentOriginX = 0
           let originY = 0
           let radius = 0
           let overhang = 0
 
           const measure = () => {
-            width = root.clientWidth
-            const height = document.documentElement.clientHeight
-            const compact = width <= 760
-            originX = width * (compact ? 0.52 : 0.5)
-            originY = height * (compact ? 0.94 : 1.01)
-            radius = Math.hypot(Math.max(originX, width - originX), originY) + 4
+            originX = root.clientWidth / 2
+            contentOriginX = originX - content.offsetLeft
+            originY = document.documentElement.clientHeight
+            radius = Math.hypot(originX, originY) + 4
             overhang = -sheet.offsetTop
+          }
+
+          const clearClip = () => {
+            sheet.style.removeProperty("clip-path")
+            content.style.removeProperty("clip-path")
           }
 
           const render = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
             const panelTop = (end - start) * (1 - progress)
             if (panelTop < 1) {
-              sheet.style.clipPath = ""
-              heading.style.transform = ""
+              clearClip()
               return
             }
 
-            // The origin stays near the viewport floor while the sheet moves in normal flow.
-            const centerY = overhang + originY - panelTop
+            // The background extends over the preceding section. Both layers share one viewport origin.
+            const center = originY - panelTop
             const opening = radius * progress ** 1.04
-            sheet.style.clipPath = `circle(${opening}px at ${originX}px ${centerY}px)`
-
-            const headingProgress = easeHeading(clamp((progress - 0.39) / 0.61))
-            heading.style.transform = `translate3d(${width * 0.88 * (1 - headingProgress)}px, ${24 * (1 - headingProgress)}px, 0)`
+            sheet.style.clipPath = `circle(${opening}px at ${originX}px ${center + overhang}px)`
+            content.style.clipPath = `circle(${opening}px at ${contentOriginX}px ${center}px)`
           }
 
           root.dataset.experienceReady = ""
           reset = () => {
             delete root.dataset.experienceReady
-            sheet.style.removeProperty("clip-path")
-            heading.style.removeProperty("transform")
+            clearClip()
           }
-
+          measure()
           ScrollTrigger.create({
             trigger: panel,
             start: "top bottom",
@@ -108,17 +193,51 @@ export function ExperienceTimeline() {
             },
           })
 
-          for (const chapter of root.querySelectorAll<HTMLElement>("[data-experience-chapter]")) {
+          gsap.timeline({
+            scrollTrigger: {
+              trigger: panel, start: "top 72%", end: "top 3%", scrub: true, invalidateOnRefresh: true,
+            },
+          })
+            .fromTo(title, { x: () => content.clientWidth * 0.84 }, { x: 0, duration: 0.9, ease: "power2.out" }, 0)
+            .fromTo(introduction, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, 0.63)
+
+          gsap.fromTo(question, { x: 42, opacity: 0.15 }, {
+            x: 0, opacity: 1, ease: "power2.out",
+            scrollTrigger: { trigger: question, start: "top 94%", end: "top 66%", scrub: 0.2 },
+          })
+
+          const paintVine = ({ progress }: { progress: number }) => vine.paint(progress)
+          ScrollTrigger.create({
+            trigger: track,
+            start: "top 85%",
+            end: "bottom 65%",
+            onRefreshInit: vine.fit,
+            onRefresh: paintVine,
+            onUpdate: paintVine,
+          })
+
+          for (const job of content.querySelectorAll<HTMLElement>(".experience-role")) {
             gsap.timeline({
-              defaults: { ease: "none" },
-              scrollTrigger: { trigger: chapter, start: "top 97%", end: "top 36%", scrub: 0.23 },
+              defaults: { ease: "power2.out" },
+              scrollTrigger: { trigger: job, start: "top 97%", end: "top 66%", scrub: 0.2 },
             })
-              .from(chapter.querySelector("[data-experience-name]"), { yPercent: 105, duration: 0.72 }, 0)
-              .from(chapter.querySelector("[data-experience-role]"), { y: 16, opacity: 0.4, duration: 0.56 }, 0.18)
-              .from(chapter.querySelectorAll("[data-experience-copy]"), { y: 20, stagger: 0.13, duration: 0.74 }, 0.27)
+              .fromTo(job.querySelector(".experience-name-text"), { yPercent: 91 }, { yPercent: 0, duration: 0.8 }, 0.04)
+          }
+
+          for (const text of content.querySelectorAll<HTMLElement>("[data-experience-text]")) {
+            gsap.fromTo(text, {
+              y: 14, opacity: 0.12, clipPath: "inset(0 0 100% 0)",
+            }, {
+              y: 0, opacity: 1, clipPath: "inset(-0.2em -0.25em -0.2em -0.25em)",
+              ease: "power2.out",
+              scrollTrigger: { trigger: text, start: "top 98%", end: "top 79%", scrub: 0.18 },
+            })
           }
         })
-      }).catch((error: unknown) => console.error("Could not start the experience animation.", error))
+      }).catch((error: unknown) => {
+        vine.paint(1)
+        console.error("Could not start the experience animation.", error)
+      })
 
       return () => {
         disposed = true
@@ -126,53 +245,77 @@ export function ExperienceTimeline() {
       }
     })
 
-    return () => motion.revert()
+    vine.fit()
+    return () => {
+      vineSize.disconnect()
+      motion.revert()
+    }
   }, [])
 
   return (
-    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-nav-light data-circular-reveal>
-      <header className="experience-opening" data-section-motion="heading">
-        <div ref={sheetRef} className="experience-sheet">
-          <div className="experience-masthead experience-width">
-            <h2 ref={headingRef} id="experience-heading" className="experience-heading">Experience</h2>
-          </div>
+    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-circular-reveal>
+      <div ref={sheetRef} className="experience-sheet" aria-hidden="true" />
+      <div ref={contentRef} className="experience-content">
+        <header className="experience-masthead">
+          <h2 id="experience-heading">Hi there<span aria-hidden="true">.</span></h2>
+          <p>I’m a full stack developer who <em className="font-serif-italic">listens first</em> and builds software that makes people’s work easier.</p>
+        </header>
+
+        <div className="experience-question">
+          <span className="experience-question-mark" aria-hidden="true" />
+          <p id="experience-work-heading"><strong>Where have I </strong><em className="font-serif-italic">worked?</em></p>
         </div>
-      </header>
 
-      <div className="experience-work">
-        <ol role="list" className="experience-roles experience-width">
-          {experience.map((job) => (
-            <li key={job.id}>
-              <article className="experience-chapter" data-experience-chapter data-company={job.id} aria-labelledby={`experience-${job.id}`}>
-                <header className="experience-chapter-header">
-                  <div>
-                    <div className="experience-name-mask">
-                      <div className="experience-name" data-experience-name>
-                        <h3 id={`experience-${job.id}`}>{job.name}</h3>
-                        <img src={job.logo} alt="" width={128} height={128} loading="lazy" decoding="async" />
+        <div className="experience-timeline">
+          <canvas ref={vineRef} className="experience-vine" aria-hidden="true" />
+          <ol className="experience-roles" role="list" aria-labelledby="experience-work-heading">
+            {experience.map((job) => (
+              <li key={job.id}>
+                <article className="experience-role" aria-labelledby={`experience-${job.id}`}>
+                  <header className="experience-job-heading">
+                    <div>
+                      <div className="experience-company">
+                        <img src={job.logo} alt="" width={44} height={44} loading="lazy" decoding="async" />
+                        <h3 id={`experience-${job.id}`}><span className="experience-name-text">{job.name}</span></h3>
                       </div>
+                      <p className="experience-company-name" data-experience-text>{job.company}</p>
+                      <p className="experience-job-title" data-experience-text>Full Stack Developer</p>
                     </div>
-                    <p className="experience-company-name">{job.company}</p>
+                    <div className="experience-date">
+                      <p data-experience-text>
+                        <time className="whitespace-nowrap" dateTime={job.start}>{job.startLabel ?? job.start}</time>
+                        {"–"}<wbr />
+                        <time className="whitespace-nowrap" dateTime={job.end}>{job.endLabel ?? job.end}</time>
+                      </p>
+                      <p data-experience-text>{job.detail}</p>
+                    </div>
+                  </header>
+                  <div className="experience-job-body">
+                    <div className="experience-result">
+                      <p className="experience-focus font-serif-italic" data-experience-text>{job.focus}</p>
+                      <ul role="list" className="experience-contributions">
+                        {job.contributions.map(({ title, description }) => (
+                          <li key={title} data-experience-text><strong>{title}</strong> {description}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="experience-stack">
+                      <h4 data-experience-text>Stack used</h4>
+                      <ul role="list" className="experience-tools" aria-label={`Technologies at ${job.name}`}>
+                        {job.tools.map(({ name, icon }) => (
+                          <li key={name} data-experience-text>
+                            <img src={icon} alt="" width={19} height={19} loading="lazy" decoding="async" />
+                            {name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  <div className="experience-role" data-experience-role>
-                    <p>{job.role}</p>
-                    <p className="experience-date">
-                      <time dateTime={job.start}>{job.start}</time>
-                      {"end" in job && <>–<time dateTime={job.end}>{job.end}</time> · {job.duration}</>}
-                    </p>
-                    <p className="experience-technologies">{job.tech}</p>
-                  </div>
-                </header>
-
-                <div className="experience-feature">
-                  {job.passages.map((passage, index) => (
-                    <p key={index} className="experience-passage" data-experience-copy data-section-motion="body">{passage}</p>
-                  ))}
-                </div>
-              </article>
-            </li>
-          ))}
-        </ol>
+                </article>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   )

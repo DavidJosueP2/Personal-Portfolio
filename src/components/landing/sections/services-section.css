@@ -1,0 +1,193 @@
+.services-section {
+  --services-gutter: clamp(0.75rem, 1.4vw, 1.75rem);
+  padding-inline: var(--services-gutter);
+  padding-block-start: clamp(7.25rem, 14svh, 10rem);
+  padding-block-end: 0;
+}
+
+.services-heading {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: clamp(0.55rem, 2vw, 2rem);
+  padding-inline: clamp(0rem, 1.65vw, 2.5rem);
+}
+
+.services-heading h2 {
+  color: var(--ui-heading, inherit);
+  font-family: var(--font-sans);
+  font-size: clamp(3.25rem, 10.5vw, 9.5rem);
+  font-weight: 610;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+
+.services-heading p {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.35rem, 0.95vw, 0.95rem);
+  font-size: clamp(0.9rem, 2.05vw, 1.95rem);
+  font-weight: 610;
+  line-height: 1.15;
+  letter-spacing: -0.026em;
+}
+
+.services-mark {
+  inline-size: 0.5em;
+  block-size: 0.5em;
+  flex: none;
+  border-radius: 0.06em;
+  background: rgb(var(--accent-rgb, 52 211 153));
+}
+
+.services-previews {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.services-previews:not([data-service-placed]) { visibility: hidden; }
+
+.services-preview {
+  --service-tilt: -5deg;
+  --service-float-time: 7.2s;
+  --service-float-phase: -1.6s;
+  position: absolute;
+  inset: 0 auto auto 0;
+  inline-size: clamp(2.5rem, 12.2vw, 14.5rem);
+}
+
+.services-preview:nth-child(2) {
+  --service-tilt: 5.5deg;
+  --service-float-time: 8.4s;
+  --service-float-phase: -4.9s;
+}
+
+.services-preview-drift {
+  perspective: 650px;
+  transform: rotate(var(--service-tilt));
+}
+
+.services-flowers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.services-flowers canvas {
+  --service-breeze-time: 8.2s;
+  --service-breeze-phase: -1.7s;
+  --service-bend: 1.7deg;
+  position: absolute;
+  width: clamp(6.75rem, 16vw, 16rem);
+  aspect-ratio: 0.88;
+  transform-origin: 50% 94%;
+}
+
+.services-flowers-early-left {
+  inset-block-start: -9%;
+  inset-inline-start: 3%;
+  rotate: -8deg;
+}
+
+.services-flowers-early-right {
+  --service-breeze-time: 7.4s;
+  --service-breeze-phase: -5s;
+  --service-bend: 2.15deg;
+  inset-block-start: 12%;
+  inset-inline-end: 4%;
+  rotate: 9deg;
+}
+
+.services-flowers-late-left {
+  --service-breeze-time: 6.8s;
+  --service-breeze-phase: -2.8s;
+  --service-bend: 2.4deg;
+  inset-block-start: 47%;
+  inset-inline-start: 2.6%;
+  rotate: -12deg;
+}
+
+.services-flowers-late-right {
+  --service-breeze-time: 9.3s;
+  --service-breeze-phase: -7.4s;
+  inset-block-end: -5%;
+  inset-inline-end: 5%;
+  rotate: 11deg;
+}
+
+.services-meadow {
+  inline-size: calc(100% + 2 * var(--services-gutter));
+  block-size: clamp(14rem, 38svh, 25rem);
+  margin-inline: calc(-1 * var(--services-gutter));
+  pointer-events: none;
+}
+
+.services-meadow canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  transform-origin: 50% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .services-preview-drift {
+    animation: services-float var(--service-float-time) ease-in-out var(--service-float-phase) infinite paused;
+  }
+
+  .services-flowers canvas {
+    animation: services-breeze var(--service-breeze-time) ease-in-out var(--service-breeze-phase) infinite paused;
+  }
+
+  .services-meadow canvas {
+    animation: services-meadow-breeze 11.2s ease-in-out -3s infinite paused;
+  }
+
+  .services-section:not([data-service-tab-hidden]) :is(canvas[data-service-in-view], [data-service-in-view] > .services-preview-drift) {
+    animation-play-state: running;
+  }
+
+  @keyframes services-float {
+    0%, 100% { transform: translate3d(-2px, 2px, 0) rotate(calc(var(--service-tilt) - 0.6deg)); }
+    33% { transform: translate3d(1px, -6px, 0) rotate(calc(var(--service-tilt) + 0.75deg)); }
+    68% { transform: translate3d(3px, 1px, 0) rotate(var(--service-tilt)); }
+  }
+
+  @keyframes services-breeze {
+    0%, 100% { transform: skewX(-0.6deg) rotate(-0.48deg); }
+    32% { transform: skewX(var(--service-bend)) rotate(0.46deg); }
+    66% { transform: skewX(-1.25deg) rotate(-0.8deg); }
+    82% { transform: skewX(0.52deg) rotate(0.22deg); }
+  }
+
+  @keyframes services-meadow-breeze {
+    0%, 100% { transform: skewX(-0.53deg); }
+    45% { transform: skewX(0.78deg); }
+    76% { transform: skewX(0.11deg); }
+  }
+}
+
+@media (max-width: 700px) {
+  .services-section { padding-block-start: clamp(5.75rem, 11svh, 7rem); }
+
+  .services-heading {
+    padding-inline: 0;
+  }
+
+  .services-heading h2 {
+    font-size: clamp(2.9rem, 12.8vw, 5.45rem);
+  }
+
+  .services-heading p {
+    max-inline-size: 52%;
+  }
+
+  .services-flowers canvas { width: clamp(3.9rem, 21vw, 8.8rem); }
+  .services-flowers-early-left { inset-inline-start: 0; }
+  .services-flowers-early-right { inset-inline-end: -2%; }
+  .services-flowers-late-left { inset-inline-start: -2%; }
+  .services-flowers-late-right { inset-inline-end: 1%; }
+  .services-meadow { block-size: clamp(12rem, 34svh, 17rem); }
+}

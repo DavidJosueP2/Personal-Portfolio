@@ -153,6 +153,11 @@
   opacity: 0;
 }
 
+.tech-stack-letter-ampersand {
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
 [data-tech-letter][data-turned] > span:first-child,
 .tech-stack:not([data-tech-motion]) [data-active="true"] [data-tech-letter] > span:first-child { opacity: 0; }
 

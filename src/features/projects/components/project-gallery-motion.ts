@@ -16,7 +16,7 @@ export type GalleryFrame = {
   compact: boolean
 }
 
-export const galleryLanding = 0.65
+export const galleryLanding = 0.72
 
 export function smoothStep(start: number, end: number, progress: number) {
   const t = Math.min(1, Math.max(0, (progress - start) / (end - start)))
@@ -42,7 +42,8 @@ export function enterGallery(frame: GalleryFrame, carousel: ProjectPose, index: 
   const { width, height, cardWidth, compact } = frame
   // The same covers travel around the words, with a large card crossing in front below them.
   const spacing = index * 2 * Math.PI / count
-  const angle = Math.PI / 2 + (0.54 - Math.min(progress, 0.68)) * 3.4 + spacing + Math.sin(spacing) * 0.62
+  const turn = Math.min(progress, galleryLanding + 0.015)
+  const angle = Math.PI / 2 + (0.59 - turn) * 3.9 + spacing + Math.sin(spacing) * 0.62
   const side = Math.cos(angle)
   const heightOnRing = Math.sin(angle)
   const near = (heightOnRing + 1) / 2
@@ -57,7 +58,7 @@ export function enterGallery(frame: GalleryFrame, carousel: ProjectPose, index: 
     depth: mix(6, 40, near),
   }
 
-  const launch = index * 0.033
+  const launch = index * 0.028
   const right = index % 3 !== 1
   const offstage: ProjectPose = {
     ...orbit,
@@ -66,7 +67,7 @@ export function enterGallery(frame: GalleryFrame, carousel: ProjectPose, index: 
     yaw: right ? -81 : 75,
     roll: right ? -12 : 11,
   }
-  const arriving = blend(offstage, orbit, smoothStep(launch, launch + 0.36, progress))
+  const arriving = blend(offstage, orbit, smoothStep(launch, launch + 0.31, progress))
   // The featured cover lifts into its place while the neighboring cards fan out.
   const lift = index === 0 ? 0 : (index % 3 + 1) * 0.015
   const landing = smoothStep(galleryLanding + lift, 1, progress)

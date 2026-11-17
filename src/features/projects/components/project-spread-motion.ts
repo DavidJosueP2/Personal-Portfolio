@@ -159,16 +159,16 @@ export function createProjectSpread(
       const words = Array.from(section.querySelectorAll<HTMLElement>("[data-project-phrase-line]"))
 
       const render = () => {
-        const paper = smoothStep(galleryLanding + 0.09, 0.97, entrance)
-        const controls = smoothStep(0.86, 1, entrance) * (1 - smoothStep(0.06, 0.44, exit))
+        const paper = smoothStep(galleryLanding + 0.075, 0.97, entrance)
+        const controls = smoothStep(0.89, 1, entrance) * (1 - smoothStep(0.06, 0.44, exit))
         interactive = entrance >= 0.96 && exit < 0.16
         section.toggleAttribute("data-project-interactive", interactive)
         section.toggleAttribute("data-nav-light", paper >= 0.52)
         section.style.setProperty("--project-darkness", String(1 - paper))
         section.style.setProperty("--project-interface", String(controls))
         for (const [index, word] of words.entries()) {
-          const appear = smoothStep(0.22 + index * 0.063, 0.40 + index * 0.063, entrance)
-          const depart = smoothStep(0.64 + index * 0.025, 0.77 + index * 0.025, entrance)
+          const appear = smoothStep(0.19 + index * 0.053, 0.34 + index * 0.053, entrance)
+          const depart = smoothStep(galleryLanding - 0.02 + index * 0.02, galleryLanding + 0.10 + index * 0.02, entrance)
           word.style.opacity = String(appear * (1 - depart))
           word.style.transform = `translateY(${(1 - appear) * 80 - depart * 40}%)`
         }

@@ -85,8 +85,8 @@ const layers = [
   },
   {
     id: "stack-data",
-    name: "Databases",
-    tools: [tech("PostgresSQL.png", "PostgreSQL"), tech("Microsoft SQL Server.png"), tech("MySQL.png"), tech("Oracle.png")],
+    name: "Data & BI",
+    tools: [tech("PostgresSQL.png", "PostgreSQL"), tech("Microsoft SQL Server.png"), tech("MySQL.png"), tech("Oracle.png"), tech("Power BI.svg")],
   },
   {
     id: "stack-tooling",
@@ -235,21 +235,23 @@ export function StackSection() {
           })
 
           for (const chapter of chapters) {
-            const letters = chapter.querySelectorAll<HTMLElement>("[data-tech-letter]")
+            const heading = chapter.querySelector<HTMLElement>(".tech-stack-chapter-heading")
+            if (!heading) continue
+            const letters = heading.querySelectorAll<HTMLElement>("[data-tech-letter]")
             let painted = -1
             const paintLetters = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
               const span = end - start
-              const entered = span * progress / (window.innerHeight * 0.36)
-              const leaving = span * (1 - progress) / (window.innerHeight * 0.31)
+              const entered = span * progress / (window.innerHeight * 0.38)
+              const leaving = span * (1 - progress) / (window.innerHeight * 0.23)
               const count = Math.floor(gsap.utils.clamp(0, 1, Math.min(entered, leaving)) * letters.length + 0.001)
               if (count === painted) return
               letters.forEach((letter, index) => letter.toggleAttribute("data-turned", index < count))
               painted = count
             }
             ScrollTrigger.create({
-              trigger: chapter,
-              start: "top 84%",
-              end: "bottom 17%",
+              trigger: heading,
+              start: "top 90%",
+              end: "bottom 12%",
               onUpdate: paintLetters,
               onRefresh: paintLetters,
             })
@@ -350,7 +352,7 @@ export function StackSection() {
                           {Array.from(word, (letter, index) => (
                             <span key={index} data-tech-letter>
                               <span>{letter}</span>
-                              <span className={letter === "&" ? "tech-stack-letter-serif" : "tech-stack-letter-serif font-serif-italic"}>{letter}</span>
+                              <span className={letter === "&" ? "tech-stack-letter-serif tech-stack-letter-ampersand" : "tech-stack-letter-serif font-serif-italic"}>{letter}</span>
                             </span>
                           ))}
                         </span>
