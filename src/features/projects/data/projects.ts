@@ -242,6 +242,7 @@ export const projects: Project[] = [
       { name: "Tailwind CSS", iconSrc: Tailwind },
     ],
     images: {
+      previewSrc: new URL("../../../assets/img/projects/wedding-page/preview.webp", import.meta.url).toString(),
       cover: {
         src: new URL("../../../assets/img/projects/wedding-page/home.png", import.meta.url).toString(),
         alt: "White Lace & Promises wedding and event styling homepage",
@@ -284,6 +285,7 @@ export const projects: Project[] = [
       { name: "Amazon S3", iconSrc: AmazonS3 },
     ],
     images: {
+      previewSrc: new URL("../../../assets/img/projects/foris-forum chat/preview.webp", import.meta.url).toString(),
       cover: {
         src: new URL("../../../assets/img/projects/foris-forum chat/Home.png", import.meta.url).toString(),
         alt: "FORIS forum homepage",

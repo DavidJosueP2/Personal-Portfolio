@@ -1,19 +1,24 @@
-.experience {
-  --experience-paper: #f5f4ef;
-  --experience-ink: #171815;
-  --experience-muted: #565952;
-  --experience-accent-ink: color-mix(in oklab, var(--experience-ink) 64%, rgb(var(--accent-rgb, 52 211 153)));
-  --experience-gutter: clamp(1.25rem, 5.35vw, 7rem);
-  --experience-stage: clamp(25rem, 79svh, 59rem);
-  background: var(--experience-paper);
-  color: var(--experience-ink);
-  color-scheme: light;
+.experience,
+.site-header[data-experience-paper] {
+  --experience-paper: #14181e;
 }
 
-.experience-width {
-  max-inline-size: 108rem;
-  margin-inline: auto;
-  padding-inline: var(--experience-gutter);
+.experience {
+  --experience-ink: #f4f3ef;
+  --experience-muted: #acb6c2;
+  --experience-accent: rgb(var(--accent-rgb, 52 211 153));
+  --experience-accent-ink: color-mix(in oklab, var(--experience-accent) 67%, var(--experience-ink));
+  position: relative;
+  background: var(--experience-paper);
+  color: var(--experience-ink);
+  color-scheme: dark;
+}
+
+.experience-sheet {
+  position: absolute;
+  inset: 0;
+  background: var(--experience-paper);
+  pointer-events: auto;
 }
 
 .experience[data-experience-ready] {
@@ -21,156 +26,252 @@
   pointer-events: none;
 }
 
+.experience[data-experience-ready] .experience-sheet { inset-block-start: -100svh; }
+
 [data-stack-ready] [data-stack-surface]:has(> .experience[data-experience-ready]) {
   overflow: visible;
 }
 
-.experience-opening {
+.experience-content {
   position: relative;
-  block-size: var(--experience-stage);
-}
-
-.experience-sheet {
-  position: absolute;
-  inset: 0;
+  isolation: isolate;
+  max-inline-size: 86rem;
+  margin-inline: auto;
+  padding: clamp(6.4rem, 12svh, 9rem) clamp(1.25rem, 5vw, 5rem) clamp(4.5rem, 10svh, 7rem);
   overflow: clip;
   background: var(--experience-paper);
   pointer-events: auto;
-}
-
-.experience[data-experience-ready] .experience-sheet {
-  inset-block-start: -100svh;
 }
 
 .experience-masthead {
-  position: absolute;
-  inset: auto 0 0;
-  block-size: var(--experience-stage);
-  padding-block-start: clamp(8rem, 29svh, 23rem);
-}
-
-.experience-heading {
-  font-family: var(--font-sans);
-  font-size: clamp(2.45rem, 12.2vw, 13.4rem);
-  font-weight: 700;
-  line-height: 0.95;
-  letter-spacing: -0.061em;
-}
-
-.experience-work {
   position: relative;
-  background: var(--experience-paper);
-  pointer-events: auto;
-}
-
-.experience-roles {
-  padding-block: clamp(2.5rem, 6.5svh, 5rem) clamp(5rem, 14svh, 12rem);
-}
-
-.experience-roles > li + li {
-  margin-block-start: clamp(3.75rem, 10svh, 7.5rem);
-}
-
-.experience-chapter-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 1rem clamp(2rem, 5vw, 6rem);
+  gap: 1.05rem;
+  padding-block-end: clamp(0.95rem, 3.1svh, 1.8rem);
 }
 
-.experience-name-mask {
-  overflow: clip;
-  padding-block-end: 0.12em;
+.experience-masthead h2 {
+  font-family: var(--font-sans);
+  font-size: clamp(2.9rem, 7vw, 5.9rem);
+  font-weight: 660;
+  line-height: 0.92;
+  letter-spacing: -0.054em;
 }
 
-.experience-name {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.6rem, 1.25vw, 1.2rem);
-}
+.experience-masthead h2 span { color: var(--experience-accent-ink); }
 
-.experience-name h3 {
-  font-size: clamp(2.15rem, 5.25vw, 6.3rem);
-  font-weight: 600;
-  letter-spacing: -0.046em;
-  line-height: 1;
-}
-
-.experience-name img {
-  inline-size: clamp(1.75rem, 3vw, 2.65rem);
-  block-size: auto;
-  flex: none;
-}
-
-.experience-company-name,
-.experience-role {
-  margin-block-start: 0.35rem;
-  font-size: clamp(0.9rem, 1.22vw, 1.1rem);
-}
-
-.experience-company-name,
-.experience-date {
+.experience-masthead p {
+  max-inline-size: 54ch;
   color: var(--experience-muted);
-}
-
-.experience-role {
-  padding-block-end: 0.16em;
-}
-
-.experience-role p:first-child { font-weight: 600; }
-
-.experience-date {
-  margin-block-start: 0.25rem;
-  font-size: 0.87em;
-  font-variant-numeric: tabular-nums;
-}
-
-.experience-technologies {
-  margin-block-start: 0.35rem;
-  color: var(--experience-accent-ink);
-  font-size: 0.79em;
-  line-height: 1.35;
-}
-
-.experience-feature {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(1.65rem, 5.2svh, 4rem) clamp(0.4rem, 1.3vw, 1.4rem);
-  margin-block-start: clamp(1.6rem, 5.4svh, 4.2rem);
-}
-
-.experience-passage {
-  grid-column: 1 / span 5;
-  max-inline-size: 38ch;
-  font-size: clamp(1rem, 1.5vw, 1.45rem);
-  line-height: 1.55;
+  font-size: clamp(1rem, 1.42vw, 1.3rem);
+  line-height: 1.42;
+  letter-spacing: -0.023em;
   text-wrap: pretty;
 }
 
-.experience-passage em { color: var(--experience-accent-ink); }
-.experience-passage + .experience-passage { grid-column: 5 / span 5; }
+.experience-masthead p em { color: var(--experience-accent-ink); }
 
-.experience-chapter[data-company="eeasa"] .experience-chapter-header {
-  margin-inline-start: clamp(0px, 31%, 29rem);
+.experience-question {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.35rem, 0.95vw, 0.95rem);
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin-block-start: clamp(1.15rem, 3.5svh, 2.5rem);
+  margin-inline-start: auto;
+  font-size: clamp(1.18rem, 2.05vw, 1.95rem);
 }
 
-.experience-chapter[data-company="eeasa"] .experience-passage { grid-column: 8 / -1; }
+.experience-question p {
+  font-size: inherit;
+  line-height: 1.15;
+  letter-spacing: -0.026em;
+}
+
+.experience-question strong { font-weight: 610; }
+.experience-question em { color: var(--experience-accent-ink); font-weight: 400; }
+
+.experience-question-mark {
+  inline-size: 0.5em;
+  block-size: 0.5em;
+  flex: none;
+  border-radius: 0.06em;
+  background: var(--experience-accent);
+}
+
+.experience-timeline {
+  --experience-vine-width: clamp(2.5rem, 5.1vw, 5.2rem);
+  --experience-rail-gap: calc(var(--experience-vine-width) + clamp(0.6rem, 1.55vw, 1.5rem));
+  --experience-row-space: clamp(1.4rem, 4.4svh, 3.15rem);
+  position: relative;
+}
+
+.experience-vine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  inline-size: var(--experience-vine-width);
+  block-size: 100%;
+  pointer-events: none;
+}
+
+.experience-role {
+  position: relative;
+  margin-inline-start: var(--experience-rail-gap);
+  padding-block: var(--experience-row-space);
+}
+
+.experience-roles > li + li {
+  margin-block-start: clamp(0.65rem, 1.85svh, 1.55rem);
+}
+
+.experience-job-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.55rem 1rem;
+}
+
+.experience-company {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.48rem, 1.35vw, 1rem);
+}
+
+.experience-company img {
+  inline-size: clamp(1.65rem, 3.15vw, 2.75rem);
+  block-size: clamp(1.65rem, 3.15vw, 2.75rem);
+  flex: none;
+  object-fit: contain;
+  padding: 0.24rem;
+  border-radius: 0.25rem;
+  background: var(--experience-ink);
+}
+
+.experience-company h3 {
+  display: inline-block;
+  padding-block: 0.02em 0.09em;
+  overflow: clip;
+  font-size: clamp(1.9rem, 3.75vw, 3.35rem);
+  font-weight: 660;
+  letter-spacing: -0.048em;
+  line-height: 1.04;
+}
+
+.experience-name-text { display: block; }
+
+.experience-company-name {
+  margin-block-start: 0.28rem;
+  color: var(--experience-muted);
+  font-size: 0.83rem;
+  line-height: 1.4;
+}
+
+.experience-job-title {
+  margin-block-start: 0.66rem;
+  color: var(--experience-accent-ink);
+  font-size: clamp(0.82rem, 1.15vw, 0.93rem);
+  font-weight: 690;
+}
+
+.experience-date {
+  justify-self: end;
+  padding-block-start: 0.42rem;
+  color: var(--experience-muted);
+  font-size: clamp(0.76rem, 1vw, 0.9rem);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.experience-date p:first-child {
+  color: var(--experience-ink);
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.experience-date p:last-child { margin-block-start: 0.15rem; }
+
+.experience-job-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.43fr);
+  align-items: stretch;
+  gap: 1.15rem clamp(1.3rem, 4vw, 4.25rem);
+  margin-block-start: clamp(1.25rem, 3.4svh, 2.1rem);
+}
+
+.experience-focus {
+  color: var(--experience-accent-ink);
+  font-size: clamp(1.45rem, 2.4vw, 2.45rem);
+  font-weight: 400;
+  letter-spacing: -0.033em;
+  line-height: 1.12;
+}
+
+.experience-contributions {
+  display: grid;
+  gap: 0.67rem;
+  margin-block-start: 0.75rem;
+  color: var(--experience-muted);
+  font-size: clamp(0.92rem, 1.18vw, 1.03rem);
+  line-height: 1.54;
+  text-wrap: pretty;
+}
+
+.experience-contributions strong { color: var(--experience-ink); font-weight: 680; }
+
+.experience-contributions li {
+  position: relative;
+  padding-inline-start: 0.95rem;
+}
+
+.experience-contributions li::before {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0.66em;
+  inline-size: 0.23rem;
+  block-size: 0.23rem;
+  border-radius: 50%;
+  background: var(--experience-accent-ink);
+  content: "";
+}
+
+.experience-stack h4 {
+  font-size: clamp(0.9rem, 1.2vw, 1.04rem);
+  font-weight: 680;
+}
+
+.experience-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.47rem;
+  margin-block-start: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 670;
+}
+
+.experience-tools li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  padding: 0.33rem 0.57rem;
+  background: rgb(205 218 235 / 0.07);
+  border-radius: 999px;
+}
+
+.experience-tools img { inline-size: 1.04rem; block-size: 1.04rem; object-fit: contain; }
 
 @media (max-width: 760px) {
-  .experience { --experience-stage: clamp(19rem, 64svh, 33rem); }
-  .experience-masthead { padding-block-start: clamp(7rem, 28svh, 15rem); }
-
-  .experience-chapter-header, .experience-feature { grid-template-columns: minmax(0, 1fr); }
-  .experience-chapter-header { row-gap: 0.75rem; }
-  .experience-role { margin-block-start: 0; }
-  .experience-passage, .experience-passage + .experience-passage,
-  .experience-chapter[data-company="eeasa"] .experience-passage { grid-column: 1; }
-  .experience-passage + .experience-passage { margin-inline-start: 7%; }
-  .experience-chapter[data-company="eeasa"] .experience-chapter-header { margin-inline-start: 7%; }
-  .experience-chapter[data-company="eeasa"] .experience-passage { margin-inline-start: 14%; }
+  .experience-job-heading { column-gap: 0.55rem; }
+  .experience-date { max-inline-size: 7.6rem; }
+  .experience-job-body { grid-template-columns: minmax(0, 1fr); }
+  .experience-timeline {
+    --experience-vine-width: clamp(1.45rem, 6.4vw, 2.4rem);
+    --experience-rail-gap: calc(var(--experience-vine-width) + 0.55rem);
+  }
+  .experience-contributions { margin-block-start: 0.48rem; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .experience { --experience-stage: clamp(16rem, 39svh, 28rem); }
-  .experience-masthead { padding-block-start: clamp(6rem, 15svh, 9.5rem); }
+@media (max-width: 370px) {
+  .experience-job-heading { grid-template-columns: minmax(0, 1fr); }
 }

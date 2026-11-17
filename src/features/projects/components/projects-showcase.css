@@ -1,7 +1,21 @@
-.project-spread {
+.project-scene {
   --project-paper: #fbfaf7;
   --project-ink: #161612;
   --project-muted: #5a5850;
+  --project-gallery-paper: #0b0b0b;
+  --project-intro-distance: clamp(46rem, 112svh, 80rem);
+  --project-hold-distance: clamp(13rem, 32svh, 21rem);
+  position: relative;
+  background: var(--project-paper);
+  touch-action: pan-y pinch-zoom;
+}
+
+.project-scene:focus-visible {
+  outline: 1px solid var(--project-ink);
+  outline-offset: -5px;
+}
+
+.project-spread {
   --project-gutter: clamp(1.5rem, 3vw, 3.5rem);
   --project-image-width: clamp(23rem, 31vw, 42rem);
   --project-title-size: clamp(1.12rem, 1.85vw, 2.25rem);
@@ -27,12 +41,70 @@
   color-scheme: light;
   color: var(--project-ink);
   background: var(--project-paper);
-  touch-action: pan-y pinch-zoom;
 }
 
-.project-spread:focus-visible {
-  outline: 1px solid var(--project-ink);
-  outline-offset: -5px;
+.project-runway,
+.project-phrase { display: none; }
+
+.project-scene[data-project-motion] .project-spread {
+  position: sticky;
+  top: 0;
+  min-block-size: var(--project-stage-height);
+}
+
+.project-scene[data-project-motion] .project-runway {
+  display: block;
+  block-size: var(--project-intro-distance);
+}
+
+.project-scene[data-project-motion]::after {
+  display: block;
+  block-size: var(--project-hold-distance);
+  content: "";
+}
+
+.project-scene[data-project-motion] .project-spread::before {
+  position: absolute;
+  inset: 0;
+  background: var(--project-gallery-paper);
+  opacity: var(--project-darkness, 0);
+  pointer-events: none;
+  content: "";
+}
+
+.project-scene[data-project-motion] .project-phrase {
+  position: absolute;
+  z-index: 43;
+  inset: 46svh auto auto 50%;
+  display: grid;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  transform: translate(-50%, -50%);
+  color: #f7f4ee;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: clamp(1.48rem, 3.52vw, 3.75rem);
+  line-height: 1.055;
+  font-weight: 480;
+  letter-spacing: -0.04em;
+  pointer-events: none;
+}
+
+.project-phrase > span {
+  display: block;
+  overflow: clip;
+  padding-block: 0.07em 0.11em;
+}
+
+.project-phrase [data-project-phrase-line] { display: block; opacity: 0; }
+.project-phrase em { font-weight: 400; }
+
+.project-scene[data-project-motion] :is(.project-heading, .project-details, .project-summary, .project-caption, .project-controls) {
+  opacity: var(--project-interface, 1);
+}
+
+.project-scene[data-project-motion]:not([data-project-interactive]) :is([data-project-preview], .project-details, .project-caption, .project-controls) {
+  pointer-events: none;
 }
 
 .project-heading {
@@ -227,6 +299,13 @@
 }
 
 @media (max-width: 899px) {
+  .project-scene {
+    --project-intro-distance: clamp(35rem, 102svh, 64rem);
+    --project-hold-distance: clamp(11rem, 27svh, 16rem);
+  }
+
+  .project-scene[data-project-motion] .project-phrase { font-size: clamp(1.33rem, 5.9vw, 3.15rem); }
+
   .project-spread {
     --project-gutter: clamp(1rem, 4vw, 2.5rem);
     --project-image-width: min(calc(100% - var(--project-gutter) * 2), 37rem);
