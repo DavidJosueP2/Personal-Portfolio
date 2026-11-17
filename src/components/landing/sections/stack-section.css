@@ -33,6 +33,19 @@
 
 .tech-stack-trace-compact { display: none; }
 
+.tech-stack-garden {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tech-stack-rose {
+  position: absolute;
+  display: block;
+  aspect-ratio: 10 / 11;
+}
+
 .tech-stack-inner {
   position: relative;
   display: grid;

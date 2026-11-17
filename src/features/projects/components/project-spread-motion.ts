@@ -1,21 +1,13 @@
 import { gsap } from "gsap"
-
-type Pose = {
-  x: number
-  y: number
-  scale: number
-  pitch: number
-  yaw: number
-  roll: number
-  opacity: number
-  depth: number
-}
+import { enterGallery, exitGallery, galleryLanding, smoothStep, type GalleryFrame, type ProjectPose as Pose } from "./project-gallery-motion"
 
 const wrap = (value: number, length: number) => ((value % length) + length) % length
 
 export function createProjectSpread(
+  section: HTMLElement,
   scene: HTMLElement,
   anchor: HTMLElement,
+  runway: HTMLElement,
   pictures: HTMLButtonElement[],
   onActive: (index: number) => void,
 ) {
@@ -29,10 +21,16 @@ export function createProjectSpread(
   let target = 0
   let active = 0
   let poses: Pose[] = []
+  let frame: GalleryFrame
   let tween: gsap.core.Tween | undefined
+  let entrance = 1
+  let exit = 0
+  let jumpToCarousel: (() => void) | undefined
+  let interactive = true
 
   function paint() {
     if (!poses.length) return
+    const current = Math.round(cursor.index)
     for (const [index, picture] of pictures.entries()) {
       const offset = wrap(index - cursor.index - first, count) + first
       const lane = (offset - first) * 2
@@ -49,15 +47,21 @@ export function createProjectSpread(
         const entry = (after[axis] - a[axis]) / 2
         return mix(a[axis], b[axis]) + t * (1 - t) * ((1 - t) * (exit - travel) + t * (travel - entry))
       }
-      const opacity = mix(a.opacity, b.opacity)
-      const scale = mix(a.scale, b.scale)
-      picture.style.transform = `translate3d(${trace("x")}px, ${trace("y")}px, 0) translate(-50%, -50%) perspective(1000px) rotateX(${mix(a.pitch, b.pitch)}deg) rotateY(${mix(a.yaw, b.yaw)}deg) rotateZ(${mix(a.roll, b.roll)}deg) scale(${scale})`
-      picture.style.opacity = String(opacity)
-      picture.style.visibility = opacity <= 0.015 ? "hidden" : "visible"
-      picture.style.zIndex = String(Math.round(mix(a.depth, b.depth)))
+      const carousel = {
+        x: trace("x"), y: trace("y"), scale: mix(a.scale, b.scale),
+        pitch: mix(a.pitch, b.pitch), yaw: mix(a.yaw, b.yaw), roll: mix(a.roll, b.roll),
+        opacity: mix(a.opacity, b.opacity), depth: mix(a.depth, b.depth),
+      }
+      const pose = entrance < 1
+        ? enterGallery(frame, carousel, wrap(index - current, count), count, entrance)
+        : exit > 0 ? exitGallery(frame, carousel, index, exit) : carousel
+      picture.style.transform = `translate3d(${pose.x}px, ${pose.y}px, 0) translate(-50%, -50%) perspective(1000px) rotateX(${pose.pitch}deg) rotateY(${pose.yaw}deg) rotateZ(${pose.roll}deg) scale(${pose.scale})`
+      picture.style.opacity = String(pose.opacity)
+      picture.style.visibility = pose.opacity <= 0.015 ? "hidden" : "visible"
+      picture.style.zIndex = String(Math.round(pose.depth))
     }
 
-    const next = wrap(Math.round(cursor.index), count)
+    const next = wrap(current, count)
     if (next !== active) {
       active = next
       onActive(next)
@@ -65,15 +69,16 @@ export function createProjectSpread(
   }
 
   function measure() {
-    const frame = scene.getBoundingClientRect()
-    if (!frame.width || !frame.height) return
+    const bounds = scene.getBoundingClientRect()
+    if (!bounds.width || !bounds.height) return
     const focus = anchor.getBoundingClientRect()
     const width = scene.clientWidth
     const height = scene.clientHeight
-    const centerX = (focus.left + focus.width / 2 - frame.left) * width / frame.width
-    const centerY = (focus.top + focus.height / 2 - frame.top) * height / frame.height
+    const centerX = (focus.left + focus.width / 2 - bounds.left) * width / bounds.width
+    const centerY = (focus.top + focus.height / 2 - bounds.top) * height / bounds.height
     const mobile = compact.matches
     const upperEdge = Math.min(height, window.innerHeight)
+    frame = { width, height: upperEdge, cardWidth: anchor.offsetWidth, compact: mobile }
     const top: Pose = { x: width * (mobile ? 0.79 : 0.28), y: mobile ? centerY - anchor.offsetHeight * 0.67 : 86 + anchor.offsetHeight * 0.25, scale: mobile ? 0.37 : 0.4, pitch: 9, yaw: -15, roll: -8, opacity: 1, depth: 18 }
     const bottom: Pose = { x: width * (mobile ? 0.88 : 0.89), y: mobile ? height - 22 : upperEdge * 0.995, scale: mobile ? 0.36 : 0.46, pitch: 10, yaw: -18, roll: -9, opacity: 1, depth: 18 }
     const center: Pose = { x: centerX, y: centerY, scale: 1, pitch: 0, yaw: 0, roll: 0, opacity: 1, depth: 40 }
@@ -143,7 +148,90 @@ export function createProjectSpread(
   reduced.addEventListener("change", settle)
   measure()
 
+  const scrollMotion = gsap.matchMedia()
+  scrollMotion.add("(prefers-reduced-motion: no-preference)", () => {
+    let disposed = false
+    let cleanup: (() => void) | undefined
+    void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+      if (disposed) return
+      gsap.registerPlugin(ScrollTrigger)
+      const panel = section.closest<HTMLElement>("[data-stack-panel]") ?? section
+      const words = Array.from(section.querySelectorAll<HTMLElement>("[data-project-phrase-line]"))
+
+      const render = () => {
+        const paper = smoothStep(galleryLanding + 0.09, 0.97, entrance)
+        const controls = smoothStep(0.86, 1, entrance) * (1 - smoothStep(0.06, 0.44, exit))
+        interactive = entrance >= 0.96 && exit < 0.16
+        section.toggleAttribute("data-project-interactive", interactive)
+        section.toggleAttribute("data-nav-light", paper >= 0.52)
+        section.style.setProperty("--project-darkness", String(1 - paper))
+        section.style.setProperty("--project-interface", String(controls))
+        for (const [index, word] of words.entries()) {
+          const appear = smoothStep(0.22 + index * 0.063, 0.40 + index * 0.063, entrance)
+          const depart = smoothStep(0.64 + index * 0.025, 0.77 + index * 0.025, entrance)
+          word.style.opacity = String(appear * (1 - depart))
+          word.style.transform = `translateY(${(1 - appear) * 80 - depart * 40}%)`
+        }
+        paint()
+      }
+      const paintEntrance = ({ progress }: { progress: number }) => {
+        entrance = progress
+        render()
+      }
+      const paintExit = ({ progress }: { progress: number }) => {
+        exit = progress
+        render()
+      }
+      section.dataset.projectMotion = ""
+      measure()
+      const intro = ScrollTrigger.create({
+        trigger: panel,
+        start: "top 78%",
+        end: () => `top -${runway.offsetHeight}px`,
+        onUpdate: paintEntrance,
+        onRefresh: paintEntrance,
+      })
+      const outro = ScrollTrigger.create({
+        trigger: panel,
+        start: "bottom bottom",
+        end: "bottom 16%",
+        onUpdate: paintExit,
+        onRefresh: paintExit,
+      })
+      jumpToCarousel = () => {
+        window.scrollTo({ top: intro.end + 2, behavior: "instant" })
+        ScrollTrigger.update()
+      }
+      ScrollTrigger.refresh()
+
+      cleanup = () => {
+        intro.kill()
+        outro.kill()
+        jumpToCarousel = undefined
+        entrance = 1
+        exit = 0
+        interactive = true
+        delete section.dataset.projectMotion
+        delete section.dataset.projectInteractive
+        section.setAttribute("data-nav-light", "")
+        section.style.removeProperty("--project-darkness")
+        section.style.removeProperty("--project-interface")
+        words.forEach((word) => {
+          word.style.removeProperty("opacity")
+          word.style.removeProperty("transform")
+        })
+        measure()
+      }
+    }).catch((error: unknown) => console.error("Could not start the project gallery motion.", error))
+    return () => {
+      disposed = true
+      cleanup?.()
+    }
+  })
+
   return {
+    canInteract: () => interactive,
+    focusCarousel: () => { if (!interactive) jumpToCarousel?.() },
     step: (direction: number) => go(target + direction),
     select: (index: number) => {
       if (index === active) return
@@ -162,6 +250,7 @@ export function createProjectSpread(
     },
     go,
     destroy: () => {
+      scrollMotion.revert()
       size.disconnect()
       reduced.removeEventListener("change", settle)
       tween?.kill()
