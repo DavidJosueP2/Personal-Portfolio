@@ -56,7 +56,6 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
     const header = nav.closest(".site-header")
     const brand = header?.querySelector(".site-header-brand")
     const actions = header?.querySelector(".site-header-actions")
-    const circularSheet = panels.find((panel) => panel.hasAttribute("data-circular-reveal"))?.querySelector<HTMLElement>(".experience-sheet")
     let frame = 0
     let lastSurface = ""
 
@@ -88,11 +87,10 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       }) ?? null
       const id = section?.id ?? ""
       const light = section?.hasAttribute("data-nav-light") ?? false
-      const experience = section?.hasAttribute("data-circular-reveal") ?? false
-      const circleCrossing = experience && Boolean(circularSheet?.style.clipPath)
-      const brandLight = circleCrossing ? hasLightSurface(brand) : light
-      const actionsLight = circleCrossing ? hasLightSurface(actions) : light
-      const experiencePaper = experience && !circleCrossing
+      const experience = section?.hasAttribute("data-scene-handoff") ?? false
+      const brandLight = experience ? hasLightSurface(brand) : light
+      const actionsLight = experience ? hasLightSurface(actions) : light
+      const experiencePaper = experience
       const key = [id, light, brandLight, actionsLight, experiencePaper].join(":")
       if (key === lastSurface) return
       lastSurface = key

@@ -16,6 +16,7 @@ import junitLogo from "@/assets/img/tech/JUnit.png"
 import playwrightLogo from "@/assets/img/tech/Playwrite.png"
 import dockerLogo from "@/assets/img/tech/Docker.png"
 import { createExperienceVine } from "./experience-vine"
+import { setupExperienceArrival } from "./hero/experience-arrival"
 import "./experience-timeline.css"
 
 const backend = [
@@ -138,68 +139,14 @@ export function ExperienceTimeline() {
         if (disposed) return
         gsap.registerPlugin(ScrollTrigger)
         context.add(() => {
-          const panel = root.closest<HTMLElement>("[data-stack-panel]") ?? root
-          const title = content.querySelector("#experience-heading")
-          const introduction = content.querySelector(".experience-masthead p")
           const question = content.querySelector(".experience-question")
           const track = content.querySelector(".experience-roles")
-          let originX = 0
-          let contentOriginX = 0
-          let originY = 0
-          let radius = 0
-          let overhang = 0
-
-          const measure = () => {
-            originX = root.clientWidth / 2
-            contentOriginX = originX - content.offsetLeft
-            originY = document.documentElement.clientHeight
-            radius = Math.hypot(originX, originY) + 4
-            overhang = -sheet.offsetTop
-          }
-
-          const clearClip = () => {
-            sheet.style.removeProperty("clip-path")
-            content.style.removeProperty("clip-path")
-          }
-
-          const render = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
-            const panelTop = (end - start) * (1 - progress)
-            if (panelTop < 1) {
-              clearClip()
-              return
-            }
-
-            // The background extends over the preceding section. Both layers share one viewport origin.
-            const center = originY - panelTop
-            const opening = radius * progress ** 1.04
-            sheet.style.clipPath = `circle(${opening}px at ${originX}px ${center + overhang}px)`
-            content.style.clipPath = `circle(${opening}px at ${contentOriginX}px ${center}px)`
-          }
-
           root.dataset.experienceReady = ""
+          const resetArrival = setupExperienceArrival(root, ScrollTrigger)
           reset = () => {
             delete root.dataset.experienceReady
-            clearClip()
+            resetArrival()
           }
-          measure()
-          ScrollTrigger.create({
-            trigger: panel,
-            start: "top bottom",
-            end: "top top",
-            onUpdate: render,
-            onRefresh: (trigger) => {
-              measure()
-              render(trigger)
-            },
-          })
-
-          gsap.timeline({
-            scrollTrigger: {
-              trigger: panel, start: "top 72%", end: "top 3%", scrub: true, invalidateOnRefresh: true,
-            },
-          })
-            .fromTo(title, { x: () => content.clientWidth * 0.84 }, { x: 0, duration: 0.9, ease: "power2.out" }, 0)
-            .fromTo(introduction, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, 0.63)
 
           gsap.fromTo(question, { x: 42, opacity: 0.15 }, {
             x: 0, opacity: 1, ease: "power2.out",
@@ -253,7 +200,7 @@ export function ExperienceTimeline() {
   }, [])
 
   return (
-    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-circular-reveal>
+    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-scene-handoff data-inverse-cursor-surface>
       <div ref={sheetRef} className="experience-sheet" aria-hidden="true" />
       <div ref={contentRef} className="experience-content">
         <header className="experience-masthead">
@@ -261,6 +208,7 @@ export function ExperienceTimeline() {
           <p>I’m a full stack developer who <em className="font-serif-italic">listens first</em> and builds software that makes people’s work easier.</p>
         </header>
 
+        <div className="experience-work">
         <div className="experience-question">
           <span className="experience-question-mark" aria-hidden="true" />
           <p id="experience-work-heading"><strong>Where have I </strong><em className="font-serif-italic">worked?</em></p>
@@ -315,6 +263,7 @@ export function ExperienceTimeline() {
               </li>
             ))}
           </ol>
+        </div>
         </div>
       </div>
     </section>

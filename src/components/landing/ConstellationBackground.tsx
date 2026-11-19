@@ -1,6 +1,7 @@
 import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
 import { createWebGLAurora } from "./aurora/aurora-webgl"
+import { heroFlight, planetDeparture } from "@/lib/hero-flight"
 
 type Star = {
   x: number
@@ -269,13 +270,15 @@ function drawAurora(
  * Uses Canvas2D for perf.
  */
 export function ConstellationBackground() {
+  const backdropRef = React.useRef<HTMLDivElement | null>(null)
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
   const auroraRef = React.useRef<HTMLCanvasElement | null>(null)
 
   React.useEffect(() => {
     const canvas = canvasRef.current
     const auroraLayer = auroraRef.current
-    if (!canvas || !auroraLayer) return
+    const backdrop = backdropRef.current
+    if (!canvas || !auroraLayer || !backdrop) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -342,6 +345,16 @@ export function ConstellationBackground() {
     }
 
     let starSprites = drawStarAtlas(atlasCtx, tint, light)
+    let lastSky = ""
+
+    const setAppearance = (nextLight: boolean) => {
+      light = nextLight
+      vignette = makeVignette(ctx, vp.width, vp.height, light)
+      starSprites = drawStarAtlas(atlasCtx, tint, light)
+      auroraPalette = makeAuroraPalette(tint, light)
+      renderer?.setAppearance(tint, light)
+      auroraDirty = true
+    }
 
     const stars: Star[] = []
     const visibleStarCount = () => Math.round(MAX_STARS * clamp(vp.width / 1000, 0.55, 1))
@@ -410,6 +423,7 @@ export function ConstellationBackground() {
     globalThis.addEventListener("resize", onResize)
     let lastFrame = 0
     let nextFrame = 0
+    let starVisibility = 1
 
     const drawStar = (s: Star, time: number, zSpeed: number, forward: number) => {
       // Move in depth (Z). zSpeed > 0 means moving "forward" into space.
@@ -448,7 +462,7 @@ export function ConstellationBackground() {
       const alphaStar = lerp(0, s.maxAlpha, intensity)
       const alphaFloor = s.baseAlpha * (1 - intensity)
       const depth = 0.28 + (1 - s.z) * 0.72
-      const alpha = clamp((alphaStar + alphaFloor) * depth, 0, 1)
+      const alpha = clamp((alphaStar + alphaFloor) * depth, 0, 1) * starVisibility
 
       // Keep the core tiny and crisp.
       const coreR = clamp(
@@ -488,6 +502,22 @@ export function ConstellationBackground() {
     }
 
     const drawFrame = (time: number, dt: number) => {
+      const returnToAurora = clamp((planetDeparture.progress - 0.76) / 0.12, 0, 1)
+      const journey = planetDeparture.active ? (1 - planetDeparture.progress * 0.71) * (1 - returnToAurora) : heroFlight.active ? heroFlight.progress : 0
+      starVisibility = 1 - clamp((journey - 0.43) / 0.16, 0, 1)
+      const inSpace = journey > 0.12
+      const nextLight = root.dataset.theme === "light" && !inSpace
+      if (nextLight !== light) setAppearance(nextLight)
+      const sky = inSpace ? "#030814" : ""
+      if (lastSky !== sky) {
+        backdrop.style.background = sky
+        lastSky = sky
+      }
+      const auroraVisibility = planetDeparture.active
+        ? Math.max(1 - clamp(planetDeparture.progress / 0.13, 0, 1), returnToAurora)
+        : 1 - clamp((journey - 0.04) / 0.26, 0, 1)
+      auroraLayer.style.opacity = String(auroraVisibility)
+
       // ease velocity
       scroll.velocity = lerp(scroll.velocity, scroll.targetVelocity, 0.11)
 
@@ -500,11 +530,15 @@ export function ConstellationBackground() {
         if (Math.abs(scroll.targetVelocity) < 0.02) scroll.targetVelocity = 0
       }
 
-      const zSpeed = (scroll.velocity * 0.0032 + 0.00034) * (dt * 60)
-      const forward = clamp(Math.abs(scroll.velocity) / 14, 0, 1)
+      const flightSpeed = inSpace ? 1.65 : 1
+      const direction = planetDeparture.active && planetDeparture.progress < 0.94 ? -1 : 1
+      const zSpeed = (scroll.velocity * 0.0032 * flightSpeed * direction + 0.00034) * (dt * 60)
+      const forward = clamp(Math.abs(scroll.velocity) * flightSpeed / 14, 0, 1)
 
       ctx.clearRect(0, 0, vp.width, vp.height)
-      paintAurora(dt)
+      ctx.globalAlpha = auroraVisibility
+      if (auroraVisibility > 0) paintAurora(dt)
+      ctx.globalAlpha = 1
       ctx.fillStyle = vignette
       ctx.fillRect(0, 0, vp.width, vp.height)
 
@@ -537,19 +571,15 @@ export function ConstellationBackground() {
     }
 
     const appearanceObserver = new MutationObserver((changes) => {
-      const nextLight = root.dataset.theme === "light"
+      const nextLight = root.dataset.theme === "light" && !(planetDeparture.active && planetDeparture.progress < 0.94) && !(heroFlight.active && heroFlight.progress > 0.12)
       if (nextLight !== light) {
-        light = nextLight
-        vignette = makeVignette(ctx, vp.width, vp.height, light)
+        setAppearance(nextLight)
       } else if (!changes.some(({ attributeName }) => attributeName === "data-accent")) {
         return
       }
 
       tint = getAccentTint(root.dataset.accent)
-      starSprites = drawStarAtlas(atlasCtx, tint, light)
-      auroraPalette = makeAuroraPalette(tint, light)
-      renderer?.setAppearance(tint, light)
-      auroraDirty = true
+      setAppearance(light)
       drawFrame(reducedMotion ? 0 : performance.now(), 0)
     })
     appearanceObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] })
@@ -610,6 +640,7 @@ export function ConstellationBackground() {
 
   return (
       <div
+          ref={backdropRef}
           className="pointer-events-none fixed inset-0 bg-[linear-gradient(#f7fbff,#f9fbfd_48%,#fff)] dark:bg-[linear-gradient(#0b2033,#0a182a_48%,#050b19)]"
           style={{ zIndex: 0, isolation: "isolate" }}
           aria-hidden
