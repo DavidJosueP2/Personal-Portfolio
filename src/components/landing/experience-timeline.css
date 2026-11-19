@@ -1,6 +1,6 @@
 .experience,
 .site-header[data-experience-paper] {
-  --experience-paper: #14181e;
+  --experience-paper: #000;
 }
 
 .experience {
@@ -26,7 +26,10 @@
   pointer-events: none;
 }
 
-.experience[data-experience-ready] .experience-sheet { inset-block-start: -100svh; }
+.experience[data-experience-arrival] .experience-sheet { inset-block-start: -300svh; }
+.experience[data-experience-ready] .experience-content { background: transparent; }
+.experience[data-experience-arrival] .experience-content { overflow: visible; }
+.experience[data-experience-arrival] .experience-masthead h2 { will-change: transform; }
 
 [data-stack-ready] [data-stack-surface]:has(> .experience[data-experience-ready]) {
   overflow: visible;
@@ -51,6 +54,8 @@
 }
 
 .experience-masthead h2 {
+  inline-size: fit-content;
+  transform-origin: center;
   font-family: var(--font-sans);
   font-size: clamp(2.9rem, 7vw, 5.9rem);
   font-weight: 660;
@@ -70,6 +75,8 @@
 }
 
 .experience-masthead p em { color: var(--experience-accent-ink); }
+
+.experience-work { overflow: clip; }
 
 .experience-question {
   display: flex;

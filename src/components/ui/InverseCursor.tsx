@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { gsap } from "gsap"
 import "./inverse-cursor.css"
 
-const foregroundSelector = '[role="dialog"], [role="menu"]'
+const foregroundSelector = '[role="dialog"], [role="menu"], [data-inverse-cursor-surface]'
 const excludedSelector = `img, picture, video, main canvas, iframe, [data-inverse-cursor-exclude], [data-hero-intro]:not([hidden]), ${foregroundSelector}`
 const svgNamespace = "http://www.w3.org/2000/svg"
 
