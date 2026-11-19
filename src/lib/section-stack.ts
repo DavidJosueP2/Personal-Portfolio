@@ -75,8 +75,8 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
   const transitions = surfaces.slice(0, -1).flatMap((surface, index) => {
     const panel = panels[index]
     const incoming = panels[index + 1]
-    // The circular sheet paints over the outgoing panel itself.
-    if (incoming.querySelector("[data-circular-reveal]")) return []
+    // The first section blends directly with the live botanical scene.
+    if (incoming.querySelector("[data-scene-handoff]")) return []
     const enteringContact = incoming.querySelector("#contact") !== null
     const incomingEntry = incoming.querySelector<HTMLElement>("[data-stack-entry]")!
     const items = Array.from(surface.querySelectorAll<HTMLElement>("[data-section-motion]"), (element) => ({

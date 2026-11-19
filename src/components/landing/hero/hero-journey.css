@@ -1,0 +1,69 @@
+.hero-journey { position: relative; }
+
+.hero-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.hero-earth {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-earth { z-index: 1; }
+.hero-earth-host, .hero-garden-words { position: absolute; inset: 0; pointer-events: none; }
+.hero-earth-host { z-index: 1; }
+.hero-garden-words { z-index: 3; overflow: clip; }
+.hero-garden-word {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: max-content;
+  max-inline-size: min(36rem, 88vw);
+  display: grid;
+  gap: 0.65rem;
+  color: #f4f3ef;
+  font-size: clamp(1.9rem, 3.8vw, 4rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-shadow: 0 3px 18px rgb(0 0 0 / 0.9);
+  visibility: hidden;
+  will-change: transform, opacity;
+}
+.hero-garden-word-title { display: block; }
+.hero-garden-word-title.font-serif-italic { font-size: 1.24em; font-weight: 400; }
+.font-serif-italic .hero-garden-word-amp { font-family: var(--font-sans); font-style: normal; font-size: 0.74em; font-weight: 450; }
+.hero-garden-word-detail { display: block; max-inline-size: 34ch; color: #d8e6df; font: 450 clamp(0.82rem, 1.05vw, 0.95rem)/1.45 var(--font-sans); letter-spacing: 0; text-wrap: balance; }
+.hero-initial { z-index: 2; }
+.hero-name { transform-origin: center; }
+
+.hero-earth-credit {
+  position: absolute;
+  z-index: 3;
+  inset-inline-start: clamp(1rem, 2.5vw, 2.5rem);
+  inset-block-end: max(1.5rem, env(safe-area-inset-bottom));
+  color: #bac7d5;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  opacity: 0;
+  visibility: hidden;
+  text-underline-offset: 0.25em;
+}
+.hero-earth-credit a:hover { color: #fff; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-journey[data-hero-journey] { block-size: 1200svh; }
+  [data-stack-panel]:has([data-hero-journey]) + [data-stack-panel] { margin-block-start: -200svh; }
+  [data-hero-journey] .hero-stage { position: sticky; inset-block-start: 0; block-size: 100svh; }
+  [data-hero-journey] .hero-initial { block-size: 100%; }
+  [data-hero-journey] .hero-name { will-change: transform, opacity; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  .hero-journey[data-hero-journey] { block-size: 1160svh; }
+}

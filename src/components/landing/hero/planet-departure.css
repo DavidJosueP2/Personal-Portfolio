@@ -1,0 +1,11 @@
+.contact-stage { position: relative; min-block-size: 100svh; display: grid; align-content: center; justify-items: center; text-align: center; overflow: clip; isolation: isolate; }
+.planet-departure-scene { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.planet-departure-scene canvas { opacity: 1 !important; }
+.contact-invitation { position: relative; }
+.contact-action { position: relative; margin-block-start: 2.5rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .contact-journey[data-planet-departure] { block-size: 420svh; }
+  [data-planet-departure] .contact-stage { position: sticky; inset-block-start: 0; block-size: 100svh; }
+  [data-planet-departure] .contact-action { z-index: 2; }
+}

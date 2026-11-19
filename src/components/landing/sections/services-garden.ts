@@ -4,6 +4,7 @@ import {
 } from "@/lib/botanical-paint"
 
 type Flower = "daisy" | "poppy" | "lavender"
+export { bouquet as composeGardenBouquet, meadow as composeGardenMeadow }
 type Random = () => number
 
 const oil = {
