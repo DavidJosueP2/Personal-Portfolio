@@ -26,10 +26,9 @@
   pointer-events: none;
 }
 
-.experience[data-experience-arrival] .experience-sheet { inset-block-start: -300svh; }
+.experience[data-experience-arrival] .experience-sheet { inset-block-start: -125svh; }
 .experience[data-experience-ready] .experience-content { background: transparent; }
 .experience[data-experience-arrival] .experience-content { overflow: visible; }
-.experience[data-experience-arrival] .experience-masthead h2 { will-change: transform; }
 
 [data-stack-ready] [data-stack-surface]:has(> .experience[data-experience-ready]) {
   overflow: visible;

@@ -1,5 +1,29 @@
 .hero-journey { position: relative; }
 
+.hero-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--intro-paper);
+  pointer-events: none;
+}
+
+.hero-opening-layer,
+.hero-opening-ink { position: absolute; inset: 0; }
+.hero-opening-layer { overflow: hidden; background: var(--intro-paper); color: #f5f5f3; }
+.hero-opening-layer:not([data-intro-layer="base"]) { transform: translateY(100%); }
+.hero-opening-layer:not([data-intro-layer="base"]) > .hero-opening-ink { transform: translateY(-100%); }
+.hero-opening-layer[data-intro-layer="accent"] { background: rgb(var(--accent-rgb, 52 211 153)); color: #08111b; }
+
+.hero-opening [data-intro-word] {
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform-origin: top left;
+  white-space: nowrap;
+}
+
 .hero-stage {
   position: relative;
   isolation: isolate;

@@ -1,13 +1,13 @@
-import Azure from "./azure.png"
+import Azure from "./azure.webp"
 import AWS from "./AWS.svg"
-import Docker from "./Docker.png"
-import GitHub from "./GitHub.png"
-import LinkedIn from "./LinkedIn.png"
-import Kubernetes from "./Kubernetes (1).png"
-import ReactLogo from "./React.png"
-import Spring from "./Spring.png"
-import TypeScript from "./TypeScript.png"
-import Nest from "./Nest.js.png"
+import Docker from "./Docker.webp"
+import GitHub from "./GitHub.webp"
+import LinkedIn from "./LinkedIn.webp"
+import Kubernetes from "./Kubernetes (1).webp"
+import ReactLogo from "./React.webp"
+import Spring from "./Spring.webp"
+import TypeScript from "./TypeScript.webp"
+import Nest from "./Nest.js.webp"
 
 // Lista general reutilizable (Projects, etc.)
 export const techLogos = [

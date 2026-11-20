@@ -12,17 +12,23 @@ export function InverseCursor() {
 
   useEffect(() => {
     const root = rootRef.current
-    const context = root?.getContext("2d")
-    if (!root || !context) return
+    if (!root) return
 
     const media = gsap.matchMedia()
     media.add("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
+      let canvasContext: CanvasRenderingContext2D | null = null
       const position = { x: 0, y: 0 }
       const followX = gsap.quickTo(position, "x", { duration: 0.28, ease: "power3.out" })
       const followY = gsap.quickTo(position, "y", { duration: 0.28, ease: "power3.out" })
       const frames = new Map<Element, HTMLSpanElement>()
       let protectedSurfaces: Element[] = []
-      let protectedMedia: Element[] = []
+      const protectedMedia = new Set<Element>()
+      const mediaVisibility = new IntersectionObserver((entries) => {
+        for (const { target, isIntersecting } of entries) {
+          if (isIntersecting) protectedMedia.add(target)
+          else protectedMedia.delete(target)
+        }
+      }, { rootMargin: "90px" })
       let refreshElements = true
       let running = false
       let radius = 0
@@ -42,11 +48,17 @@ export function InverseCursor() {
       }
 
       const render = () => {
+        const context = canvasContext
+        if (!context) return
         if (refreshElements) {
           protectedSurfaces = Array.from(document.querySelectorAll(`${excludedSelector}, ${foregroundSelector}`))
-          protectedMedia = Array.from(document.querySelectorAll(cursorMediaSelector)).filter((element) =>
-            !element.closest(excludedSelector) && !element.parentElement?.closest(cursorCardSelector),
-          )
+          mediaVisibility.disconnect()
+          protectedMedia.clear()
+          for (const element of document.querySelectorAll(cursorMediaSelector)) {
+            if (element.closest(excludedSelector) || element.parentElement?.closest(cursorCardSelector)) continue
+            protectedMedia.add(element)
+            mediaVisibility.observe(element)
+          }
           for (const [element, frame] of frames) {
             if (element.isConnected) continue
             frame.remove()
@@ -128,6 +140,11 @@ export function InverseCursor() {
           return
         }
         if (!running) {
+          if (!canvasContext) {
+            canvasContext = root.getContext("2d")
+            if (!canvasContext) return
+            resize()
+          }
           position.x = event.clientX
           position.y = event.clientY
           render()
@@ -150,11 +167,11 @@ export function InverseCursor() {
       document.addEventListener("visibilitychange", onVisibility)
       window.addEventListener("blur", hide)
       window.addEventListener("resize", resize)
-      resize()
 
       return () => {
         hide()
         observer.disconnect()
+        mediaVisibility.disconnect()
         document.removeEventListener("pointermove", move)
         document.removeEventListener("pointerleave", hide)
         document.removeEventListener("visibilitychange", onVisibility)

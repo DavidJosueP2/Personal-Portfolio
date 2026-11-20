@@ -3,6 +3,7 @@ import {
   ShaderMaterial, SphereGeometry, SRGBColorSpace, TextureLoader, Vector3, WebGLRenderer,
 } from "three"
 import type { Texture } from "three"
+import { yieldToIdle } from "@/lib/idle-work"
 import { createBotanicalWorld, WORLD_SCALE } from "./botanical-world"
 import { createWorldWords } from "./world-words"
 
@@ -132,10 +133,14 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
   if (signal.aborted) return null
   const renderer = new WebGLRenderer({ canvas, context, alpha: true, antialias: true, powerPreference: "high-performance" })
   renderer.setClearColor(0x000000, 0)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.25 : 1.5))
+  const mobile = window.innerWidth < 768
   const resources: { dispose(): void }[] = []
   let disposed = false
-  const retain = <T extends { dispose(): void }>(resource: T): T => { resources.push(resource); return resource }
+  const retain = <T extends { dispose(): void }>(resource: T): T => {
+    if (disposed) resource.dispose()
+    else resources.push(resource)
+    return resource
+  }
   const dispose = () => {
     if (disposed) return
     disposed = true
@@ -145,32 +150,16 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
 
   try {
     const loader = new TextureLoader()
+    const resolution = mobile ? 1024 : 2048
     const load = (name: string, color = false) => new Promise<Texture>((resolve, reject) => {
-      const texture: Texture = retain(loader.load(`/assets/earth/${name}`, () => {
-        // Keep the large orbital maps off the GPU on phones; the original files
-        // stay cached and desktop keeps their full detail.
-        const image = texture.image as HTMLImageElement
-        const limit = Math.min(window.innerWidth < 768 ? 2048 : 4096, renderer.capabilities.maxTextureSize)
-        if (image.width > limit) {
-          const reduced = document.createElement("canvas")
-          reduced.width = limit
-          reduced.height = Math.round(image.height * limit / image.width)
-          const paint = reduced.getContext("2d")
-          if (paint) {
-            paint.drawImage(image, 0, 0, reduced.width, reduced.height)
-            texture.image = reduced
-            texture.needsUpdate = true
-          }
-        }
-        resolve(texture)
-      }, undefined, reject))
+      const texture: Texture = retain(loader.load(`/assets/earth/${name}_${resolution}.webp`, () => resolve(texture), undefined, reject))
       if (color) texture.colorSpace = SRGBColorSpace
       texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
     })
     const [day, night, surface, world] = await Promise.all([
-      load("earth_day_4096.jpg", true),
-      load("earth_night_4096.jpg", true),
-      load("earth_bump_roughness_clouds_4096.jpg"),
+      load("earth_day", true),
+      load("earth_night", true),
+      load("earth_bump_roughness_clouds"),
       createBotanicalWorld(retain, signal),
     ])
     if (signal.aborted || !world) { dispose(); return null }
@@ -193,7 +182,7 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     const entryPosition = fromLocal(world.cameraPosition, new Vector3())
     const entryTarget = fromLocal(world.cameraTarget, new Vector3())
     const descentPath = new CubicBezierCurve3(new Vector3(), new Vector3(), new Vector3(), entryPosition)
-    const geometry = retain(new SphereGeometry(1, 128, 96))
+    const geometry = retain(new SphereGeometry(1, mobile ? 64 : 96, mobile ? 48 : 64))
     const sun = { value: new Vector3(-1.4, 0.9, 1.7).normalize() }
     const material = (fragmentShader: string, uniforms: Record<string, { value: unknown }>, transparent = false) => retain(new ShaderMaterial({
       vertexShader, fragmentShader, uniforms: { uSun: sun, ...uniforms }, transparent,
@@ -239,10 +228,12 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     let lastProgress = 0
     let lastElapsed = 0
     let lastDeparting = false
+    let hasFrame = false
     const resize = () => {
       const width = canvas.clientWidth
       const height = canvas.clientHeight
       if (!width || !height) return
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 768 ? 1.25 : 1.5, Math.sqrt(1_850_000 / (width * height))))
       renderer.setSize(width, height, false)
       camera.aspect = width / height
       world.resize(camera.aspect)
@@ -261,11 +252,17 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     world.root.visible = true
     await renderer.compileAsync(scene, camera)
     if (signal.aborted) { dispose(); return null }
-    for (const texture of [day, night, surface, ...world.textures]) renderer.initTexture(texture)
+    const textures = [day, night, surface, ...world.textures]
+    for (let index = 0; index < textures.length; index += 3) {
+      await yieldToIdle()
+      if (signal.aborted) { dispose(); return null }
+      for (const texture of textures.slice(index, index + 3)) renderer.initTexture(texture)
+    }
     world.root.visible = false
 
     const draw = (progress: number, elapsed: number, departing = false) => {
       if (disposed) return
+      hasFrame = true
       lastProgress = progress
       lastElapsed = elapsed
       lastDeparting = departing
@@ -307,7 +304,7 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     }
 
     return {
-      resize() { resize(); draw(lastProgress, lastElapsed, lastDeparting) },
+      resize() { resize(); if (hasFrame) draw(lastProgress, lastElapsed, lastDeparting) },
       dispose,
       draw,
       drawDeparture(progress: number, elapsed: number) {

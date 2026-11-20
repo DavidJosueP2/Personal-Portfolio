@@ -46,18 +46,18 @@
 .project-runway,
 .project-phrase { display: none; }
 
-.project-scene[data-project-motion] .project-spread {
+.project-scene[data-project-layout] .project-spread {
   position: sticky;
   top: 0;
   min-block-size: var(--project-stage-height);
 }
 
-.project-scene[data-project-motion] .project-runway {
+.project-scene[data-project-layout] .project-runway {
   display: block;
   block-size: var(--project-intro-distance);
 }
 
-.project-scene[data-project-motion]::after {
+.project-scene[data-project-layout]::after {
   display: block;
   block-size: var(--project-hold-distance);
   content: "";

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ArrowUpRight, CodeXml, Cpu, MapPin } from "lucide-react"
-import awsPractitioner from "@/assets/img/about/aws-cloud-practitioner.png"
-import awsSimuLearn from "@/assets/img/about/aws-simulearn.png"
+import awsPractitioner from "@/assets/img/about/aws-cloud-practitioner.webp"
+import awsSimuLearn from "@/assets/img/about/aws-simulearn.webp"
 import spotifyCover from "@/assets/img/about/spotify-cover.webp"
-import surrealism from "@/assets/img/about/surrealism.jpg"
+import surrealism from "@/assets/img/about/surrealism.webp"
 import cseiLogo from "@/assets/img/about/university/csei.webp"
 import fiseiLogo from "@/assets/img/about/university/fisei.webp"
 import grokLogo from "@/assets/img/about/university/grok.webp"
@@ -82,17 +82,18 @@ function Profile() {
   return (
     <div className="about-layout about-profile">
       <div>
-        <h3 className="about-lead">Full-stack developer, <em className="font-serif-italic">backend at heart.</em></h3>
+        <h3 className="about-lead">Full-stack developer, <em className="font-serif-italic">microservices at heart.</em></h3>
         <p className="about-copy">
-          I’m David Barragán, with <strong>one year of professional experience</strong> building software for the web and mobile.
-          I’m especially interested in microservices and business intelligence.
+          I’m David Barragán, with <strong>one year of professional experience</strong> building web and mobile software.
+          I use Clean Architecture and domain-driven design (DDD) to build reliable backend services,
+          with clean, scalable code that’s easy to improve as the product grows.
         </p>
 
         <div className="about-profile-details">
           <div id="education">
             <h4 className="about-subheading">Education</h4>
             <p className="about-list-title">Software Engineering</p>
-            <p className="about-detail">{university} · 7th semester</p>
+            <p className="about-detail">{university}</p>
           </div>
           <div>
             <h4 className="about-subheading">Languages</h4>

@@ -100,7 +100,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       if (!frame) frame = requestAnimationFrame(update)
     }
 
-    update()
+    requestUpdate()
     window.addEventListener("scroll", requestUpdate, { passive: true })
     window.addEventListener("resize", requestUpdate)
     const size = new ResizeObserver(requestUpdate)
@@ -175,7 +175,7 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
   return (
     <header className="site-header" data-surface={surface.light ? "light" : "dark"} data-experience-paper={surface.experiencePaper || undefined}>
       <div data-home-navigation className="site-header-frame">
-        <PortfolioLink section="top" onSection={onSection} aria-label="David Barragán, home" className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
+        <PortfolioLink section="top" onSection={onSection} aria-label="DJB, David Barragán, home" className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
           DJB
         </PortfolioLink>
 

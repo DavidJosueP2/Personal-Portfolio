@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/shadcn/button"
 import { scrollToSection } from "@/lib/section-stack"
@@ -120,7 +120,7 @@ function HeroTagline() {
 export function HeroSection() {
   const rootRef = useRef<HTMLElement>(null)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current
     if (root) return setupHeroJourney(root)
   }, [])

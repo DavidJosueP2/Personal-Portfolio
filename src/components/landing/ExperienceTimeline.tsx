@@ -1,20 +1,21 @@
 import { useEffect, useRef } from "react"
 import { gsap } from "gsap"
-import eeasaLogo from "@/assets/img/experience/eeasa.png"
-import kronhosLogo from "@/assets/img/experience/kronhos.png"
-import angularLogo from "@/assets/img/tech/Angular.png"
-import reactLogo from "@/assets/img/tech/React.png"
-import javaLogo from "@/assets/img/tech/Java.png"
-import springLogo from "@/assets/img/tech/Spring.png"
-import oracleLogo from "@/assets/img/tech/Oracle.png"
-import sqlServerLogo from "@/assets/img/tech/Microsoft SQL Server.png"
-import azureLogo from "@/assets/img/tech/azure.png"
+import eeasaLogo from "@/assets/img/experience/eeasa.webp"
+import kronhosLogo from "@/assets/img/experience/kronhos.webp"
+import angularLogo from "@/assets/img/tech/Angular.webp"
+import reactLogo from "@/assets/img/tech/React.webp"
+import javaLogo from "@/assets/img/tech/Java.webp"
+import springLogo from "@/assets/img/tech/Spring.webp"
+import oracleLogo from "@/assets/img/tech/Oracle.webp"
+import sqlServerLogo from "@/assets/img/tech/Microsoft SQL Server.webp"
+import azureLogo from "@/assets/img/tech/azure.webp"
 import powerBiLogo from "@/assets/img/tech/Power BI.svg"
-import swaggerLogo from "@/assets/img/tech/Swagger.png"
-import openApiLogo from "@/assets/img/tech/OpenAPI.png"
-import junitLogo from "@/assets/img/tech/JUnit.png"
-import playwrightLogo from "@/assets/img/tech/Playwrite.png"
-import dockerLogo from "@/assets/img/tech/Docker.png"
+import swaggerLogo from "@/assets/img/tech/Swagger.webp"
+import openApiLogo from "@/assets/img/tech/OpenAPI.webp"
+import junitLogo from "@/assets/img/tech/JUnit.webp"
+import playwrightLogo from "@/assets/img/tech/Playwrite.webp"
+import dockerLogo from "@/assets/img/tech/Docker.webp"
+import { afterHeroIntro } from "@/lib/hero-intro"
 import { createExperienceVine } from "./experience-vine"
 import { setupExperienceArrival } from "./hero/experience-arrival"
 import "./experience-timeline.css"
@@ -117,7 +118,7 @@ export function ExperienceTimeline() {
   const contentRef = useRef<HTMLDivElement>(null)
   const vineRef = useRef<HTMLCanvasElement>(null)
 
-  useEffect(() => {
+  useEffect(() => afterHeroIntro(() => {
     const root = rootRef.current
     const sheet = sheetRef.current
     const content = contentRef.current
@@ -126,12 +127,22 @@ export function ExperienceTimeline() {
 
     const motion = gsap.matchMedia(root)
     const vine = createExperienceVine(canvas)
-    const vineSize = new ResizeObserver(vine.fit)
+    let vineReady = false
+    const fitVine = () => { if (vineReady) vine.fit() }
+    const vineSize = new ResizeObserver(fitVine)
     vineSize.observe(canvas)
+    const vineVisibility = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      vineReady = true
+      fitVine()
+      vineVisibility.disconnect()
+    }, { rootMargin: "100% 0px" })
+    vineVisibility.observe(canvas)
     motion.add("(prefers-reduced-motion: reduce)", () => vine.paint(1))
 
     motion.add("(prefers-reduced-motion: no-preference)", (context) => {
       let disposed = false
+      let workVisibility: IntersectionObserver | undefined
       let reset: (() => void) | undefined
       vine.paint(0)
 
@@ -148,38 +159,45 @@ export function ExperienceTimeline() {
             resetArrival()
           }
 
-          gsap.fromTo(question, { x: 42, opacity: 0.15 }, {
-            x: 0, opacity: 1, ease: "power2.out",
-            scrollTrigger: { trigger: question, start: "top 94%", end: "top 66%", scrub: 0.2 },
-          })
+          workVisibility = new IntersectionObserver(([entry]) => {
+            if (disposed || !entry.isIntersecting) return
+            workVisibility?.disconnect()
+            context.add(() => {
+              gsap.fromTo(question, { x: 42, opacity: 0.15 }, {
+                x: 0, opacity: 1, ease: "power2.out",
+                scrollTrigger: { trigger: question, start: "top 94%", end: "top 66%", scrub: 0.2 },
+              })
 
-          const paintVine = ({ progress }: { progress: number }) => vine.paint(progress)
-          ScrollTrigger.create({
-            trigger: track,
-            start: "top 85%",
-            end: "bottom 65%",
-            onRefreshInit: vine.fit,
-            onRefresh: paintVine,
-            onUpdate: paintVine,
-          })
+              const paintVine = ({ progress }: { progress: number }) => vine.paint(progress)
+              ScrollTrigger.create({
+                trigger: track,
+                start: "top 85%",
+                end: "bottom 65%",
+                onRefreshInit: fitVine,
+                onRefresh: paintVine,
+                onUpdate: paintVine,
+              })
 
-          for (const job of content.querySelectorAll<HTMLElement>(".experience-role")) {
-            gsap.timeline({
-              defaults: { ease: "power2.out" },
-              scrollTrigger: { trigger: job, start: "top 97%", end: "top 66%", scrub: 0.2 },
+              for (const job of content.querySelectorAll<HTMLElement>(".experience-role")) {
+                gsap.timeline({
+                  defaults: { ease: "power2.out" },
+                  scrollTrigger: { trigger: job, start: "top 97%", end: "top 66%", scrub: 0.2 },
+                })
+                  .fromTo(job.querySelector(".experience-name-text"), { yPercent: 91 }, { yPercent: 0, duration: 0.8 }, 0.04)
+              }
+
+              for (const text of content.querySelectorAll<HTMLElement>("[data-experience-text]")) {
+                gsap.fromTo(text, {
+                  y: 14, opacity: 0.12, clipPath: "inset(0 0 100% 0)",
+                }, {
+                  y: 0, opacity: 1, clipPath: "inset(-0.2em -0.25em -0.2em -0.25em)",
+                  ease: "power2.out",
+                  scrollTrigger: { trigger: text, start: "top 98%", end: "top 79%", scrub: 0.18 },
+                })
+              }
             })
-              .fromTo(job.querySelector(".experience-name-text"), { yPercent: 91 }, { yPercent: 0, duration: 0.8 }, 0.04)
-          }
-
-          for (const text of content.querySelectorAll<HTMLElement>("[data-experience-text]")) {
-            gsap.fromTo(text, {
-              y: 14, opacity: 0.12, clipPath: "inset(0 0 100% 0)",
-            }, {
-              y: 0, opacity: 1, clipPath: "inset(-0.2em -0.25em -0.2em -0.25em)",
-              ease: "power2.out",
-              scrollTrigger: { trigger: text, start: "top 98%", end: "top 79%", scrub: 0.18 },
-            })
-          }
+          }, { rootMargin: "100% 0px" })
+          workVisibility.observe(content)
         })
       }).catch((error: unknown) => {
         vine.paint(1)
@@ -188,16 +206,17 @@ export function ExperienceTimeline() {
 
       return () => {
         disposed = true
+        workVisibility?.disconnect()
         reset?.()
       }
     })
 
-    vine.fit()
     return () => {
       vineSize.disconnect()
+      vineVisibility.disconnect()
       motion.revert()
     }
-  }, [])
+  }), [])
 
   return (
     <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-scene-handoff data-inverse-cursor-surface>

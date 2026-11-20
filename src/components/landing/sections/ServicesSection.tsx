@@ -185,9 +185,9 @@ export function ServicesSection() {
       })
     }
     const onResize = () => {
-      if (disposed) return
+      if (disposed || !visible) return
       measure()
-      if (visible) syncScroll(true)
+      syncScroll(true)
     }
     const stop = () => {
       window.removeEventListener("scroll", onScroll)
@@ -219,7 +219,6 @@ export function ServicesSection() {
     size.observe(words)
     for (const row of rows) size.observe(row)
     for (const { frame } of photos) size.observe(frame)
-    measure()
     void document.fonts.ready.then(onResize)
     const visibility = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
@@ -230,7 +229,7 @@ export function ServicesSection() {
       } else {
         stop()
       }
-    })
+    }, { rootMargin: "30% 0px" })
     visibility.observe(stage)
     reduced.addEventListener("change", onMotionPreference)
 

@@ -2,6 +2,7 @@ import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
 import { createWebGLAurora } from "./aurora/aurora-webgl"
 import { heroFlight, planetDeparture, planetDepartureTiming } from "@/lib/hero-flight"
+import { scheduleIdle } from "@/lib/idle-work"
 
 type Star = {
   x: number
@@ -17,6 +18,7 @@ type Star = {
 
 const MAX_BACKGROUND_DPR = 1.25
 const FRAME_INTERVAL_MS = 1000 / 60
+const IDLE_FRAME_INTERVAL_MS = 1000 / 30
 const MAX_STARS = 500
 const STAR_TILE_SIZE = 96
 const STAR_DEPTH_STEPS = 8
@@ -308,10 +310,10 @@ export function ConstellationBackground() {
     let auroraTime = 0
     let lastAuroraPaint = 0
     let auroraDirty = true
-    let renderer = createWebGLAurora(auroraLayer)
-    auroraLayer.hidden = !renderer
-    renderer?.resize(vp.width, vp.height)
-    renderer?.setAppearance(tint, light)
+    let renderer: ReturnType<typeof createWebGLAurora> = null
+    let painting = false
+    let auroraAttempted = false
+    let cancelAurora: (() => void) | undefined
 
     const paintAurora = (dt: number) => {
       auroraTime += dt
@@ -405,7 +407,7 @@ export function ConstellationBackground() {
       // Re-spread stars to fit new viewport
       for (const s of stars) resetStar(s, true)
 
-      if (reducedMotion) drawFrame(0, 0)
+      if (painting && reducedMotion) drawFrame(0, 0)
     }
 
     // Track scroll velocity
@@ -418,6 +420,7 @@ export function ConstellationBackground() {
       scroll.lastY = y
       scroll.lastInputTs = now
       scroll.targetVelocity = clamp(dy * 0.12 * (FRAME_INTERVAL_MS / elapsed), -14, 14)
+      nextFrame = Math.min(nextFrame, now)
     }
 
     globalThis.addEventListener("resize", onResize)
@@ -563,13 +566,17 @@ export function ConstellationBackground() {
 
     const loop = (time: number) => {
       raf = globalThis.requestAnimationFrame(loop)
+      // The 3D garden has its own sky, so it fully covers this backdrop.
+      if (heroFlight.active && heroFlight.progress > 0.67 && !planetDeparture.active) return
       if (time + 0.5 < nextFrame) return
 
       const dt = lastFrame ? Math.min(0.05, (time - lastFrame) / 1000) : 0
       lastFrame = time
       // Keep the average cadence on high-refresh screens and discard missed frames.
-      const deadline = nextFrame + FRAME_INTERVAL_MS
-      nextFrame = deadline > time ? deadline : time + FRAME_INTERVAL_MS
+      const moving = Math.abs(scroll.velocity) > 0.05 || Math.abs(scroll.targetVelocity) > 0.05
+      const interval = moving ? FRAME_INTERVAL_MS : IDLE_FRAME_INTERVAL_MS
+      const deadline = nextFrame + interval
+      nextFrame = deadline > time ? deadline : time + interval
       drawFrame(time, dt)
     }
 
@@ -583,7 +590,7 @@ export function ConstellationBackground() {
 
       tint = getAccentTint(root.dataset.accent)
       setAppearance(light)
-      drawFrame(reducedMotion ? 0 : performance.now(), 0)
+      if (painting) drawFrame(reducedMotion ? 0 : performance.now(), 0)
     })
     appearanceObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] })
 
@@ -592,25 +599,46 @@ export function ConstellationBackground() {
       renderer = null
       auroraLayer.hidden = true
       auroraDirty = true
-      if (reducedMotion && !document.hidden) drawFrame(0, 0)
+      if (painting && reducedMotion) drawFrame(0, 0)
     }
-    const onContextRestored = () => {
+    const prepareAurora = () => {
+      auroraAttempted = true
       renderer = createWebGLAurora(auroraLayer)
       renderer?.resize(vp.width, vp.height)
       renderer?.setAppearance(tint, light)
       auroraLayer.hidden = !renderer
       auroraDirty = true
-      if (reducedMotion && !document.hidden) drawFrame(0, 0)
+      if (painting && reducedMotion) drawFrame(0, 0)
     }
     auroraLayer.addEventListener("webglcontextlost", onContextLost)
-    auroraLayer.addEventListener("webglcontextrestored", onContextRestored)
+    auroraLayer.addEventListener("webglcontextrestored", prepareAurora)
 
+    const intro = document.querySelector<HTMLElement>("[data-hero-intro]")
+    const windows = new Set<Element>()
+    let introActive = false
     const updateAnimation = () => {
+      const nextPainting = !document.hidden && windows.size > 0
+        && (!intro || intro.hidden || intro.hasAttribute("data-intro-revealing"))
+      const nextReduced = motionPreference.matches
+      const nextIntroActive = intro?.hasAttribute("data-intro-active") ?? false
+      if (painting === nextPainting && (!painting || (reducedMotion === nextReduced && introActive === nextIntroActive))) return
+      painting = nextPainting
+      introActive = nextIntroActive
       globalThis.cancelAnimationFrame(raf)
       globalThis.removeEventListener("scroll", onScroll)
-      if (document.hidden) return
+      if (!painting) {
+        cancelAurora?.()
+        cancelAurora = undefined
+        return
+      }
 
-      reducedMotion = motionPreference.matches
+      reducedMotion = nextReduced
+      if (!introActive && !auroraAttempted && !cancelAurora) {
+        cancelAurora = scheduleIdle(() => {
+          cancelAurora = undefined
+          if (painting) prepareAurora()
+        }, 320)
+      }
       scroll.lastY = globalThis.scrollY
       scroll.lastInputTs = performance.now()
       scroll.velocity = 0
@@ -618,13 +646,22 @@ export function ConstellationBackground() {
       lastFrame = 0
       nextFrame = 0
       drawFrame(reducedMotion ? 0 : scroll.lastInputTs, 0)
-      if (!reducedMotion) {
+      if (!reducedMotion && !introActive) {
         globalThis.addEventListener("scroll", onScroll, { passive: true })
         raf = globalThis.requestAnimationFrame(loop)
       }
     }
 
-    updateAnimation()
+    const visibility = new IntersectionObserver((entries) => {
+      for (const { target, isIntersecting } of entries) {
+        if (isIntersecting) windows.add(target)
+        else windows.delete(target)
+      }
+      updateAnimation()
+    })
+    document.querySelectorAll("[data-hero-stage], #contact, footer").forEach((element) => visibility.observe(element))
+    const introObserver = new MutationObserver(updateAnimation)
+    if (intro) introObserver.observe(intro, { attributes: true, attributeFilter: ["hidden", "data-intro-revealing", "data-intro-active"] })
     motionPreference.addEventListener("change", updateAnimation)
     document.addEventListener("visibilitychange", updateAnimation)
 
@@ -632,11 +669,14 @@ export function ConstellationBackground() {
       globalThis.removeEventListener("resize", onResize)
       globalThis.removeEventListener("scroll", onScroll)
       globalThis.cancelAnimationFrame(raf)
+      cancelAurora?.()
+      visibility.disconnect()
+      introObserver.disconnect()
       appearanceObserver.disconnect()
       motionPreference.removeEventListener("change", updateAnimation)
       document.removeEventListener("visibilitychange", updateAnimation)
       auroraLayer.removeEventListener("webglcontextlost", onContextLost)
-      auroraLayer.removeEventListener("webglcontextrestored", onContextRestored)
+      auroraLayer.removeEventListener("webglcontextrestored", prepareAurora)
       renderer?.dispose()
     }
   }, [])

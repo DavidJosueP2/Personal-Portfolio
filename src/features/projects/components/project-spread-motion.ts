@@ -227,7 +227,10 @@ export function createProjectSpread(
         })
         measure()
       }
-    }).catch((error: unknown) => console.error("Could not start the project gallery motion.", error))
+    }).catch((error: unknown) => {
+      delete section.dataset.projectLayout
+      console.error("Could not start the project gallery motion.", error)
+    })
     return () => {
       disposed = true
       cleanup?.()

@@ -276,8 +276,8 @@ export function connectServiceGarden(section: HTMLElement) {
   const paintings = new Map(Array.from(section.querySelectorAll<HTMLCanvasElement>("[data-service-paint]"), (canvas, index) => {
     const context = canvas.getContext("2d")
     const name = canvas.dataset.servicePaint as Flower | "meadow"
-    // The edge flowers are ready from the first layout. Prepare the larger meadow nearby.
-    let ready = name !== "meadow"
+    // Paint before the panel reaches the screen, without painting during the opening.
+    let ready = false
     let lastSize = ""
 
     const render = () => {
@@ -301,7 +301,7 @@ export function connectServiceGarden(section: HTMLElement) {
         paintEdgeFlowers(context, canvas, width, height, 61 + index * 13, name)
       }
     }
-    return [canvas, { name, render, prepare: () => { ready = true; render() } }] as const
+    return [canvas, { render, prepare: () => { ready = true; render() } }] as const
   }))
   const visibility = new IntersectionObserver((entries) => {
     for (const { target, isIntersecting } of entries) {
@@ -309,13 +309,13 @@ export function connectServiceGarden(section: HTMLElement) {
       paintings.get(target as HTMLCanvasElement)?.prepare()
       visibility.unobserve(target)
     }
-  }, { rootMargin: "75% 0px" })
+  }, { rootMargin: "125% 0px" })
   const size = new ResizeObserver((entries) => {
     for (const { target } of entries) paintings.get(target as HTMLCanvasElement)?.render()
   })
-  for (const [canvas, painting] of paintings) {
+  for (const canvas of paintings.keys()) {
     size.observe(canvas)
-    if (painting.name === "meadow") visibility.observe(canvas)
+    visibility.observe(canvas)
   }
 
   return () => {
