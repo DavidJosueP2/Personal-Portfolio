@@ -2,6 +2,7 @@
 export const heroFlight = { active: false, progress: 0, covered: false }
 
 export const planetDeparture = { active: false, progress: 0 }
+export const planetDepartureTiming = { auroraStart: 0.74, planetGone: 0.85, contactStart: 0.87 } as const
 
 export function updatePlanetDeparture(active: boolean, progress: number) {
   planetDeparture.active = active

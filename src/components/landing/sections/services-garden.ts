@@ -166,6 +166,36 @@ function bouquet(width: number, height: number, seed: number, name: Flower) {
   return strokes
 }
 
+function paintEdgeFlowers(context: CanvasRenderingContext2D, canvas: HTMLCanvasElement, width: number, height: number, seed: number, kind: Flower) {
+  const random = paintRandom(seed)
+  const climbing = canvas.hasAttribute("data-service-climb")
+  const scale = Math.min(width, height) / 185
+  const companion = kind === "daisy" ? "poppy" : "daisy"
+  const branches = [
+    { flower: "lavender", length: 0.8, size: 0.7, angle: -17 },
+    { flower: kind, length: 0.87, size: 0.9, angle: 2 },
+    { flower: kind, length: 0.62, size: 0.7, angle: 24 },
+    { flower: companion, length: 0.49, size: 0.53, angle: climbing ? -24 : -6 },
+  ] as const
+
+  context.save()
+  if (canvas.dataset.serviceEdge === "right") {
+    context.translate(width, 0)
+    context.scale(-1, 1)
+  }
+  // Begin beyond the canvas edge so each stem continues into the margin.
+  context.translate(-width * 0.055, height * (climbing ? 0.84 : 0.09))
+  for (const branch of branches) {
+    const marks: Brushstroke[] = []
+    plant(marks, [0, 0], width * branch.length, scale * branch.size, random() * 0.6 - 0.3, branch.flower, random)
+    context.save()
+    context.rotate((climbing ? 62 - branch.angle : 115 + branch.angle) * Math.PI / 180)
+    for (const mark of marks) mark(context)
+    context.restore()
+  }
+  context.restore()
+}
+
 function meadow(width: number, height: number) {
   const random = paintRandom(107)
   const strokes: Brushstroke[] = []
@@ -243,78 +273,53 @@ function meadow(width: number, height: number) {
 }
 
 export function connectServiceGarden(section: HTMLElement) {
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
-  const paintings = Array.from(section.querySelectorAll<HTMLCanvasElement>("[data-service-paint]"), (canvas, index) => {
+  const paintings = new Map(Array.from(section.querySelectorAll<HTMLCanvasElement>("[data-service-paint]"), (canvas, index) => {
     const context = canvas.getContext("2d")
     const name = canvas.dataset.servicePaint as Flower | "meadow"
-    let brushstrokes: Brushstroke[] | undefined
-    let applied = 0
-    let progress = 0
+    // The edge flowers are ready from the first layout. Prepare the larger meadow nearby.
+    let ready = name !== "meadow"
     let lastSize = ""
 
     const render = () => {
-      if (!context) return
+      if (!context || !ready) return
       const width = canvas.clientWidth
       const height = canvas.clientHeight
       if (width < 1 || height < 1) return
 
-      // The garden keeps the paint already applied if the visitor scrolls back.
-      const viewport = window.innerHeight
-      const entry = viewport * 0.94
-      const distance = viewport * (name === "meadow" ? 0.43 : 0.36)
-      const top = canvas.getBoundingClientRect().top
-      const reach = clamp((entry - top) / distance)
-      const showStatic = reduced.matches && top < viewport * 1.4
-      progress = Math.max(progress, showStatic ? 1 : reach)
-      if (progress === 0) return
-
       const ratio = Math.min(1.75, window.devicePixelRatio || 1)
       const size = `${width}:${height}:${ratio}`
-      if (size !== lastSize) {
-        lastSize = size
-        canvas.width = Math.round(width * ratio)
-        canvas.height = Math.round(height * ratio)
-        context.setTransform(ratio, 0, 0, ratio, 0, 0)
-        context.lineCap = "round"
-        context.lineJoin = "round"
-        brushstrokes = name === "meadow" ? meadow(width, height) : bouquet(width, height, 61 + index * 13, name)
-        applied = 0
+      if (size === lastSize) return
+      lastSize = size
+      canvas.width = Math.round(width * ratio)
+      canvas.height = Math.round(height * ratio)
+      context.setTransform(ratio, 0, 0, ratio, 0, 0)
+      context.lineCap = "round"
+      context.lineJoin = "round"
+      if (name === "meadow") {
+        for (const mark of meadow(width, height)) mark(context)
+      } else {
+        paintEdgeFlowers(context, canvas, width, height, 61 + index * 13, name)
       }
-
-      if (!brushstrokes) return
-      const target = Math.floor(progress * brushstrokes.length)
-      for (; applied < target; applied++) brushstrokes[applied](context)
-      if (applied === brushstrokes.length) brushstrokes = undefined
     }
-    return { canvas, render }
+    return [canvas, { name, render, prepare: () => { ready = true; render() } }] as const
+  }))
+  const visibility = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      if (!isIntersecting) continue
+      paintings.get(target as HTMLCanvasElement)?.prepare()
+      visibility.unobserve(target)
+    }
+  }, { rootMargin: "75% 0px" })
+  const size = new ResizeObserver((entries) => {
+    for (const { target } of entries) paintings.get(target as HTMLCanvasElement)?.render()
   })
-
-  let frame = 0
-  let inView = false
-  const update = () => {
-    frame = 0
-    paintings.forEach(({ render }) => render())
+  for (const [canvas, painting] of paintings) {
+    size.observe(canvas)
+    if (painting.name === "meadow") visibility.observe(canvas)
   }
-  const schedule = () => {
-    if (!frame) frame = window.requestAnimationFrame(update)
-  }
-  const onScroll = () => { if (inView) schedule() }
-  const visibility = new IntersectionObserver(([entry]) => {
-    inView = entry.isIntersecting
-    if (inView) schedule()
-  }, { rootMargin: "45% 0px" })
-  const size = new ResizeObserver(schedule)
-  visibility.observe(section)
-  paintings.forEach(({ canvas }) => size.observe(canvas))
-  window.addEventListener("scroll", onScroll, { passive: true })
-  reduced.addEventListener("change", schedule)
-  schedule()
 
   return () => {
     visibility.disconnect()
     size.disconnect()
-    window.removeEventListener("scroll", onScroll)
-    reduced.removeEventListener("change", schedule)
-    window.cancelAnimationFrame(frame)
   }
 }

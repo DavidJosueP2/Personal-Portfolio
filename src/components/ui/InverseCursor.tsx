@@ -1,104 +1,115 @@
-import { useEffect, useId, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { gsap } from "gsap"
+import { cursorCardSelector, cursorMediaSelector, eraseCursorMedia } from "./inverse-cursor-media"
 import "./inverse-cursor.css"
 
 const foregroundSelector = '[role="dialog"], [role="menu"], [data-inverse-cursor-surface]'
-const excludedSelector = `img, picture, video, main canvas, iframe, [data-inverse-cursor-exclude], [data-hero-intro]:not([hidden]), ${foregroundSelector}`
-const svgNamespace = "http://www.w3.org/2000/svg"
+const excludedSelector = "[data-inverse-cursor-exclude], [data-hero-intro]:not([hidden])"
 
 export function InverseCursor() {
-  const rootRef = useRef<SVGSVGElement>(null)
-  const circleRef = useRef<SVGCircleElement>(null)
-  const exclusionsRef = useRef<SVGGElement>(null)
-  const surfaceRef = useRef<SVGRectElement>(null)
-  const maskId = useId()
+  const rootRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const root = rootRef.current
-    const circle = circleRef.current
-    const exclusions = exclusionsRef.current
-    const surface = surfaceRef.current
-    if (!root || !circle || !exclusions || !surface) return
+    const context = root?.getContext("2d")
+    if (!root || !context) return
 
     const media = gsap.matchMedia()
     media.add("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
       const position = { x: 0, y: 0 }
       const followX = gsap.quickTo(position, "x", { duration: 0.28, ease: "power3.out" })
       const followY = gsap.quickTo(position, "y", { duration: 0.28, ease: "power3.out" })
-      const holes: SVGRectElement[] = []
-      const geometry: string[] = []
-      let excluded: Element[] = []
+      const frames = new Map<Element, HTMLSpanElement>()
+      let protectedSurfaces: Element[] = []
+      let protectedMedia: Element[] = []
       let refreshElements = true
       let running = false
       let radius = 0
+      let extent = 0
+      let scale = 1
       let previousX = -1
       let previousY = -1
-      let previousSurface = ""
 
       const resize = () => {
         radius = Math.min(82, Math.max(56, window.innerWidth * 0.0575))
-        circle.setAttribute("r", String(radius))
+        extent = Math.ceil(radius) + 2
+        const size = extent * 2
+        root.width = root.height = Math.ceil(size * Math.min(3, window.devicePixelRatio || 1))
+        root.style.width = root.style.height = `${size}px`
+        scale = root.width / size
+        previousX = previousY = -1
       }
 
       const render = () => {
         if (refreshElements) {
-          excluded = Array.from(document.querySelectorAll(excludedSelector))
+          protectedSurfaces = Array.from(document.querySelectorAll(`${excludedSelector}, ${foregroundSelector}`))
+          protectedMedia = Array.from(document.querySelectorAll(cursorMediaSelector)).filter((element) =>
+            !element.closest(excludedSelector) && !element.parentElement?.closest(cursorCardSelector),
+          )
+          for (const [element, frame] of frames) {
+            if (element.isConnected) continue
+            frame.remove()
+            frames.delete(element)
+          }
           refreshElements = false
         }
         const { x, y } = position
-        const foreground = document.elementFromPoint(x, y)?.closest(foregroundSelector)
-        const bounds = foreground?.getBoundingClientRect()
-        const area = bounds
-          ? [bounds.left, bounds.top, bounds.width, bounds.height]
-          : [0, 0, window.innerWidth, window.innerHeight]
-        const surfaceGeometry = area.join(":")
-        if (surfaceGeometry !== previousSurface) {
-          for (const [index, name] of ["x", "y", "width", "height"].entries()) surface.setAttribute(name, String(area[index]))
-          previousSurface = surfaceGeometry
-        }
+        const left = x - extent
+        const top = y - extent
         if (x !== previousX || y !== previousY) {
-          circle.setAttribute("cx", String(x))
-          circle.setAttribute("cy", String(y))
+          root.style.transform = `translate3d(${left}px, ${top}px, 0)`
           previousX = x
           previousY = y
         }
 
-        let used = 0
-        // Protect the whole visible bounds, including the corners of tilted image cards.
-        for (const element of excluded) {
-          // A foreground window owns its own backdrop. Images behind it cannot punch holes through its text.
+        context.resetTransform()
+        context.clearRect(0, 0, root.width, root.height)
+        const target = document.elementFromPoint(x, y)
+        if (target?.closest(excludedSelector)) return
+        const foreground = target?.closest(foregroundSelector)
+
+        context.save()
+        context.setTransform(scale, 0, 0, scale, -left * scale, -top * scale)
+        if (foreground) {
+          const bounds = foreground.getBoundingClientRect()
+          context.beginPath()
+          context.rect(bounds.left, bounds.top, bounds.width, bounds.height)
+          context.clip()
+        }
+        context.fillStyle = "white"
+        context.beginPath()
+        context.arc(x, y, radius, 0, Math.PI * 2)
+        context.fill()
+        context.globalCompositeOperation = "destination-out"
+
+        const styles = new Map<Element, CSSStyleDeclaration>()
+        const layout = (element: Element) => {
+          let style = styles.get(element)
+          if (!style) {
+            style = getComputedStyle(element)
+            styles.set(element, style)
+          }
+          return style
+        }
+        const intersects = (bounds: DOMRect) => bounds.width && bounds.height
+          && bounds.right >= x - radius && bounds.left <= x + radius
+          && bounds.bottom >= y - radius && bounds.top <= y + radius
+
+        for (const element of protectedSurfaces) {
           if (element === foreground || (foreground && !foreground.contains(element))) continue
           const bounds = element.getBoundingClientRect()
-          if (!bounds.width || !bounds.height
-            || bounds.right < x - radius || bounds.left > x + radius
-            || bounds.bottom < y - radius || bounds.top > y + radius) continue
-          const style = getComputedStyle(element)
-          if (style.visibility !== "visible" || Number(style.opacity) === 0) continue
-
-          if (!holes[used]) {
-            const hole = document.createElementNS(svgNamespace, "rect")
-            hole.setAttribute("fill", "black")
-            exclusions.append(hole)
-            holes.push(hole)
+          if (intersects(bounds) && layout(element).visibility === "visible" && Number(layout(element).opacity) > 0) {
+            context.fillRect(bounds.left, bounds.top, bounds.width, bounds.height)
           }
-          const hole = holes[used]
-          const left = Math.floor(bounds.left - 1)
-          const top = Math.floor(bounds.top - 1)
-          const width = Math.ceil(bounds.right + 1) - left
-          const height = Math.ceil(bounds.bottom + 1) - top
-          const next = `${left}:${top}:${width}:${height}`
-          if (geometry[used] !== next) {
-            hole.setAttribute("x", String(left))
-            hole.setAttribute("y", String(top))
-            hole.setAttribute("width", String(width))
-            hole.setAttribute("height", String(height))
-            geometry[used] = next
-          }
-          hole.removeAttribute("display")
-          used++
         }
-        for (let index = used; index < holes.length; index++) holes[index].setAttribute("display", "none")
+        for (const element of protectedMedia) {
+          // A modal owns its backdrop, including the media protection inside it.
+          if (foreground && !foreground.contains(element)) continue
+          const bounds = element.getBoundingClientRect()
+          if (intersects(bounds)) eraseCursorMedia(context, element, bounds, layout, frames)
+        }
+        context.restore()
       }
 
       const hide = () => {
@@ -131,7 +142,7 @@ export function InverseCursor() {
 
       const onVisibility = () => { if (document.hidden) hide() }
       const observer = new MutationObserver((mutations) => {
-        if (mutations.some(({ target }) => !root.contains(target))) refreshElements = true
+        if (mutations.some(({ target }) => !(target instanceof Element && target.closest(cursorCardSelector)))) refreshElements = true
       })
       observer.observe(document.body, { childList: true, subtree: true })
       document.addEventListener("pointermove", move, { passive: true })
@@ -151,22 +162,14 @@ export function InverseCursor() {
         window.removeEventListener("resize", resize)
         followX.tween.kill()
         followY.tween.kill()
-        exclusions.replaceChildren()
+        for (const frame of frames.values()) frame.remove()
       }
     })
     return () => media.revert()
   }, [])
 
   return createPortal(
-    <svg ref={rootRef} className="inverse-cursor" aria-hidden="true" focusable="false" data-inverse-cursor>
-      <defs>
-        <mask id={maskId} maskUnits="userSpaceOnUse" x={0} y={0} width="100%" height="100%" style={{ maskType: "luminance" }}>
-          <rect ref={surfaceRef} width="100%" height="100%" fill="white" />
-          <g ref={exclusionsRef} />
-        </mask>
-      </defs>
-      <circle ref={circleRef} fill="white" mask={`url(#${maskId})`} />
-    </svg>,
+    <canvas ref={rootRef} className="inverse-cursor" aria-hidden="true" data-inverse-cursor />,
     document.body,
   )
 }

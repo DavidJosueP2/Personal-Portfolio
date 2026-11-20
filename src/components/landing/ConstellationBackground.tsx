@@ -1,7 +1,7 @@
 import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
 import { createWebGLAurora } from "./aurora/aurora-webgl"
-import { heroFlight, planetDeparture } from "@/lib/hero-flight"
+import { heroFlight, planetDeparture, planetDepartureTiming } from "@/lib/hero-flight"
 
 type Star = {
   x: number
@@ -501,11 +501,14 @@ export function ConstellationBackground() {
       }
     }
 
+    const { auroraStart, contactStart } = planetDepartureTiming
+    const leavingEarth = () => planetDeparture.active && planetDeparture.progress < contactStart
     const drawFrame = (time: number, dt: number) => {
-      const returnToAurora = clamp((planetDeparture.progress - 0.76) / 0.12, 0, 1)
-      const journey = planetDeparture.active ? (1 - planetDeparture.progress * 0.71) * (1 - returnToAurora) : heroFlight.active ? heroFlight.progress : 0
+      const progress = planetDeparture.progress
+      const returnToAurora = clamp((progress - auroraStart) / (contactStart - auroraStart), 0, 1)
+      const journey = heroFlight.active ? heroFlight.progress : 0
       starVisibility = 1 - clamp((journey - 0.43) / 0.16, 0, 1)
-      const inSpace = journey > 0.12
+      const inSpace = leavingEarth() || journey > 0.12
       const nextLight = root.dataset.theme === "light" && !inSpace
       if (nextLight !== light) setAppearance(nextLight)
       const sky = inSpace ? "#030814" : ""
@@ -514,7 +517,7 @@ export function ConstellationBackground() {
         lastSky = sky
       }
       const auroraVisibility = planetDeparture.active
-        ? Math.max(1 - clamp(planetDeparture.progress / 0.13, 0, 1), returnToAurora)
+        ? Math.max(1 - clamp(progress / 0.13, 0, 1), returnToAurora)
         : 1 - clamp((journey - 0.04) / 0.26, 0, 1)
       auroraLayer.style.opacity = String(auroraVisibility)
 
@@ -531,7 +534,7 @@ export function ConstellationBackground() {
       }
 
       const flightSpeed = inSpace ? 1.65 : 1
-      const direction = planetDeparture.active && planetDeparture.progress < 0.94 ? -1 : 1
+      const direction = leavingEarth() ? -1 : 1
       const zSpeed = (scroll.velocity * 0.0032 * flightSpeed * direction + 0.00034) * (dt * 60)
       const forward = clamp(Math.abs(scroll.velocity) * flightSpeed / 14, 0, 1)
 
@@ -571,7 +574,7 @@ export function ConstellationBackground() {
     }
 
     const appearanceObserver = new MutationObserver((changes) => {
-      const nextLight = root.dataset.theme === "light" && !(planetDeparture.active && planetDeparture.progress < 0.94) && !(heroFlight.active && heroFlight.progress > 0.12)
+      const nextLight = root.dataset.theme === "light" && !leavingEarth() && !(heroFlight.active && heroFlight.progress > 0.12)
       if (nextLight !== light) {
         setAppearance(nextLight)
       } else if (!changes.some(({ attributeName }) => attributeName === "data-accent")) {

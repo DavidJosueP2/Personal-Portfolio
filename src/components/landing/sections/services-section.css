@@ -1,5 +1,6 @@
 .services-section {
   --services-gutter: clamp(0.75rem, 1.4vw, 1.75rem);
+  position: relative;
   padding-inline: var(--services-gutter);
   padding-block-start: clamp(7.25rem, 14svh, 10rem);
   padding-block-end: 0;
@@ -12,7 +13,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: clamp(0.55rem, 2vw, 2rem);
-  padding-inline: clamp(0rem, 1.65vw, 2.5rem);
+  padding-inline: clamp(2.6rem, 12.7vw, 15rem) clamp(2rem, 15vw, 18rem);
 }
 
 .services-heading h2 {
@@ -81,41 +82,45 @@
   --service-breeze-phase: -1.7s;
   --service-bend: 1.7deg;
   position: absolute;
-  width: clamp(6.75rem, 16vw, 16rem);
-  aspect-ratio: 0.88;
-  transform-origin: 50% 94%;
+  width: clamp(6.8rem, 16vw, 19.5rem);
+  aspect-ratio: 1.12;
+  transform-origin: 0 9%;
 }
 
+.services-flowers canvas[data-service-edge="right"] { transform-origin: 100% 9%; }
+.services-flowers canvas[data-service-climb] {
+  width: clamp(7rem, 13vw, 15rem);
+  transform-origin: 0 84%;
+}
+
+.services-flowers canvas[data-service-climb][data-service-edge="right"] { transform-origin: 100% 84%; }
+
 .services-flowers-early-left {
-  inset-block-start: -9%;
-  inset-inline-start: 3%;
-  rotate: -8deg;
+  inset-block-start: clamp(1.5rem, 6svh, 4rem);
+  inset-inline-start: 0;
 }
 
 .services-flowers-early-right {
   --service-breeze-time: 7.4s;
   --service-breeze-phase: -5s;
   --service-bend: 2.15deg;
-  inset-block-start: 12%;
-  inset-inline-end: 4%;
-  rotate: 9deg;
+  inset-block-start: clamp(2.15rem, 8svh, 5rem);
+  inset-inline-end: 0;
 }
 
 .services-flowers-late-left {
   --service-breeze-time: 6.8s;
   --service-breeze-phase: -2.8s;
   --service-bend: 2.4deg;
-  inset-block-start: 47%;
-  inset-inline-start: 2.6%;
-  rotate: -12deg;
+  inset-block-start: 24%;
+  inset-inline-start: calc(-1 * var(--services-gutter));
 }
 
 .services-flowers-late-right {
   --service-breeze-time: 9.3s;
   --service-breeze-phase: -7.4s;
-  inset-block-end: -5%;
-  inset-inline-end: 5%;
-  rotate: 11deg;
+  inset-block-end: 2%;
+  inset-inline-end: calc(-1 * var(--services-gutter));
 }
 
 .services-meadow {
@@ -133,6 +138,17 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .services-heading h2 {
+    --services-title-hidden: calc(1 - var(--services-title-progress, 1));
+    clip-path: inset(-0.12em calc(100% * var(--services-title-hidden) - 0.04em) -0.16em -0.06em);
+    transform: translate3d(calc(-2.6rem * var(--services-title-hidden)), calc(1.4rem * var(--services-title-hidden)), 0);
+  }
+
+  .services-heading p {
+    opacity: var(--services-question-progress, 1);
+    transform: translate3d(calc(1.6rem * (1 - var(--services-question-progress, 1))), 0, 0);
+  }
+
   .services-preview-drift {
     animation: services-float var(--service-float-time) ease-in-out var(--service-float-phase) infinite paused;
   }
@@ -170,7 +186,7 @@
 }
 
 @media (max-width: 700px) {
-  .services-section { padding-block-start: clamp(5.75rem, 11svh, 7rem); }
+  .services-section { padding-block-start: clamp(6.75rem, 14svh, 7.75rem); }
 
   .services-heading {
     padding-inline: 0;
@@ -184,10 +200,9 @@
     max-inline-size: 52%;
   }
 
-  .services-flowers canvas { width: clamp(3.9rem, 21vw, 8.8rem); }
-  .services-flowers-early-left { inset-inline-start: 0; }
-  .services-flowers-early-right { inset-inline-end: -2%; }
-  .services-flowers-late-left { inset-inline-start: -2%; }
-  .services-flowers-late-right { inset-inline-end: 1%; }
+  .services-flowers canvas { width: clamp(5.1rem, 27vw, 8.5rem); }
+  .services-flowers canvas[data-service-climb] { width: clamp(3.9rem, 18vw, 7rem); }
+  .services-flowers-early-left { inset-block-start: 2.25rem; }
+  .services-flowers-early-right { inset-block-start: 2.55rem; }
   .services-meadow { block-size: clamp(12rem, 34svh, 17rem); }
 }

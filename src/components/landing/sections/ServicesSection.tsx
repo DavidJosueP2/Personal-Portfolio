@@ -249,6 +249,10 @@ export function ServicesSection() {
 
   return (
     <section ref={sectionRef} id="services" aria-labelledby="services-heading" className="services-section portfolio-section overflow-clip bg-[#f6f6f4] text-ink dark:bg-[#111113]">
+      <div className="services-flowers" aria-hidden="true">
+        <canvas className="services-flowers-early-left" data-service-paint="daisy" data-service-edge="left" />
+        <canvas className="services-flowers-early-right" data-service-paint="poppy" data-service-edge="right" />
+      </div>
       <header data-section-motion="heading" className="services-heading">
         <h2 id="services-heading">Services</h2>
         <p>
@@ -259,10 +263,8 @@ export function ServicesSection() {
 
       <div ref={stageRef} data-service-stage className="relative isolate mt-[clamp(3.5rem,8vw,8.5rem)] mb-[var(--service-stage-end,clamp(1.5rem,3vw,3.5rem))] [--service-word-size:clamp(1.8rem,9.1vw,12rem)]">
         <div className="services-flowers" aria-hidden="true">
-          <canvas className="services-flowers-early-left" data-service-paint="daisy" />
-          <canvas className="services-flowers-early-right" data-service-paint="poppy" />
-          <canvas className="services-flowers-late-left" data-service-paint="lavender" />
-          <canvas className="services-flowers-late-right" data-service-paint="daisy" />
+          <canvas className="services-flowers-late-left" data-service-paint="lavender" data-service-edge="left" data-service-climb />
+          <canvas className="services-flowers-late-right" data-service-paint="daisy" data-service-edge="right" data-service-climb />
         </div>
         <div className="relative" data-section-motion="body">
           <ul ref={wordsRef} className="relative z-10 grid justify-items-center gap-[clamp(0.55rem,0.9vw,1rem)]">

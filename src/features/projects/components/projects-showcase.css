@@ -79,8 +79,9 @@
   display: grid;
   width: max-content;
   max-width: calc(100% - 2rem);
-  transform: translate(-50%, -50%);
-  color: #f7f4ee;
+  transform: translate(-50%, calc(-50% + var(--project-phrase-drift, 0px)));
+  color: #fff;
+  mix-blend-mode: difference;
   text-align: center;
   font-family: var(--font-sans);
   font-size: clamp(1.48rem, 3.52vw, 3.75rem);

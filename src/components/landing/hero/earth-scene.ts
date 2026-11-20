@@ -238,6 +238,7 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     const up = new Vector3(0, 1, 0)
     let lastProgress = 0
     let lastElapsed = 0
+    let lastDeparting = false
     const resize = () => {
       const width = canvas.clientWidth
       const height = canvas.clientHeight
@@ -267,6 +268,7 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
       if (disposed) return
       lastProgress = progress
       lastElapsed = elapsed
+      lastDeparting = departing
       const arrival = between(progress, 0.245, 0.385)
       const approach = between(progress, 0.39, 0.58)
       const groundProgress = Math.max(0, Math.min(1, (progress - 0.58) / 0.4))
@@ -279,7 +281,8 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
         camera.updateProjectionMatrix()
       }
 
-      world.update(groundProgress, elapsed)
+      world.root.visible = progress > 0.55
+      if (world.root.visible) world.update(groundProgress, elapsed)
       if (progress < 0.39) {
         camera.position.set(0, 0.11, orbitDistance * (5.2 - arrival * 4.2))
         target.set(0, 0, 0)
@@ -297,7 +300,6 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
       cloudVisibility.value = 1 - between(progress, 0.47, 0.58)
       airVisibility.value = 1 - between(progress, 0.48, 0.59)
       globe.visible = progress < 0.635
-      world.root.visible = progress > 0.55
       entryFog.visible = progress > 0.46 && progress < 0.67
       fogMaterial.uniforms.uPass.value = Math.max(0, Math.min(1, (progress - 0.46) / 0.21))
       renderer.render(scene, camera)
@@ -305,11 +307,11 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     }
 
     return {
-      resize() { resize(); draw(lastProgress, lastElapsed) },
+      resize() { resize(); draw(lastProgress, lastElapsed, lastDeparting) },
       dispose,
       draw,
       drawDeparture(progress: number, elapsed: number) {
-        draw(1 - between(progress, 0.025, 0.94) * 0.71, elapsed, true)
+        draw(0.385 - between(progress, 0.015, 0.81) * 0.14, elapsed, true)
       },
     }
   } catch (error) {

@@ -98,7 +98,11 @@ export function setupHeroJourney(root: HTMLElement) {
             // Restore the navigation for the first content section, after the flight.
             .to(header, { autoAlpha: 1, yPercent: 0, duration: 0.03, ease: "power2.out" }, 0.97)
 
-          departure = setupPlanetDeparture(canvas, host, updateAnimation)
+          departure = setupPlanetDeparture(canvas, host, (canvasEntered) => {
+            // Replace the garden frame before the shared canvas enters the closing section.
+            if (canvasEntered && departure?.visible) scene?.drawDeparture(departure.progress, elapsed)
+            updateAnimation()
+          })
           resize = new ResizeObserver(() => scene?.resize())
           resize.observe(stage)
           visibility = new IntersectionObserver(([entry]) => {
