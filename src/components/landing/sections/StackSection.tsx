@@ -4,13 +4,13 @@ import { scrollToSection } from "@/lib/section-stack"
 import { createRosePainter, roseRoot, roseWidth, roseHeight, type RoseKind } from "./stack-rose-paint"
 import "./stack-section.css"
 
-const icons = import.meta.glob<string>("/src/assets/img/tech/*.{png,svg}", { eager: true, import: "default" })
+const icons = import.meta.glob<string>("/src/assets/img/tech/*.{webp,svg}", { eager: true, import: "default" })
 const traceWidth = 1200
 const traceHeight = 1100
 const traceViewBox = `0 0 ${traceWidth} ${traceHeight}`
 const traceEntry = 0.78
 const traceLowerEdge = 0.89
-const traceSamples = 192
+const traceSamples = 112
 
 const roseAnchorX = 100 * roseRoot[0] / roseWidth
 const roseAnchorY = 100 * roseRoot[1] / roseHeight
@@ -71,27 +71,27 @@ const layers = [
   {
     id: "stack-frontend",
     name: "Frontend",
-    tools: [tech("Angular.png"), tech("React.png"), tech("Svelte.svg", "SvelteKit"), tech("Tailwind CSS.png"), tech("TypeScript.png")],
+    tools: [tech("Angular.webp"), tech("React.webp"), tech("Svelte.svg", "SvelteKit"), tech("Tailwind CSS.webp"), tech("TypeScript.webp")],
   },
   {
     id: "stack-backend",
     name: "Backend",
-    tools: [tech("Spring.png", "Spring Boot"), tech("Java.png"), tech("Nest.js.png"), tech("Node.js.png"), tech("Laravel.png"), tech("PHP.png")],
+    tools: [tech("Spring.webp", "Spring Boot"), tech("Java.webp"), tech("Nest.js.webp"), tech("Node.js.webp"), tech("Laravel.webp"), tech("PHP.webp")],
   },
   {
     id: "stack-cloud",
     name: "Cloud & DevOps",
-    tools: [tech("azure.png", "Azure"), tech("AWS.svg"), tech("Docker.png"), tech("Kubernetes (1).png", "Kubernetes"), tech("GitHub Actions.png"), tech("Jenkins.png"), tech("Cloudflare.svg"), tech("Amazon S3.svg")],
+    tools: [tech("azure.webp", "Azure"), tech("AWS.svg"), tech("Docker.webp"), tech("Kubernetes (1).webp", "Kubernetes"), tech("GitHub Actions.webp"), tech("Jenkins.webp"), tech("Cloudflare.svg"), tech("Amazon S3.svg")],
   },
   {
     id: "stack-data",
     name: "Data & BI",
-    tools: [tech("PostgresSQL.png", "PostgreSQL"), tech("Microsoft SQL Server.png"), tech("MySQL.png"), tech("Oracle.png"), tech("Power BI.svg")],
+    tools: [tech("PostgresSQL.webp", "PostgreSQL"), tech("Microsoft SQL Server.webp"), tech("MySQL.webp"), tech("Oracle.webp"), tech("Power BI.svg")],
   },
   {
     id: "stack-tooling",
     name: "Tooling",
-    tools: [tech("Grafana.png"), tech("Prometheus.png"), tech("SonarQube.png"), tech("JUnit.png"), tech("Playwrite.png", "Playwright"), tech("Swagger.png"), tech("OpenAPI.png"), tech("GitHub.png"), tech("Linux.png")],
+    tools: [tech("Grafana.webp"), tech("Prometheus.webp"), tech("SonarQube.webp"), tech("JUnit.webp"), tech("Playwrite.webp", "Playwright"), tech("Swagger.webp"), tech("OpenAPI.webp"), tech("GitHub.webp"), tech("Linux.webp")],
   },
 ]
 
@@ -117,6 +117,7 @@ export function StackSection() {
     }))
     let observer: IntersectionObserver | undefined
     let stopped = false
+    let prepared = false
     let fittedGeometry = ""
     let entryY = 0
     let timing: number[] = []
@@ -130,7 +131,7 @@ export function StackSection() {
     }
 
     const fitTrace = () => {
-      if (stopped || !trace.clientWidth || !trace.clientHeight) return
+      if (stopped || !prepared || !trace.clientWidth || !trace.clientHeight) return
 
       const { clientWidth, clientHeight } = trace
       const offset = trace.getBoundingClientRect()
@@ -184,7 +185,6 @@ export function StackSection() {
         paintFlowers(traceProgress(scrollProgress, timing))
       }
     }
-    fitTrace()
     const traceSize = new ResizeObserver(fitTrace)
     traceSize.observe(trace)
     traceSize.observe(firstLine)
@@ -206,77 +206,87 @@ export function StackSection() {
       }, { rootMargin: `-${center}px 0px -${height - center - 1}px 0px` })
       for (const chapter of chapters) observer.observe(chapter)
     }
-    observeCurrentChapter()
-    window.addEventListener("resize", observeCurrentChapter)
-
-    media.add("(prefers-reduced-motion: reduce)", () => paintFlowers(1))
-    media.add("(prefers-reduced-motion: no-preference)", (context) => {
-      let disposed = false
-      void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
-        if (disposed) return
-        gsap.registerPlugin(ScrollTrigger)
-        context.add(() => {
-          root.dataset.techMotion = ""
-          const panel = root.closest<HTMLElement>("[data-stack-panel]") ?? root
-          const paintTrace = ({ progress }: { progress: number }) => {
-            scrollProgress = progress
-            const arc = traceProgress(progress, timing)
-            const offset = `${1 - arc}px`
-            for (const path of paths) path.style.strokeDashoffset = offset
-            paintFlowers(arc)
-          }
-          ScrollTrigger.create({
-            trigger: panel,
-            start: () => `top ${window.innerHeight * traceEntry - entryY}px`,
-            end: "bottom bottom",
-            onRefreshInit: fitTrace,
-            onRefresh: paintTrace,
-            onUpdate: paintTrace,
-          })
-
-          for (const chapter of chapters) {
-            const heading = chapter.querySelector<HTMLElement>(".tech-stack-chapter-heading")
-            if (!heading) continue
-            const letters = heading.querySelectorAll<HTMLElement>("[data-tech-letter]")
-            let painted = -1
-            const paintLetters = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
-              const span = end - start
-              const entered = span * progress / (window.innerHeight * 0.38)
-              const leaving = span * (1 - progress) / (window.innerHeight * 0.23)
-              const count = Math.floor(gsap.utils.clamp(0, 1, Math.min(entered, leaving)) * letters.length + 0.001)
-              if (count === painted) return
-              letters.forEach((letter, index) => letter.toggleAttribute("data-turned", index < count))
-              painted = count
+    const activate = () => {
+      prepared = true
+      fitTrace()
+      observeCurrentChapter()
+      window.addEventListener("resize", observeCurrentChapter)
+      media.add("(prefers-reduced-motion: reduce)", () => paintFlowers(1))
+      media.add("(prefers-reduced-motion: no-preference)", (context) => {
+        let disposed = false
+        void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+          if (disposed) return
+          gsap.registerPlugin(ScrollTrigger)
+          context.add(() => {
+            root.dataset.techMotion = ""
+            const panel = root.closest<HTMLElement>("[data-stack-panel]") ?? root
+            const paintTrace = ({ progress }: { progress: number }) => {
+              scrollProgress = progress
+              const arc = traceProgress(progress, timing)
+              const offset = `${1 - arc}px`
+              for (const path of paths) path.style.strokeDashoffset = offset
+              paintFlowers(arc)
             }
             ScrollTrigger.create({
-              trigger: heading,
-              start: "top 90%",
-              end: "bottom 12%",
-              onUpdate: paintLetters,
-              onRefresh: paintLetters,
+              trigger: panel,
+              start: () => `top ${window.innerHeight * traceEntry - entryY}px`,
+              end: "bottom bottom",
+              onRefreshInit: fitTrace,
+              onRefresh: paintTrace,
+              onUpdate: paintTrace,
             })
 
-            const tools = chapter.querySelectorAll("[data-tech-item]")
-            gsap.fromTo(tools, { y: 12, opacity: 0 }, {
-              y: 0,
-              opacity: 1,
-              stagger: 0.03,
-              ease: "none",
-              scrollTrigger: { trigger: chapter, start: "top 91%", end: "top 37%", scrub: 0.36 },
-            })
-          }
-        })
-      }).catch((error: unknown) => console.error("Could not start the stack animations.", error))
-      return () => {
-        disposed = true
-        delete root.dataset.techMotion
-        paths.forEach((path) => path.style.removeProperty("stroke-dashoffset"))
-        root.querySelectorAll("[data-turned]").forEach((letter) => letter.removeAttribute("data-turned"))
-      }
-    })
+            for (const chapter of chapters) {
+              const heading = chapter.querySelector<HTMLElement>(".tech-stack-chapter-heading")
+              if (!heading) continue
+              const letters = heading.querySelectorAll<HTMLElement>("[data-tech-letter]")
+              let painted = -1
+              const paintLetters = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
+                const span = end - start
+                const entered = span * progress / (window.innerHeight * 0.38)
+                const leaving = span * (1 - progress) / (window.innerHeight * 0.23)
+                const count = Math.floor(gsap.utils.clamp(0, 1, Math.min(entered, leaving)) * letters.length + 0.001)
+                if (count === painted) return
+                letters.forEach((letter, index) => letter.toggleAttribute("data-turned", index < count))
+                painted = count
+              }
+              ScrollTrigger.create({
+                trigger: heading,
+                start: "top 90%",
+                end: "bottom 12%",
+                onUpdate: paintLetters,
+                onRefresh: paintLetters,
+              })
+
+              const tools = chapter.querySelectorAll("[data-tech-item]")
+              gsap.fromTo(tools, { y: 12, opacity: 0 }, {
+                y: 0,
+                opacity: 1,
+                stagger: 0.03,
+                ease: "none",
+                scrollTrigger: { trigger: chapter, start: "top 91%", end: "top 37%", scrub: 0.36 },
+              })
+            }
+          })
+        }).catch((error: unknown) => console.error("Could not start the stack animations.", error))
+        return () => {
+          disposed = true
+          delete root.dataset.techMotion
+          paths.forEach((path) => path.style.removeProperty("stroke-dashoffset"))
+          root.querySelectorAll("[data-turned]").forEach((letter) => letter.removeAttribute("data-turned"))
+        }
+      })
+    }
+    const visibility = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      visibility.disconnect()
+      activate()
+    }, { rootMargin: "120% 0px" })
+    visibility.observe(root)
 
     return () => {
       stopped = true
+      visibility.disconnect()
       observer?.disconnect()
       traceSize.disconnect()
       window.removeEventListener("resize", observeCurrentChapter)

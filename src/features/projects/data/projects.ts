@@ -1,17 +1,23 @@
-import AKS from "@/assets/img/tech/AKS.png"
+import AKS from "@/assets/img/tech/AKS.webp"
 import AmazonS3 from "@/assets/img/tech/Amazon S3.svg"
-import Azure from "@/assets/img/tech/azure.png"
+import Azure from "@/assets/img/tech/azure.webp"
 import Cloudflare from "@/assets/img/tech/Cloudflare.svg"
-import Jenkins from "@/assets/img/tech/Jenkins.png"
-import Nest from "@/assets/img/tech/Nest.js.png"
-import PostgreSQL from "@/assets/img/tech/PostgresSQL.png"
-import ReactLogo from "@/assets/img/tech/React.png"
-import SonarQube from "@/assets/img/tech/SonarQube.png"
-import Spring from "@/assets/img/tech/Spring.png"
+import Jenkins from "@/assets/img/tech/Jenkins.webp"
+import Nest from "@/assets/img/tech/Nest.js.webp"
+import PostgreSQL from "@/assets/img/tech/PostgresSQL.webp"
+import ReactLogo from "@/assets/img/tech/React.webp"
+import SonarQube from "@/assets/img/tech/SonarQube.webp"
+import Spring from "@/assets/img/tech/Spring.webp"
 import Svelte from "@/assets/img/tech/Svelte.svg"
-import Tailwind from "@/assets/img/tech/Tailwind CSS.png"
-import TypeScript from "@/assets/img/tech/TypeScript.png"
+import Tailwind from "@/assets/img/tech/Tailwind CSS.webp"
+import TypeScript from "@/assets/img/tech/TypeScript.webp"
 import type { Project } from "../types"
+
+function projectPreview(folder: string, width = 960) {
+  const large = new URL(`../../../assets/img/projects/${folder}/preview.webp`, import.meta.url).toString()
+  const small = new URL(`../../../assets/img/projects/${folder}/preview-576.webp`, import.meta.url).toString()
+  return { previewSrc: large, previewSrcSet: `${small} 576w, ${large} ${width}w` }
+}
 
 export const projects: Project[] = [
   {
@@ -38,14 +44,14 @@ export const projects: Project[] = [
       { name: "PostgreSQL", iconSrc: PostgreSQL },
     ],
     images: {
-      previewSrc: new URL("../../../assets/img/projects/clinic/preview.webp", import.meta.url).toString(),
+      ...projectPreview("clinic"),
       cover: {
-        src: new URL("../../../assets/img/projects/clinic/1.png", import.meta.url).toString(),
+        src: new URL("../../../assets/img/projects/clinic/1.webp", import.meta.url).toString(),
         alt: "ClinicCare home page with options to browse doctors and book an appointment",
         kind: "cover",
       },
       gallery: ["1", "2", "3", "5", "6", "7", "8", "9", "10"].map((file) => ({
-        src: new URL(`../../../assets/img/projects/clinic/${file}.png`, import.meta.url).toString(),
+        src: new URL(`../../../assets/img/projects/clinic/${file}.webp`, import.meta.url).toString(),
         alt: `Clinic platform screenshot ${file}`,
         kind: "gallery",
       })),
@@ -90,14 +96,14 @@ export const projects: Project[] = [
       { name: "React", iconSrc: ReactLogo },
     ],
     images: {
-      previewSrc: new URL("../../../assets/img/projects/fuel-system/preview.webp", import.meta.url).toString(),
+      ...projectPreview("fuel-system"),
       cover: {
-        src: new URL("../../../assets/img/projects/fuel-system/Picture7.png", import.meta.url).toString(),
+        src: new URL("../../../assets/img/projects/fuel-system/Picture7.webp", import.meta.url).toString(),
         alt: "FuelIQ trip board with trips grouped by status",
         kind: "cover",
       },
       gallery: Array.from({ length: 10 }, (_, i) => ({
-        src: new URL(`../../../assets/img/projects/fuel-system/Picture${i + 1}.png`, import.meta.url).toString(),
+        src: new URL(`../../../assets/img/projects/fuel-system/Picture${i + 1}.webp`, import.meta.url).toString(),
         alt: `Fuel system screenshot ${i + 1}`,
         kind: "gallery",
       })),
@@ -141,22 +147,22 @@ export const projects: Project[] = [
       { name: "React", iconSrc: ReactLogo },
     ],
     images: {
-      previewSrc: new URL("../../../assets/img/projects/hospital/preview.webp", import.meta.url).toString(),
+      ...projectPreview("hospital"),
       cover: {
-        src: new URL("../../../assets/img/projects/hospital/Picture3.png", import.meta.url).toString(),
+        src: new URL("../../../assets/img/projects/hospital/Picture3.webp", import.meta.url).toString(),
         alt: "Hospital administration dashboard listing medical centers",
         kind: "cover",
       },
       gallery: [
-        "Picture1.png",
-        "Picture2.png",
-        "Picture3.png",
-        "Picture4.png",
-        "Picture5.png",
-        "Picture6.png",
-        "Picture7.png",
-        "Picture8.png",
-        "Picture42.png",
+        "Picture1.webp",
+        "Picture2.webp",
+        "Picture3.webp",
+        "Picture4.webp",
+        "Picture5.webp",
+        "Picture6.webp",
+        "Picture7.webp",
+        "Picture8.webp",
+        "Picture42.webp",
       ].map((file) => ({
         src: new URL(`../../../assets/img/projects/hospital/${file}`, import.meta.url).toString(),
         alt: `Hospital system screenshot ${file}`,
@@ -194,21 +200,21 @@ export const projects: Project[] = [
       { name: "Amazon S3", iconSrc: AmazonS3 },
     ],
     images: {
-      previewSrc: new URL("../../../assets/img/projects/moderation/preview.webp", import.meta.url).toString(),
+      ...projectPreview("moderation", 893),
       cover: {
-        src: new URL("../../../assets/img/projects/moderation/Picture12.png", import.meta.url).toString(),
+        src: new URL("../../../assets/img/projects/moderation/Picture12.webp", import.meta.url).toString(),
         alt: "Marketplace Link moderator dashboard with status counts and a list of moderators",
         kind: "cover",
       },
       gallery: [
-        "Picture10.png",
-        "Picture11.png",
-        "Picture12.png",
-        "Picture13.png",
-        "Picture4.png",
-        "Picture6.png",
-        "Picture7.png",
-        "Picture8.png",
+        "Picture10.webp",
+        "Picture11.webp",
+        "Picture12.webp",
+        "Picture13.webp",
+        "Picture4.webp",
+        "Picture6.webp",
+        "Picture7.webp",
+        "Picture8.webp",
       ].map((file) => ({
         src: new URL(`../../../assets/img/projects/moderation/${file}`, import.meta.url).toString(),
         alt: `Moderation platform screenshot ${file}`,
@@ -242,17 +248,17 @@ export const projects: Project[] = [
       { name: "Tailwind CSS", iconSrc: Tailwind },
     ],
     images: {
-      previewSrc: new URL("../../../assets/img/projects/wedding-page/preview.webp", import.meta.url).toString(),
+      ...projectPreview("wedding-page"),
       cover: {
-        src: new URL("../../../assets/img/projects/wedding-page/home.png", import.meta.url).toString(),
+        src: new URL("../../../assets/img/projects/wedding-page/home.webp", import.meta.url).toString(),
         alt: "White Lace & Promises wedding and event styling homepage",
         kind: "cover",
       },
       gallery: [
-        { src: new URL("../../../assets/img/projects/wedding-page/real weddings.png", import.meta.url).toString(), alt: "Real weddings portfolio" },
-        { src: new URL("../../../assets/img/projects/wedding-page/gallery.png", import.meta.url).toString(), alt: "Event styling gallery" },
-        { src: new URL("../../../assets/img/projects/wedding-page/enquery.png", import.meta.url).toString(), alt: "Event enquiry form" },
-        { src: new URL("../../../assets/img/projects/wedding-page/about.png", import.meta.url).toString(), alt: "About the event styling business" },
+        { src: new URL("../../../assets/img/projects/wedding-page/real weddings.webp", import.meta.url).toString(), alt: "Real weddings portfolio" },
+        { src: new URL("../../../assets/img/projects/wedding-page/gallery.webp", import.meta.url).toString(), alt: "Event styling gallery" },
+        { src: new URL("../../../assets/img/projects/wedding-page/enquery.webp", import.meta.url).toString(), alt: "Event enquiry form" },
+        { src: new URL("../../../assets/img/projects/wedding-page/about.webp", import.meta.url).toString(), alt: "About the event styling business" },
       ],
     },
     links: [
@@ -285,17 +291,17 @@ export const projects: Project[] = [
       { name: "Amazon S3", iconSrc: AmazonS3 },
     ],
     images: {
-      previewSrc: new URL("../../../assets/img/projects/foris-forum chat/preview.webp", import.meta.url).toString(),
+      ...projectPreview("foris-forum chat"),
       cover: {
-        src: new URL("../../../assets/img/projects/foris-forum chat/Home.png", import.meta.url).toString(),
+        src: new URL("../../../assets/img/projects/foris-forum chat/Home.webp", import.meta.url).toString(),
         alt: "FORIS forum homepage",
         kind: "cover",
       },
       gallery: [
-        { src: new URL("../../../assets/img/projects/foris-forum chat/Comunidades.png", import.meta.url).toString(), alt: "FORIS communities view" },
-        { src: new URL("../../../assets/img/projects/foris-forum chat/Chats.png", import.meta.url).toString(), alt: "FORIS chat interface" },
-        { src: new URL("../../../assets/img/projects/foris-forum chat/Crear publicación.png", import.meta.url).toString(), alt: "FORIS post editor" },
-        { src: new URL("../../../assets/img/projects/foris-forum chat/login.png", import.meta.url).toString(), alt: "FORIS sign-in screen" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/Comunidades.webp", import.meta.url).toString(), alt: "FORIS communities view" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/Chats.webp", import.meta.url).toString(), alt: "FORIS chat interface" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/Crear publicación.webp", import.meta.url).toString(), alt: "FORIS post editor" },
+        { src: new URL("../../../assets/img/projects/foris-forum chat/login.webp", import.meta.url).toString(), alt: "FORIS sign-in screen" },
       ],
     },
     links: [

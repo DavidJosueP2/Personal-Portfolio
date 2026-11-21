@@ -1,13 +1,11 @@
 import {
   CanvasTexture, CatmullRomCurve3, Color, DoubleSide, Group,
   InstancedBufferAttribute, InstancedBufferGeometry, Mesh, PlaneGeometry,
-  RepeatWrapping, ShaderMaterial, SRGBColorSpace, Vector3,
+  RepeatWrapping, ShaderMaterial, SRGBColorSpace, TextureLoader, Vector3,
 } from "three"
 import type { Texture } from "three"
-import { composeGardenBouquet } from "../sections/services-garden"
-import { createRosePainter } from "../sections/stack-rose-paint"
 import { paintRandom } from "@/lib/botanical-paint"
-import { paintWorldPlant, worldSpecies } from "./world-flora"
+import { worldSpecies } from "./world-flora"
 import { createWorldSky } from "./world-sky"
 import { groundAt, pathAt, terrainShader } from "./world-terrain"
 import { createGroundcover } from "./world-groundcover"
@@ -45,39 +43,21 @@ const worldVertex = /* glsl */ `
   }
 `
 
-async function paintedTextures(retain: Retain, signal: AbortSignal) {
-  const textures: Texture[] = []
-  for (const [index, kind] of ["daisy", "lavender", "poppy", "cup", "open", ...worldSpecies].entries()) {
-    if (signal.aborted) return textures
-    const canvas = document.createElement("canvas")
-    if (kind === "cup" || kind === "open") {
-      const painter = createRosePainter(canvas, kind, 328 + index * 19)
-      painter.fit(320)
-      painter.paint(1)
-    } else if (worldSpecies.includes(kind as typeof worldSpecies[number])) {
-      paintWorldPlant(canvas, kind as typeof worldSpecies[number], 211 + index * 37)
-    } else {
-      canvas.width = 384
-      canvas.height = 576
-      const context = canvas.getContext("2d")!
-      context.lineCap = "round"
-      context.lineJoin = "round"
-      composeGardenBouquet(canvas.width, canvas.height, 143 + index * 31, kind as "daisy" | "lavender" | "poppy").forEach((mark) => mark(context))
-    }
-    const texture = retain(new CanvasTexture(canvas))
+const paintings = import.meta.glob<string>("/src/assets/img/garden/*.webp", { eager: true, import: "default" })
+
+export function loadWorldTextures(retain: Retain) {
+  // The painted flora is baked from the original brushstrokes. Growth still runs in the world shaders.
+  const loader = new TextureLoader()
+  return Promise.all(["daisy", "lavender", "poppy", "cup", "open", ...worldSpecies].map(async (kind) => {
+    const texture = retain(await loader.loadAsync(paintings[`/src/assets/img/garden/${kind}.webp`]))
     texture.colorSpace = SRGBColorSpace
-    textures.push(texture)
-    // Yield between paintings so scene preparation never blocks the initial controls.
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
-  }
-  return textures
+    return texture
+  }))
 }
 
-export async function createBotanicalWorld(retain: Retain, signal: AbortSignal) {
+export function createBotanicalWorld(textures: Texture[], retain: Retain) {
   const root = new Group()
   root.visible = false
-  const textures = await paintedTextures(retain, signal)
-  if (signal.aborted) return null
   const random = paintRandom(1826)
   const time = { value: 0 }
   const exit = { value: 0 }
@@ -144,7 +124,7 @@ export async function createBotanicalWorld(retain: Retain, signal: AbortSignal) 
   grassGeometry.index = blade.index?.clone() ?? null
   for (const key of ["position", "uv"]) grassGeometry.setAttribute(key, blade.getAttribute(key).clone())
   blade.dispose()
-  const count = window.innerWidth < 768 ? 22000 : 42000
+  const count = window.innerWidth < 768 ? 16000 : 32000
   const roots = new Float32Array(count * 3)
   const shape = new Float32Array(count * 3)
   const lampLight = new Float32Array(count)

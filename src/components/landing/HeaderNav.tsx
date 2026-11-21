@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
 import { socialLogos } from "@/assets/img/tech"
+import { afterHeroIntro } from "@/lib/hero-intro"
 import { PortfolioLink } from "./PortfolioLink"
 import "./site-chrome.css"
 
@@ -47,7 +48,7 @@ const SECTIONS = [
 function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScroll: boolean) {
   const [surface, setSurface] = useState({ id: "", light: false, brandLight: false, actionsLight: false, experiencePaper: false })
 
-  useEffect(() => {
+  useEffect(() => afterHeroIntro(() => {
     const nav = navRef.current
     if (!nav || !followScroll) return
 
@@ -90,7 +91,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       const experience = section?.hasAttribute("data-scene-handoff") ?? false
       const brandLight = experience ? hasLightSurface(brand) : light
       const actionsLight = experience ? hasLightSurface(actions) : light
-      const experiencePaper = experience
+      const experiencePaper = experience && section !== null && section.getBoundingClientRect().top <= y
       const key = [id, light, brandLight, actionsLight, experiencePaper].join(":")
       if (key === lastSurface) return
       lastSurface = key
@@ -100,7 +101,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       if (!frame) frame = requestAnimationFrame(update)
     }
 
-    update()
+    requestUpdate()
     window.addEventListener("scroll", requestUpdate, { passive: true })
     window.addEventListener("resize", requestUpdate)
     const size = new ResizeObserver(requestUpdate)
@@ -113,7 +114,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       cancelAnimationFrame(frame)
       size.disconnect()
     }
-  }, [followScroll, navRef])
+  }), [followScroll, navRef])
 
   return surface
 }
@@ -175,7 +176,7 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
   return (
     <header className="site-header" data-surface={surface.light ? "light" : "dark"} data-experience-paper={surface.experiencePaper || undefined}>
       <div data-home-navigation className="site-header-frame">
-        <PortfolioLink section="top" onSection={onSection} aria-label="David Barragán, home" className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
+        <PortfolioLink section="top" onSection={onSection} aria-label="DJB, David Barragán, home" className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
           DJB
         </PortfolioLink>
 

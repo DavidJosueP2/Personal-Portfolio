@@ -31,9 +31,7 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string) {
   if (!shader) return null
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
-  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader
-  gl.deleteShader(shader)
-  return null
+  return shader
 }
 
 function linkProgram(gl: WebGL2RenderingContext) {
@@ -49,6 +47,7 @@ function linkProgram(gl: WebGL2RenderingContext) {
   }
   gl.deleteShader(vertex)
   if (fragment) gl.deleteShader(fragment)
+  // Linking checks both shaders in one query to the driver.
   if (!program || gl.getProgramParameter(program, gl.LINK_STATUS)) return program
   gl.deleteProgram(program)
   return null

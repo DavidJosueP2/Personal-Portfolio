@@ -156,6 +156,7 @@ export function createProjectSpread(
       if (disposed) return
       gsap.registerPlugin(ScrollTrigger)
       const panel = section.closest<HTMLElement>("[data-stack-panel]") ?? section
+      const phrase = section.querySelector<HTMLElement>(".project-phrase")
       const words = Array.from(section.querySelectorAll<HTMLElement>("[data-project-phrase-line]"))
 
       const render = () => {
@@ -166,6 +167,9 @@ export function createProjectSpread(
         section.toggleAttribute("data-nav-light", paper >= 0.52)
         section.style.setProperty("--project-darkness", String(1 - paper))
         section.style.setProperty("--project-interface", String(controls))
+        // Keep rising between the staggered entrance and the handoff to the carousel.
+        const rise = gsap.utils.clamp(0, 1, (entrance - 0.19) / (galleryLanding + 0.14 - 0.19))
+        phrase?.style.setProperty("--project-phrase-drift", `${2.8 - rise * 5.6}svh`)
         for (const [index, word] of words.entries()) {
           const appear = smoothStep(0.19 + index * 0.053, 0.34 + index * 0.053, entrance)
           const depart = smoothStep(galleryLanding - 0.02 + index * 0.02, galleryLanding + 0.10 + index * 0.02, entrance)
@@ -216,13 +220,17 @@ export function createProjectSpread(
         section.setAttribute("data-nav-light", "")
         section.style.removeProperty("--project-darkness")
         section.style.removeProperty("--project-interface")
+        phrase?.style.removeProperty("--project-phrase-drift")
         words.forEach((word) => {
           word.style.removeProperty("opacity")
           word.style.removeProperty("transform")
         })
         measure()
       }
-    }).catch((error: unknown) => console.error("Could not start the project gallery motion.", error))
+    }).catch((error: unknown) => {
+      delete section.dataset.projectLayout
+      console.error("Could not start the project gallery motion.", error)
+    })
     return () => {
       disposed = true
       cleanup?.()

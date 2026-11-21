@@ -1,7 +1,8 @@
 import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
 import { createWebGLAurora } from "./aurora/aurora-webgl"
-import { heroFlight, planetDeparture } from "@/lib/hero-flight"
+import { heroFlight, planetDeparture, planetDepartureTiming } from "@/lib/hero-flight"
+import { scheduleIdle } from "@/lib/idle-work"
 
 type Star = {
   x: number
@@ -17,6 +18,7 @@ type Star = {
 
 const MAX_BACKGROUND_DPR = 1.25
 const FRAME_INTERVAL_MS = 1000 / 60
+const IDLE_FRAME_INTERVAL_MS = 1000 / 30
 const MAX_STARS = 500
 const STAR_TILE_SIZE = 96
 const STAR_DEPTH_STEPS = 8
@@ -265,20 +267,23 @@ function drawAurora(
   ctx.putImageData(raster, 0, 0)
 }
 
-/**
- * Fullscreen background: stars + aurora curtains + scroll-driven warp.
- * Uses Canvas2D for perf.
- */
-export function ConstellationBackground() {
-  const backdropRef = React.useRef<HTMLDivElement | null>(null)
-  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
-  const auroraRef = React.useRef<HTMLCanvasElement | null>(null)
+function createFallbackAurora() {
+  const canvas = document.createElement("canvas")
+  canvas.width = AURORA_WIDTH
+  canvas.height = AURORA_HEIGHT
+  const context = canvas.getContext("2d")
+  if (!context) return null
+  return {
+    canvas,
+    context,
+    raster: context.createImageData(canvas.width, canvas.height),
+    columnLight: new Float32Array(canvas.height * 4),
+  }
+}
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current
-    const auroraLayer = auroraRef.current
-    const backdrop = backdropRef.current
-    if (!canvas || !auroraLayer || !backdrop) return
+function connectBackground(canvas: HTMLCanvasElement, auroraLayer: HTMLCanvasElement, backdrop: HTMLDivElement) {
+    const root = document.documentElement
+    const initialTint = getAccentTint(root.dataset.accent)
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -288,30 +293,22 @@ export function ConstellationBackground() {
     const atlasCtx = starAtlas.getContext("2d")
     if (!atlasCtx) return
 
-    const auroraCanvas = document.createElement("canvas")
-    auroraCanvas.width = AURORA_WIDTH
-    auroraCanvas.height = AURORA_HEIGHT
-    const auroraCtx = auroraCanvas.getContext("2d")
-    if (!auroraCtx) return
-    const auroraRaster = auroraCtx.createImageData(auroraCanvas.width, auroraCanvas.height)
-    const auroraColumnLight = new Float32Array(auroraCanvas.height * 4)
-
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)")
     let reducedMotion = motionPreference.matches
     let raf = 0
     const vp = resizeCanvasToViewport(canvas, ctx, MAX_BACKGROUND_DPR)
-    const root = document.documentElement
     let light = root.dataset.theme === "light"
     let vignette = makeVignette(ctx, vp.width, vp.height, light)
-    let tint = getAccentTint(root.dataset.accent)
+    let tint = initialTint
     let auroraPalette = makeAuroraPalette(tint, light)
     let auroraTime = 0
     let lastAuroraPaint = 0
     let auroraDirty = true
-    let renderer = createWebGLAurora(auroraLayer)
-    auroraLayer.hidden = !renderer
-    renderer?.resize(vp.width, vp.height)
-    renderer?.setAppearance(tint, light)
+    let renderer: ReturnType<typeof createWebGLAurora> = null
+    let painting = false
+    let auroraAttempted = false
+    let fallback: ReturnType<typeof createFallbackAurora> | undefined
+    let lastAuroraVisibility = -1
 
     const paintAurora = (dt: number) => {
       auroraTime += dt
@@ -319,18 +316,22 @@ export function ConstellationBackground() {
       if (auroraDirty || auroraTime - lastAuroraPaint >= interval - 0.001) {
         if (renderer) {
           renderer.draw(auroraTime)
+          if (auroraLayer.hidden) auroraLayer.hidden = false
         } else {
-          drawAurora(auroraCtx, auroraRaster, auroraColumnLight, auroraPalette, auroraTime, light, vp.width < vp.height)
+          if (fallback === undefined) fallback = createFallbackAurora()
+          if (fallback) {
+            drawAurora(fallback.context, fallback.raster, fallback.columnLight, auroraPalette, auroraTime, light, vp.width < vp.height)
+          }
         }
         lastAuroraPaint = auroraTime
         auroraDirty = false
       }
-      if (!renderer) ctx.drawImage(auroraCanvas, 0, 0, vp.width, vp.height)
+      if (!renderer && fallback) ctx.drawImage(fallback.canvas, 0, 0, vp.width, vp.height)
     }
 
     // Scroll -> "travel speed". We ease it to feel like a camera inertia.
     const scroll = {
-      lastY: globalThis.scrollY,
+      lastY: 0,
       velocity: 0,
       targetVelocity: 0,
       lastInputTs: performance.now(),
@@ -405,7 +406,7 @@ export function ConstellationBackground() {
       // Re-spread stars to fit new viewport
       for (const s of stars) resetStar(s, true)
 
-      if (reducedMotion) drawFrame(0, 0)
+      if (painting && reducedMotion) drawFrame(0, 0)
     }
 
     // Track scroll velocity
@@ -418,6 +419,7 @@ export function ConstellationBackground() {
       scroll.lastY = y
       scroll.lastInputTs = now
       scroll.targetVelocity = clamp(dy * 0.12 * (FRAME_INTERVAL_MS / elapsed), -14, 14)
+      nextFrame = Math.min(nextFrame, now)
     }
 
     globalThis.addEventListener("resize", onResize)
@@ -501,11 +503,14 @@ export function ConstellationBackground() {
       }
     }
 
+    const { auroraStart, contactStart } = planetDepartureTiming
+    const leavingEarth = () => planetDeparture.active && planetDeparture.progress < contactStart
     const drawFrame = (time: number, dt: number) => {
-      const returnToAurora = clamp((planetDeparture.progress - 0.76) / 0.12, 0, 1)
-      const journey = planetDeparture.active ? (1 - planetDeparture.progress * 0.71) * (1 - returnToAurora) : heroFlight.active ? heroFlight.progress : 0
+      const progress = planetDeparture.progress
+      const returnToAurora = clamp((progress - auroraStart) / (contactStart - auroraStart), 0, 1)
+      const journey = heroFlight.active ? heroFlight.progress : 0
       starVisibility = 1 - clamp((journey - 0.43) / 0.16, 0, 1)
-      const inSpace = journey > 0.12
+      const inSpace = leavingEarth() || journey > 0.12
       const nextLight = root.dataset.theme === "light" && !inSpace
       if (nextLight !== light) setAppearance(nextLight)
       const sky = inSpace ? "#030814" : ""
@@ -514,9 +519,12 @@ export function ConstellationBackground() {
         lastSky = sky
       }
       const auroraVisibility = planetDeparture.active
-        ? Math.max(1 - clamp(planetDeparture.progress / 0.13, 0, 1), returnToAurora)
+        ? Math.max(1 - clamp(progress / 0.13, 0, 1), returnToAurora)
         : 1 - clamp((journey - 0.04) / 0.26, 0, 1)
-      auroraLayer.style.opacity = String(auroraVisibility)
+      if (auroraVisibility !== lastAuroraVisibility) {
+        auroraLayer.style.opacity = String(auroraVisibility)
+        lastAuroraVisibility = auroraVisibility
+      }
 
       // ease velocity
       scroll.velocity = lerp(scroll.velocity, scroll.targetVelocity, 0.11)
@@ -531,7 +539,7 @@ export function ConstellationBackground() {
       }
 
       const flightSpeed = inSpace ? 1.65 : 1
-      const direction = planetDeparture.active && planetDeparture.progress < 0.94 ? -1 : 1
+      const direction = leavingEarth() ? -1 : 1
       const zSpeed = (scroll.velocity * 0.0032 * flightSpeed * direction + 0.00034) * (dt * 60)
       const forward = clamp(Math.abs(scroll.velocity) * flightSpeed / 14, 0, 1)
 
@@ -542,8 +550,10 @@ export function ConstellationBackground() {
       ctx.fillStyle = vignette
       ctx.fillRect(0, 0, vp.width, vp.height)
 
-      for (let i = 0; i < starCount; i++) {
-        drawStar(stars[i], time, zSpeed, forward)
+      if (starVisibility > 0) {
+        for (let i = 0; i < starCount; i++) {
+          drawStar(stars[i], time, zSpeed, forward)
+        }
       }
       ctx.globalAlpha = 1
 
@@ -560,27 +570,27 @@ export function ConstellationBackground() {
 
     const loop = (time: number) => {
       raf = globalThis.requestAnimationFrame(loop)
+      // The 3D garden has its own sky, so it fully covers this backdrop.
+      if (heroFlight.active && heroFlight.progress > 0.67 && !planetDeparture.active) return
       if (time + 0.5 < nextFrame) return
 
       const dt = lastFrame ? Math.min(0.05, (time - lastFrame) / 1000) : 0
       lastFrame = time
       // Keep the average cadence on high-refresh screens and discard missed frames.
-      const deadline = nextFrame + FRAME_INTERVAL_MS
-      nextFrame = deadline > time ? deadline : time + FRAME_INTERVAL_MS
+      const moving = Math.abs(scroll.velocity) > 0.05 || Math.abs(scroll.targetVelocity) > 0.05
+      const interval = moving ? FRAME_INTERVAL_MS : IDLE_FRAME_INTERVAL_MS
+      const deadline = nextFrame + interval
+      nextFrame = deadline > time ? deadline : time + interval
       drawFrame(time, dt)
     }
 
     const appearanceObserver = new MutationObserver((changes) => {
-      const nextLight = root.dataset.theme === "light" && !(planetDeparture.active && planetDeparture.progress < 0.94) && !(heroFlight.active && heroFlight.progress > 0.12)
-      if (nextLight !== light) {
-        setAppearance(nextLight)
-      } else if (!changes.some(({ attributeName }) => attributeName === "data-accent")) {
-        return
-      }
-
-      tint = getAccentTint(root.dataset.accent)
-      setAppearance(light)
-      drawFrame(reducedMotion ? 0 : performance.now(), 0)
+      const nextLight = root.dataset.theme === "light" && !leavingEarth() && !(heroFlight.active && heroFlight.progress > 0.12)
+      const accentChanged = changes.some(({ attributeName }) => attributeName === "data-accent")
+      if (accentChanged) tint = getAccentTint(root.dataset.accent)
+      if (nextLight === light && !accentChanged) return
+      setAppearance(nextLight)
+      if (painting) drawFrame(reducedMotion ? 0 : performance.now(), 0)
     })
     appearanceObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] })
 
@@ -589,26 +599,35 @@ export function ConstellationBackground() {
       renderer = null
       auroraLayer.hidden = true
       auroraDirty = true
-      if (reducedMotion && !document.hidden) drawFrame(0, 0)
+      if (painting && reducedMotion) drawFrame(0, 0)
     }
-    const onContextRestored = () => {
+    const prepareAurora = () => {
+      auroraAttempted = true
       renderer = createWebGLAurora(auroraLayer)
       renderer?.resize(vp.width, vp.height)
       renderer?.setAppearance(tint, light)
-      auroraLayer.hidden = !renderer
       auroraDirty = true
-      if (reducedMotion && !document.hidden) drawFrame(0, 0)
+      if (painting && reducedMotion) drawFrame(0, 0)
     }
     auroraLayer.addEventListener("webglcontextlost", onContextLost)
-    auroraLayer.addEventListener("webglcontextrestored", onContextRestored)
+    auroraLayer.addEventListener("webglcontextrestored", prepareAurora)
 
+    const intro = document.querySelector<HTMLElement>("[data-hero-intro]")
+    const windows = new Set<Element>()
     const updateAnimation = () => {
+      const nextPainting = !document.hidden && windows.size > 0
+        && (!intro || intro.hidden || intro.hasAttribute("data-intro-revealing"))
+      const nextReduced = motionPreference.matches
+      if (painting === nextPainting && (!painting || reducedMotion === nextReduced)) return
+      painting = nextPainting
       globalThis.cancelAnimationFrame(raf)
       globalThis.removeEventListener("scroll", onScroll)
-      if (document.hidden) return
+      if (!painting) return
 
-      reducedMotion = motionPreference.matches
+      reducedMotion = nextReduced
       scroll.lastY = globalThis.scrollY
+      // Choose the renderer before the first paint, while the intro still covers the sky.
+      if (!auroraAttempted) prepareAurora()
       scroll.lastInputTs = performance.now()
       scroll.velocity = 0
       scroll.targetVelocity = 0
@@ -621,7 +640,16 @@ export function ConstellationBackground() {
       }
     }
 
-    updateAnimation()
+    const visibility = new IntersectionObserver((entries) => {
+      for (const { target, isIntersecting } of entries) {
+        if (isIntersecting) windows.add(target)
+        else windows.delete(target)
+      }
+      updateAnimation()
+    })
+    document.querySelectorAll("[data-hero-stage], #contact, footer").forEach((element) => visibility.observe(element))
+    const introObserver = new MutationObserver(updateAnimation)
+    if (intro) introObserver.observe(intro, { attributes: true, attributeFilter: ["hidden", "data-intro-revealing"] })
     motionPreference.addEventListener("change", updateAnimation)
     document.addEventListener("visibilitychange", updateAnimation)
 
@@ -629,12 +657,43 @@ export function ConstellationBackground() {
       globalThis.removeEventListener("resize", onResize)
       globalThis.removeEventListener("scroll", onScroll)
       globalThis.cancelAnimationFrame(raf)
+      visibility.disconnect()
+      introObserver.disconnect()
       appearanceObserver.disconnect()
       motionPreference.removeEventListener("change", updateAnimation)
       document.removeEventListener("visibilitychange", updateAnimation)
       auroraLayer.removeEventListener("webglcontextlost", onContextLost)
-      auroraLayer.removeEventListener("webglcontextrestored", onContextRestored)
+      auroraLayer.removeEventListener("webglcontextrestored", prepareAurora)
       renderer?.dispose()
+    }
+}
+
+export function ConstellationBackground() {
+  const backdropRef = React.useRef<HTMLDivElement | null>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+  const auroraRef = React.useRef<HTMLCanvasElement | null>(null)
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current
+    const auroraLayer = auroraRef.current
+    const backdrop = backdropRef.current
+    if (!canvas || !auroraLayer || !backdrop) return
+
+    const intro = document.querySelector<HTMLElement>("[data-hero-intro]")
+    if (!intro || intro.hidden) return connectBackground(canvas, auroraLayer, backdrop)
+
+    // Give the title's first frame priority over canvas setup.
+    let cancelPreparation: (() => void) | undefined
+    let disconnect: (() => void) | undefined
+    const frame = window.requestAnimationFrame(() => {
+      cancelPreparation = scheduleIdle(() => {
+        disconnect = connectBackground(canvas, auroraLayer, backdrop)
+      }, 160)
+    })
+    return () => {
+      window.cancelAnimationFrame(frame)
+      cancelPreparation?.()
+      disconnect?.()
     }
   }, [])
 

@@ -9,7 +9,7 @@ import { StackSection } from "@/components/landing/sections/StackSection"
 import { ContactSection } from "@/components/landing/sections/ContactSection"
 import { Footer } from "@/components/landing/Footer"
 import { ExperienceTimeline } from "@/components/landing/ExperienceTimeline"
-import { setupHeroIntro } from "@/lib/hero-intro"
+import { afterHeroIntro, setupHeroIntro } from "@/lib/hero-intro"
 import { scrollToSection, setupSectionStack } from "@/lib/section-stack"
 import { setupRevealList } from "@/lib/gsap-reveal-list"
 
@@ -30,12 +30,16 @@ export function LandingPage() {
             destination.scrollIntoView({ behavior: "instant" })
         }
 
-        return setupSectionStack(main)
     }, [])
 
     useLayoutEffect(() => {
         const root = rootRef.current
         if (root) return setupHeroIntro(root)
+    }, [])
+
+    useEffect(() => {
+        const main = sectionsRef.current
+        if (main) return afterHeroIntro(() => setupSectionStack(main))
     }, [])
 
     useEffect(() => {
@@ -61,12 +65,15 @@ export function LandingPage() {
                 </main>
                 <Footer onSection={scrollToSection} />
             </div>
-            <div data-hero-intro hidden aria-hidden="true" className="pointer-events-none fixed inset-0 z-[60] isolate overflow-hidden">
-                <div data-intro-base className="absolute inset-0 bg-[var(--intro-paper)]" />
-                <div data-intro-accent className="absolute inset-0 bg-[rgb(var(--accent-rgb,52_211_153))] [transform:translateY(100%)]" />
-                <div data-intro-night className="absolute inset-0 bg-[var(--intro-paper)] [transform:translateY(100%)]" />
-                <span data-intro-word className="absolute top-0 left-0 origin-top-left bg-clip-text whitespace-nowrap text-transparent" />
-                <span data-intro-word className="absolute top-0 left-0 origin-top-left bg-clip-text whitespace-nowrap text-transparent" />
+            <div data-hero-intro hidden aria-hidden="true" className="hero-opening">
+                {["base", "accent", "night"].map((phase) => (
+                    <div key={phase} data-intro-layer={phase} className="hero-opening-layer">
+                        <div className="hero-opening-ink">
+                            <span data-intro-word />
+                            <span data-intro-word />
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     )
