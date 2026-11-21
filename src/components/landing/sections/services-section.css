@@ -1,6 +1,13 @@
 .services-section {
   --services-gutter: clamp(0.75rem, 1.4vw, 1.75rem);
+  --ui-ink: #fff;
+  --ui-heading: #ece9e2;
+  --ui-panel: #101518;
+  --ui-accent-ink: rgb(var(--accent-rgb, 52 211 153));
   position: relative;
+  background: #000;
+  color: var(--ui-ink);
+  color-scheme: dark;
   padding-inline: var(--services-gutter);
   padding-block-start: clamp(7.25rem, 14svh, 10rem);
   padding-block-end: 0;

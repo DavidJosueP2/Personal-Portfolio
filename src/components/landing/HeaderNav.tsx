@@ -90,7 +90,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       const experience = section?.hasAttribute("data-scene-handoff") ?? false
       const brandLight = experience ? hasLightSurface(brand) : light
       const actionsLight = experience ? hasLightSurface(actions) : light
-      const experiencePaper = experience
+      const experiencePaper = experience && section !== null && section.getBoundingClientRect().top <= y
       const key = [id, light, brandLight, actionsLight, experiencePaper].join(":")
       if (key === lastSurface) return
       lastSurface = key

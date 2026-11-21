@@ -37,6 +37,7 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
     const scrollY = window.scrollY
     const remaining = panelY - scrollY
     if (!enhanced) {
+      root.setAttribute("data-nav-light", "")
       sheet.style.opacity = "1"
       sheet.style.removeProperty("pointer-events")
       title.style.removeProperty("transform")
@@ -60,8 +61,10 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
     work.style.opacity = String(workReveal)
     work.style.visibility = workReveal ? "visible" : "hidden"
     const shade = 1 - smooth(remaining / viewport, 0.12, 1.5)
+    const lightSurface = shade >= 0.42
     sheet.style.opacity = String(shade)
-    sheet.style.pointerEvents = shade > 0.95 ? "" : "none"
+    sheet.style.pointerEvents = lightSurface ? "" : "none"
+    root.toggleAttribute("data-nav-light", lightSurface)
     heroFlight.covered = shade === 1
   }
 
@@ -84,6 +87,7 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
     size.disconnect()
     trigger.kill()
     delete root.dataset.experienceArrival
+    root.setAttribute("data-nav-light", "")
     sheet.style.removeProperty("opacity")
     sheet.style.removeProperty("pointer-events")
     title.style.removeProperty("transform")

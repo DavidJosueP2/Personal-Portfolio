@@ -45,17 +45,19 @@ const worldVertex = /* glsl */ `
 
 const paintings = import.meta.glob<string>("/src/assets/img/garden/*.webp", { eager: true, import: "default" })
 
-export async function createBotanicalWorld(retain: Retain, signal: AbortSignal) {
-  const root = new Group()
-  root.visible = false
+export function loadWorldTextures(retain: Retain) {
   // The painted flora is baked from the original brushstrokes. Growth still runs in the world shaders.
   const loader = new TextureLoader()
-  const textures: Texture[] = await Promise.all(["daisy", "lavender", "poppy", "cup", "open", ...worldSpecies].map(async (kind) => {
+  return Promise.all(["daisy", "lavender", "poppy", "cup", "open", ...worldSpecies].map(async (kind) => {
     const texture = retain(await loader.loadAsync(paintings[`/src/assets/img/garden/${kind}.webp`]))
     texture.colorSpace = SRGBColorSpace
     return texture
   }))
-  if (signal.aborted) return null
+}
+
+export function createBotanicalWorld(textures: Texture[], retain: Retain) {
+  const root = new Group()
+  root.visible = false
   const random = paintRandom(1826)
   const time = { value: 0 }
   const exit = { value: 0 }

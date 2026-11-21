@@ -92,15 +92,15 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
       const covered = travel * (services ? 0.18 : 0.13)
       const retreat = gsap.utils.clamp(0, 1, (progress - 0.12) / 0.68)
       const release = gsap.utils.clamp(0, 1, (1 - progress) / 0.1)
-      const depth = enteringContact || services ? easeEdge(retreat) * easeEdge(release) : 0
+      const depth = enteringContact ? easeEdge(retreat) * easeEdge(release) : 0
 
       incomingEntry.style.translate = lift ? `0 ${-lift}px` : ""
       // Keep the cut aligned with the incoming edge as the surfaces slide past each other.
       surface.style.translate = travel ? `0 ${covered - lift}px` : ""
       surface.style.clipPath = covered ? `inset(0 0 ${covered}px 0${depth ? ` round ${depth * 32}px` : ""})` : ""
-      if (enteringContact || services) {
+      if (enteringContact) {
         surface.style.transformOrigin = depth ? `center calc(100% - ${covered}px)` : ""
-        surface.style.scale = depth ? String(1 - (services ? 0.035 : 0.06) * depth) : ""
+        surface.style.scale = depth ? String(1 - 0.06 * depth) : ""
       }
       if (services) {
         const title = easeEdge(gsap.utils.clamp(0, 1, (progress - 0.18) / 0.62))

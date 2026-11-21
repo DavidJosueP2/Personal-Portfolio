@@ -4,7 +4,7 @@ import {
 } from "three"
 import type { Texture } from "three"
 import { yieldToIdle } from "@/lib/idle-work"
-import { createBotanicalWorld, WORLD_SCALE } from "./botanical-world"
+import { createBotanicalWorld, loadWorldTextures, WORLD_SCALE } from "./botanical-world"
 import { createWorldWords } from "./world-words"
 
 const vertexShader = /* glsl */ `
@@ -129,10 +129,14 @@ function between(progress: number, start: number, end: number) {
   return value * value * (3 - 2 * value)
 }
 
-export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL2RenderingContext, signal: AbortSignal) {
+export async function createEarthScene(
+  canvas: HTMLCanvasElement,
+  signal: AbortSignal,
+  openingRevealed: Promise<void>,
+  acquireContext: () => WebGL2RenderingContext | null,
+) {
   if (signal.aborted) return null
-  const renderer = new WebGLRenderer({ canvas, context, alpha: true, antialias: true, powerPreference: "high-performance" })
-  renderer.setClearColor(0x000000, 0)
+  let graphics: WebGLRenderer | undefined
   const mobile = window.innerWidth < 768
   const resources: { dispose(): void }[] = []
   let disposed = false
@@ -145,7 +149,7 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     if (disposed) return
     disposed = true
     resources.forEach((resource) => resource.dispose())
-    renderer.dispose()
+    graphics?.dispose()
   }
 
   try {
@@ -154,15 +158,22 @@ export async function createEarthScene(canvas: HTMLCanvasElement, context: WebGL
     const load = (name: string, color = false) => new Promise<Texture>((resolve, reject) => {
       const texture: Texture = retain(loader.load(`/assets/earth/${name}_${resolution}.webp`, () => resolve(texture), undefined, reject))
       if (color) texture.colorSpace = SRGBColorSpace
-      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
     })
-    const [day, night, surface, world] = await Promise.all([
+    const [day, night, surface, flora] = await Promise.all([
       load("earth_day", true),
       load("earth_night", true),
       load("earth_bump_roughness_clouds"),
-      createBotanicalWorld(retain, signal),
+      loadWorldTextures(retain),
+      openingRevealed,
     ])
-    if (signal.aborted || !world) { dispose(); return null }
+    if (signal.aborted) { dispose(); return null }
+    const context = acquireContext()
+    if (!context) { dispose(); return null }
+    const renderer = graphics = new WebGLRenderer({ canvas, context, alpha: true, antialias: true, powerPreference: "high-performance" })
+    renderer.setClearColor(0x000000, 0)
+    const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+    for (const texture of [day, night, surface]) texture.anisotropy = anisotropy
+    const world = createBotanicalWorld(flora, retain)
 
     const scene = new Scene()
     const camera = new PerspectiveCamera(38, 1, 0.001, 150)

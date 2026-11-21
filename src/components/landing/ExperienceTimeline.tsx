@@ -157,7 +157,7 @@ export function ExperienceTimeline() {
   }), [])
 
   return (
-    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-scene-handoff data-inverse-cursor-surface>
+    <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-scene-handoff data-inverse-cursor-surface data-nav-light>
       <div className="experience-sheet" aria-hidden="true" />
       <div className="experience-garden" aria-hidden="true">
         <canvas className="experience-vine experience-vine-crown" data-experience-vine="left" />

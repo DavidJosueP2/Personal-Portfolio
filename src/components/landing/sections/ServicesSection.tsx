@@ -247,7 +247,7 @@ export function ServicesSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="services" aria-labelledby="services-heading" className="services-section portfolio-section overflow-clip bg-[#f6f6f4] text-ink dark:bg-[#111113]">
+    <section ref={sectionRef} id="services" aria-labelledby="services-heading" className="services-section portfolio-section overflow-clip">
       <div className="services-flowers" aria-hidden="true">
         <canvas className="services-flowers-early-left" data-service-paint="daisy" data-service-edge="left" />
         <canvas className="services-flowers-early-right" data-service-paint="poppy" data-service-edge="right" />

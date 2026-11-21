@@ -84,7 +84,8 @@ function Profile() {
       <div>
         <h3 className="about-lead">Full-stack developer, <em className="font-serif-italic">microservices at heart.</em></h3>
         <p className="about-copy">
-          I’m David Barragán, with <strong>one year of professional experience</strong> building web and mobile software.
+          I’m David Barragán, with <strong>one year of professional experience</strong> building web and mobile software,
+          developing microservices, and working in cloud environments.
           I use Clean Architecture and domain-driven design (DDD) to build reliable backend services,
           with clean, scalable code that’s easy to improve as the product grows. I care about code quality.
         </p>

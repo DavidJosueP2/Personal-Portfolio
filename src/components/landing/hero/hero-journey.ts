@@ -5,6 +5,72 @@ import { setupPlanetDeparture } from "./planet-departure"
 
 type EarthScene = Awaited<ReturnType<typeof import("./earth-scene").createEarthScene>>
 
+const earlyScrollLimit = 3_200
+
+function holdEarlyScroll() {
+  const input = new AbortController()
+  const { signal } = input
+  let queued = 0
+  let touch: Touch | undefined
+  const retain = (event: Event, delta: number) => {
+    if (!event.cancelable || window.scrollY > 1) return
+    if (event.target instanceof Element && event.target.closest('[role="dialog"], [role="menu"]')) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    queued = Math.max(0, Math.min(queued + delta, window.innerHeight * 0.28))
+  }
+
+  window.addEventListener("wheel", (event) => {
+    if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+    const scale = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1
+    retain(event, event.deltaY * scale)
+  }, { capture: true, passive: false, signal })
+  window.addEventListener("touchstart", (event) => {
+    touch = event.touches.length === 1 ? event.touches[0] : undefined
+  }, { capture: true, passive: true, signal })
+  window.addEventListener("touchmove", (event) => {
+    if (!touch || event.touches.length !== 1) return
+    const current = event.touches[0]
+    const delta = touch.clientY - current.clientY
+    if (Math.abs(delta) > Math.abs(touch.clientX - current.clientX)) retain(event, delta)
+    touch = current
+  }, { capture: true, passive: false, signal })
+  window.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
+    if (event.target instanceof Element && event.target.closest('button, a, input, textarea, select, [contenteditable]')) return
+    if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ") {
+      retain(event, event.key === "ArrowDown" ? 40 : window.innerHeight)
+    }
+  }, { capture: true, signal })
+
+  const timer = window.setTimeout(() => release(true), earlyScrollLimit)
+  const release = (replay: boolean) => {
+    if (signal.aborted) return
+    input.abort()
+    window.clearTimeout(timer)
+    if (replay && queued > 0 && window.scrollY <= 1) {
+      // The camera's scrub eases this input after its scroll range is installed.
+      window.scrollTo({ top: queued, behavior: "instant" })
+    }
+  }
+  return release
+}
+
+function waitForOpening(intro: HTMLElement | null, signal: AbortSignal) {
+  if (!intro || intro.hidden || signal.aborted) return Promise.resolve()
+  return new Promise<void>((resolve) => {
+    const complete = () => {
+      observer.disconnect()
+      signal.removeEventListener("abort", complete)
+      resolve()
+    }
+    const observer = new MutationObserver(() => { if (intro.hidden) complete() })
+    observer.observe(intro, { attributes: true, attributeFilter: ["hidden"] })
+    signal.addEventListener("abort", complete, { once: true })
+  })
+}
+
 export function setupHeroJourney(root: HTMLElement) {
   const stage = root.querySelector<HTMLElement>("[data-hero-stage]")
   const name = root.querySelector<HTMLElement>("[data-hero-name]")
@@ -14,18 +80,18 @@ export function setupHeroJourney(root: HTMLElement) {
 
   const media = gsap.matchMedia()
   media.add("(prefers-reduced-motion: no-preference)", (context) => {
+    if (!("WebGL2RenderingContext" in window)) return
     // This imperative canvas has one owner and one GPU context across both flights.
     const canvas = document.createElement("canvas")
     canvas.dataset.heroEarth = ""
     canvas.className = "hero-earth"
     canvas.setAttribute("aria-hidden", "true")
     const controller = new AbortController()
-    const intro = document.querySelector("[data-hero-intro]")
-    const introActive = () => intro?.hasAttribute("data-intro-active") ?? false
+    const intro = document.querySelector<HTMLElement>("[data-hero-intro]")
+    const releaseEarlyScroll = window.scrollY <= 1 && (!location.hash || location.hash === "#top") ? holdEarlyScroll() : undefined
     let webgl: WebGL2RenderingContext | null = null
     let scene: EarthScene = null
     let scheduled: (() => void) | undefined
-    let earthModule: Promise<typeof import("./earth-scene") | null> | undefined
     let preparation: Promise<EarthScene> | undefined
     let trigger: import("gsap/ScrollTrigger").ScrollTrigger | undefined
     let resize: ResizeObserver | undefined
@@ -42,6 +108,11 @@ export function setupHeroJourney(root: HTMLElement) {
     const camera = { progress: 0 }
     const details = root.querySelectorAll<HTMLElement>("[data-hero-secondary]")
     const header = document.querySelector<HTMLElement>(".site-header")
+    const nearStart = () => window.scrollY <= window.innerHeight * 0.45
+    const releaseGpu = () => {
+      webgl?.getExtension("WEBGL_lose_context")?.loseContext()
+      webgl = null
+    }
     const state = () => {
       updateHeroFlight(Boolean(trigger?.isActive), camera.progress)
       // Hidden controls must also leave keyboard navigation while the camera passes them.
@@ -74,32 +145,30 @@ export function setupHeroJourney(root: HTMLElement) {
 
     const prepare = () => {
       scheduled = undefined
-      if (preparation || window.scrollY > window.innerHeight || controller.signal.aborted) return
-      // Download the scene during the opening, then allocate WebGL after it settles.
-      earthModule ??= import("./earth-scene").catch((error: unknown) => {
-        if (!controller.signal.aborted) console.error("Could not load the Earth entrance.", error)
-        return null
-      })
-      if (introActive()) return
-      preparation = earthModule.then((earth) => {
-        if (controller.signal.aborted || !earth) return null
-        webgl = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "high-performance" })
-        if (!webgl) return null
-        host.append(canvas)
-        return earth.createEarthScene(canvas, webgl, controller.signal)
-      })
+      if (preparation || !nearStart() || controller.signal.aborted) return
+      const openingRevealed = waitForOpening(intro, controller.signal)
+      preparation = import("./earth-scene").then(({ createEarthScene }) =>
+        createEarthScene(canvas, controller.signal, openingRevealed, () => {
+          webgl = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "high-performance" })
+          if (webgl) host.append(canvas)
+          return webgl
+        }),
+      )
       void Promise.all([
         import("gsap/ScrollTrigger"),
         preparation,
         document.fonts.ready,
       ]).then(([{ ScrollTrigger }, earth]) => {
-        if (controller.signal.aborted || !earth) { earth?.dispose(); return }
+        if (controller.signal.aborted || !earth) {
+          earth?.dispose()
+          releaseEarlyScroll?.(true)
+          return
+        }
         scene = earth
         gsap.registerPlugin(ScrollTrigger)
-        const startAtTop = () => {
-          // A slow connection must never strand a visitor in an unready, pinned scene.
-          // If they already started reading, keep that layout until they return home.
-          if (started || controller.signal.aborted || window.scrollY > 1 || Math.abs(root.getBoundingClientRect().top) > 1) return
+        const startNearTop = () => {
+          // Preserve the reading position if the visitor already navigated past the hero.
+          if (started || controller.signal.aborted || !nearStart()) return
           started = true
           context.add(() => {
             root.dataset.heroJourney = ""
@@ -145,11 +214,20 @@ export function setupHeroJourney(root: HTMLElement) {
             document.addEventListener("visibilitychange", updateAnimation)
             root.dataset.heroEarthReady = ""
             ScrollTrigger.refresh()
+            releaseEarlyScroll?.(true)
           })
         }
-        window.addEventListener("scroll", startAtTop, { passive: true, signal: controller.signal })
-        startAtTop()
+        window.addEventListener("scroll", startNearTop, { passive: true, signal: controller.signal })
+        startNearTop()
       }).catch((error: unknown) => {
+        if (controller.signal.aborted) return
+        controller.abort()
+        releaseEarlyScroll?.(true)
+        canvas.remove()
+        void preparation?.then((earth) => {
+          earth?.dispose()
+          releaseGpu()
+        }, releaseGpu)
         delete root.dataset.heroJourney
         updateHeroFlight(false, 0)
         console.error("Could not start the Earth entrance.", error)
@@ -157,18 +235,19 @@ export function setupHeroJourney(root: HTMLElement) {
       })
     }
     const schedulePreparation = () => {
-      if (!scheduled && !preparation && (!earthModule || !introActive()) && window.scrollY <= window.innerHeight) {
+      if (!scheduled && !preparation && nearStart()) {
         scheduled = scheduleIdle(prepare, 350)
       }
     }
-    const opening = new MutationObserver(schedulePreparation)
-    if (intro) opening.observe(intro, { attributes: true, attributeFilter: ["data-intro-active"] })
     const firstFrame = window.requestAnimationFrame(schedulePreparation)
-    window.addEventListener("scroll", schedulePreparation, { passive: true, signal: controller.signal })
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 1) releaseEarlyScroll?.(false)
+      schedulePreparation()
+    }, { passive: true, signal: controller.signal })
 
     return () => {
+      releaseEarlyScroll?.(false)
       controller.abort()
-      opening.disconnect()
       window.cancelAnimationFrame(firstFrame)
       scheduled?.()
       resize?.disconnect()
@@ -179,8 +258,7 @@ export function setupHeroJourney(root: HTMLElement) {
       scene?.dispose()
       canvas.remove()
       // Async shader compilation must finish before releasing its context.
-      const release = () => webgl?.getExtension("WEBGL_lose_context")?.loseContext()
-      void preparation?.then(release, release)
+      void preparation?.then(releaseGpu, releaseGpu)
       updateHeroFlight(false, 0)
       details.forEach((element) => { element.inert = false })
       if (header) header.inert = false
