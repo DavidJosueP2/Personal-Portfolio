@@ -1,9 +1,9 @@
-import { gsap } from "gsap"
 import { heroFlight } from "@/lib/hero-flight"
 import type { ScrollTrigger as Trigger } from "gsap/ScrollTrigger"
 
+const unit = (value: number) => Math.max(0, Math.min(1, value))
 const smooth = (value: number, low = 0, high = 1) => {
-  const t = Math.max(0, Math.min(1, (value - low) / (high - low)))
+  const t = unit((value - low) / (high - low))
   return t * t * (3 - 2 * t)
 }
 
@@ -16,53 +16,83 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
   const work = root.querySelector<HTMLElement>(".experience-work")!
   const sheet = root.querySelector<HTMLElement>(".experience-sheet")!
   const hero = document.getElementById("top")!
-  const render = () => {
-    const viewport = document.documentElement.clientHeight
+  const measure = () => {
+    const viewport = window.innerHeight
+    const bounds = panel.getBoundingClientRect()
     const enhanced = hero.hasAttribute("data-hero-journey")
-    root.toggleAttribute("data-experience-arrival", enhanced)
-    const panelTop = panel.getBoundingClientRect().top
+    const titleTop = content.offsetTop + masthead.offsetTop + title.offsetTop
+    const centerY = Math.max(titleTop + 1, (viewport - title.offsetHeight) / 2)
+    return {
+      viewport, enhanced, titleTop,
+      panelY: bounds.top + window.scrollY,
+      centerY,
+      travel: viewport * 1.22,
+      flightEnd: hero.getBoundingClientRect().top + window.scrollY + hero.offsetHeight - viewport * 4,
+    }
+  }
+  let geometry = measure()
+
+  const render = () => {
+    const { enhanced, viewport, panelY, flightEnd, titleTop, centerY, travel } = geometry
+    const scrollY = window.scrollY
+    const remaining = panelY - scrollY
     if (!enhanced) {
+      root.setAttribute("data-nav-light", "")
       sheet.style.opacity = "1"
-      gsap.set(title, { x: content.clientWidth * 0.84 * (1 - smooth(-panelTop / viewport, -0.72, -0.03)), y: 0, scale: 1, opacity: 1 })
-      gsap.set(introduction, { opacity: smooth(-panelTop / viewport, -0.3, 0) })
-      gsap.set(work, { autoAlpha: 1 })
+      sheet.style.removeProperty("pointer-events")
+      title.style.removeProperty("transform")
+      title.style.opacity = "1"
+      introduction.style.opacity = String(smooth(-remaining / viewport, -0.3, 0))
+      work.style.opacity = "1"
+      work.style.visibility = "visible"
       heroFlight.covered = false
       return
     }
-    const panelY = panelTop + window.scrollY
-    const flightEnd = hero.getBoundingClientRect().top + window.scrollY + hero.offsetHeight - viewport * 4
-    const settle = smooth(window.scrollY, flightEnd + viewport * 0.7, panelY)
-    const appear = smooth(window.scrollY, flightEnd - viewport * 0.65, flightEnd - viewport * 0.15)
-    const baseLeft = content.getBoundingClientRect().left + masthead.offsetLeft + title.offsetLeft
-    const baseTop = content.getBoundingClientRect().top + masthead.offsetTop + title.offsetTop
-    const centerX = (document.documentElement.clientWidth - title.offsetWidth) / 2
-    const centerY = (viewport - title.offsetHeight) / 2
-    const finalTop = masthead.offsetTop + title.offsetTop
-    // The destination stays fixed while the section approaches beneath the title.
-    const arrivalY = centerY + (finalTop - centerY) * settle
-    gsap.set(title, {
-      x: (centerX - baseLeft) * (1 - settle), y: settle < 1 ? arrivalY - baseTop : 0,
-      scale: 1 + (viewport > 700 && window.innerWidth > 767 ? 0.3 : 0.14) * (1 - settle),
-      opacity: appear, force3D: true,
-    })
-    gsap.set(introduction, { opacity: smooth(settle, 0.68, 1) })
-    gsap.set(work, { autoAlpha: smooth(settle, 0.65, 1) })
-    const shade = smooth(settle, 0.02, 0.9)
+    const distance = centerY - titleTop
+    const landing = unit(1 - remaining / travel)
+    // Match natural scrolling at the end of the curve so releasing the title is seamless.
+    const screenY = centerY - distance * landing ** (travel / distance)
+    const offset = screenY - titleTop - remaining
+    const opacity = smooth(scrollY, flightEnd - viewport * 0.53, flightEnd + viewport * 0.09)
+    title.style.transform = opacity && remaining > 0 ? `translate3d(0,${offset}px,0)` : ""
+    title.style.opacity = String(opacity)
+    introduction.style.opacity = String(smooth(landing, 0.27, 0.93))
+    const workReveal = smooth(landing, 0.42, 0.98)
+    work.style.opacity = String(workReveal)
+    work.style.visibility = workReveal ? "visible" : "hidden"
+    const shade = 1 - smooth(remaining / viewport, 0.12, 1.5)
+    const lightSurface = shade >= 0.42
     sheet.style.opacity = String(shade)
-    heroFlight.covered = shade >= 0.999
+    sheet.style.pointerEvents = lightSurface ? "" : "none"
+    root.toggleAttribute("data-nav-light", lightSurface)
+    heroFlight.covered = shade === 1
   }
-  ScrollTrigger.create({
+
+  const refresh = () => {
+    geometry = measure()
+    root.toggleAttribute("data-experience-arrival", geometry.enhanced)
+    render()
+  }
+  const trigger = ScrollTrigger.create({
     trigger: panel,
     start: () => hero.hasAttribute("data-hero-journey")
       ? hero.getBoundingClientRect().top + window.scrollY + hero.offsetHeight - innerHeight * 5
       : panel.getBoundingClientRect().top + window.scrollY - innerHeight,
-    end: "top -10%", onUpdate: render, onRefresh: render,
+    end: "top -10%", onUpdate: render, onRefresh: refresh,
   })
-  render()
+  const size = new ResizeObserver(refresh)
+  size.observe(title)
+  refresh()
   return () => {
+    size.disconnect()
+    trigger.kill()
     delete root.dataset.experienceArrival
+    root.setAttribute("data-nav-light", "")
     sheet.style.removeProperty("opacity")
-    gsap.set([title, introduction, work], { clearProps: "transform,opacity,visibility" })
+    sheet.style.removeProperty("pointer-events")
+    title.style.removeProperty("transform")
+    for (const element of [title, introduction, work]) element.style.removeProperty("opacity")
+    work.style.removeProperty("visibility")
     heroFlight.covered = false
   }
 }

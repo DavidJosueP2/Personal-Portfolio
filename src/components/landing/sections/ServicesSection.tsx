@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import { gsap } from "gsap"
-import clinic from "@/assets/img/projects/clinic/preview.webp"
-import moderation from "@/assets/img/projects/moderation/preview.webp"
-import fuel from "@/assets/img/projects/fuel-system/preview.webp"
-import hospital from "@/assets/img/projects/hospital/preview.webp"
+import clinic from "@/assets/img/projects/clinic/preview-576.webp"
+import moderation from "@/assets/img/projects/moderation/preview-576.webp"
+import fuel from "@/assets/img/projects/fuel-system/preview-576.webp"
+import hospital from "@/assets/img/projects/hospital/preview-576.webp"
 import backendAppointments from "@/assets/img/services/backend-appointments.webp"
 import backendModeration from "@/assets/img/services/backend-moderation.webp"
 import cloudArchitecture from "@/assets/img/services/cloud-architecture.webp"
@@ -185,9 +185,9 @@ export function ServicesSection() {
       })
     }
     const onResize = () => {
-      if (disposed) return
+      if (disposed || !visible) return
       measure()
-      if (visible) syncScroll(true)
+      syncScroll(true)
     }
     const stop = () => {
       window.removeEventListener("scroll", onScroll)
@@ -219,7 +219,6 @@ export function ServicesSection() {
     size.observe(words)
     for (const row of rows) size.observe(row)
     for (const { frame } of photos) size.observe(frame)
-    measure()
     void document.fonts.ready.then(onResize)
     const visibility = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
@@ -230,7 +229,7 @@ export function ServicesSection() {
       } else {
         stop()
       }
-    })
+    }, { rootMargin: "30% 0px" })
     visibility.observe(stage)
     reduced.addEventListener("change", onMotionPreference)
 
@@ -248,7 +247,11 @@ export function ServicesSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="services" aria-labelledby="services-heading" className="services-section portfolio-section overflow-clip bg-[#f6f6f4] text-ink dark:bg-[#111113]">
+    <section ref={sectionRef} id="services" aria-labelledby="services-heading" className="services-section portfolio-section overflow-clip">
+      <div className="services-flowers" aria-hidden="true">
+        <canvas className="services-flowers-early-left" data-service-paint="daisy" data-service-edge="left" />
+        <canvas className="services-flowers-early-right" data-service-paint="poppy" data-service-edge="right" />
+      </div>
       <header data-section-motion="heading" className="services-heading">
         <h2 id="services-heading">Services</h2>
         <p>
@@ -259,10 +262,8 @@ export function ServicesSection() {
 
       <div ref={stageRef} data-service-stage className="relative isolate mt-[clamp(3.5rem,8vw,8.5rem)] mb-[var(--service-stage-end,clamp(1.5rem,3vw,3.5rem))] [--service-word-size:clamp(1.8rem,9.1vw,12rem)]">
         <div className="services-flowers" aria-hidden="true">
-          <canvas className="services-flowers-early-left" data-service-paint="daisy" />
-          <canvas className="services-flowers-early-right" data-service-paint="poppy" />
-          <canvas className="services-flowers-late-left" data-service-paint="lavender" />
-          <canvas className="services-flowers-late-right" data-service-paint="daisy" />
+          <canvas className="services-flowers-late-left" data-service-paint="lavender" data-service-edge="left" data-service-climb />
+          <canvas className="services-flowers-late-right" data-service-paint="daisy" data-service-edge="right" data-service-climb />
         </div>
         <div className="relative" data-section-motion="body">
           <ul ref={wordsRef} className="relative z-10 grid justify-items-center gap-[clamp(0.55rem,0.9vw,1rem)]">
@@ -299,6 +300,7 @@ export function ServicesSection() {
                         alt=""
                         loading="lazy"
                         decoding="async"
+                        fetchPriority="low"
                         data-active={index === 0}
                         className="invisible absolute inset-0 size-full object-cover data-[active=true]:visible"
                       />

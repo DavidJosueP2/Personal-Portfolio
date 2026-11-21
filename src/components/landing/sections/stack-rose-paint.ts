@@ -89,7 +89,7 @@ function makeRose(kind: RoseKind, seed: number) {
 }
 
 export function createRosePainter(canvas: HTMLCanvasElement, kind: RoseKind, seed: number) {
-  const context = canvas.getContext("2d")
+  let context: CanvasRenderingContext2D | null | undefined
   let layers: ReturnType<typeof makeRose> | undefined
   const painted = [0, 0, 0]
   let lastProgress = 0
@@ -104,6 +104,7 @@ export function createRosePainter(canvas: HTMLCanvasElement, kind: RoseKind, see
   return {
     fit(width: number) {
       const pixels = Math.round(width * Math.min(window.devicePixelRatio || 1, 2))
+      if (context === undefined) context = canvas.getContext("2d")
       if (!context || bitmapWidth === pixels) return
       bitmapWidth = pixels
       canvas.width = pixels

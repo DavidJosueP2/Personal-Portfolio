@@ -53,6 +53,7 @@ export type Project = {
   images: {
     cover: ProjectImage
     previewSrc?: string
+    previewSrcSet?: string
     gallery?: ProjectImage[]
   }
 

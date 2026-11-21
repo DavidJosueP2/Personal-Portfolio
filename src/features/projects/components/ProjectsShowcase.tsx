@@ -31,6 +31,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
   const gestureRef = useRef<Gesture>(null)
   const suppressClick = useRef(false)
   const [active, setActive] = useState(0)
+  const [previewsReady, setPreviewsReady] = useState(false)
   const project = projects[active]
   const demo = project.links.find(({ kind }) => kind === "demo")
   const repositories = project.links.filter(({ kind }) => kind === "repo")
@@ -44,15 +45,30 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
     const runway = runwayRef.current
     if (!scene || !media || !anchor || !runway) return
 
-    const pictures = [...media.querySelectorAll<HTMLButtonElement>("[data-project-preview]")]
-    const motion = createProjectSpread(scene, media, anchor, runway, pictures, setActive)
-    motionRef.current = motion
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const reserve = () => scene.toggleAttribute("data-project-layout", !reduced.matches)
+    reserve()
+    reduced.addEventListener("change", reserve)
+
+    const start = () => {
+      if (motionRef.current) return
+      visibility.disconnect()
+      const pictures = [...media.querySelectorAll<HTMLButtonElement>("[data-project-preview]")]
+      motionRef.current = createProjectSpread(scene, media, anchor, runway, pictures, setActive)
+      setPreviewsReady(true)
+    }
+    const visibility = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) start()
+    }, { rootMargin: "120% 0px" })
+    visibility.observe(scene)
+    scene.addEventListener("focusin", start)
 
     let previousWheel = -Infinity
     let wheelDistance = 0
     let wheelHandled = false
     const onWheel = (event: WheelEvent) => {
-      if (event.ctrlKey || !event.cancelable || !navigable || !motion.canInteract()) return
+      const motion = motionRef.current
+      if (event.ctrlKey || !event.cancelable || !navigable || !motion?.canInteract()) return
       const x = event.deltaX || (event.shiftKey ? event.deltaY : 0)
       const y = event.shiftKey ? 0 : event.deltaY
       if (!x || Math.abs(x) < Math.abs(y) * 1.35) return
@@ -73,8 +89,12 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
     }
     scene.addEventListener("wheel", onWheel, { passive: false })
     return () => {
+      visibility.disconnect()
+      reduced.removeEventListener("change", reserve)
+      delete scene.dataset.projectLayout
+      scene.removeEventListener("focusin", start)
       scene.removeEventListener("wheel", onWheel)
-      motion.destroy()
+      motionRef.current?.destroy()
       motionRef.current = null
     }
   }, [navigable])
@@ -178,16 +198,19 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
               aria-disabled={active === index}
               onClick={() => motionRef.current?.select(index)}
             >
-              <img
-                src={images.previewSrc ?? images.cover.src}
-                alt=""
-                width={1600}
-                height={900}
-                loading="lazy"
-                decoding="async"
-                fetchPriority={index === 0 ? "high" : index === 1 || index === projects.length - 1 ? "auto" : "low"}
-                draggable={false}
-              />
+              {previewsReady && (
+                <img
+                  src={images.previewSrc ?? images.cover.src}
+                  srcSet={images.previewSrcSet}
+                  sizes="(max-width: 899px) min(calc(100vw - 2 * clamp(1rem, 4vw, 2.5rem)), 37rem), clamp(23rem, 31vw, 42rem)"
+                  alt=""
+                  width={1600}
+                  height={900}
+                  decoding="async"
+                  fetchPriority={index === 0 ? "auto" : "low"}
+                  draggable={false}
+                />
+              )}
             </button>
           ))}
         </div>
@@ -204,7 +227,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
                 {technologies?.length ? (
                   <ul className="project-technologies">
                     {technologies.map(({ name, iconSrc }) => (
-                      <li key={name} title={name}><img src={iconSrc} alt={name} width={21} height={21} /></li>
+                      <li key={name} title={name}><img src={iconSrc} alt={name} width={21} height={21} loading="lazy" decoding="async" /></li>
                     ))}
                   </ul>
                 ) : project.stack.join(" · ")}

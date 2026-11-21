@@ -5,7 +5,8 @@
 .contact-action { position: relative; margin-block-start: 2.5rem; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .contact-journey[data-planet-departure] { block-size: 420svh; }
+  .contact-journey[data-planet-departure] { block-size: 320svh; }
   [data-planet-departure] .contact-stage { position: sticky; inset-block-start: 0; block-size: 100svh; }
+  [data-planet-departure] :is(.contact-invitation, .contact-action) { opacity: 0; visibility: hidden; }
   [data-planet-departure] .contact-action { z-index: 2; }
 }

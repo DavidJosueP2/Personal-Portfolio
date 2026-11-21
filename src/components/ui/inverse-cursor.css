@@ -1,15 +1,25 @@
 .inverse-cursor {
   position: fixed;
-  inset: 0;
+  inset: 0 auto auto 0;
   z-index: 90;
   display: none;
-  inline-size: 100%;
-  block-size: 100%;
-  overflow: hidden;
   mix-blend-mode: difference;
   visibility: hidden;
   pointer-events: none;
 }
+
+.inverse-cursor-frame,
+.inverse-cursor-frame > i {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.inverse-cursor-frame > i { inline-size: 0; block-size: 0; }
+.inverse-cursor-frame > i:nth-child(1) { top: 0; left: 0; }
+.inverse-cursor-frame > i:nth-child(2) { top: 0; right: 0; }
+.inverse-cursor-frame > i:nth-child(3) { bottom: 0; right: 0; }
+.inverse-cursor-frame > i:nth-child(4) { bottom: 0; left: 0; }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .inverse-cursor { display: block; }

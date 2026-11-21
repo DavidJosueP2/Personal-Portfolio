@@ -46,18 +46,18 @@
 .project-runway,
 .project-phrase { display: none; }
 
-.project-scene[data-project-motion] .project-spread {
+.project-scene[data-project-layout] .project-spread {
   position: sticky;
   top: 0;
   min-block-size: var(--project-stage-height);
 }
 
-.project-scene[data-project-motion] .project-runway {
+.project-scene[data-project-layout] .project-runway {
   display: block;
   block-size: var(--project-intro-distance);
 }
 
-.project-scene[data-project-motion]::after {
+.project-scene[data-project-layout]::after {
   display: block;
   block-size: var(--project-hold-distance);
   content: "";
@@ -79,8 +79,9 @@
   display: grid;
   width: max-content;
   max-width: calc(100% - 2rem);
-  transform: translate(-50%, -50%);
-  color: #f7f4ee;
+  transform: translate(-50%, calc(-50% + var(--project-phrase-drift, 0px)));
+  color: #fff;
+  mix-blend-mode: difference;
   text-align: center;
   font-family: var(--font-sans);
   font-size: clamp(1.48rem, 3.52vw, 3.75rem);

@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/shadcn/button"
 import { scrollToSection } from "@/lib/section-stack"
+import { afterHeroIntro } from "@/lib/hero-intro"
 import { topHeroTools, socialLogos } from "@/assets/img/tech"
 import cvPdf from "@/assets/docs/Curriculum.pdf"
 import { setupHeroJourney } from "../hero/hero-journey"
@@ -29,7 +30,7 @@ function HeroTagline() {
   const textRef = useRef<HTMLParagraphElement>(null)
   const [typed, setTyped] = useState(openingPhrase)
 
-  useEffect(() => {
+  useEffect(() => afterHeroIntro(() => {
     const text = textRef.current
     if (!text) return
 
@@ -42,7 +43,7 @@ function HeroTagline() {
 
     const schedule = () => {
       window.clearTimeout(timer)
-      if (!visible || document.hidden || reduced.matches) return
+      if (!visible || document.hidden || text.inert || reduced.matches) return
 
       timer = window.setTimeout(() => {
         if (erasing) {
@@ -82,15 +83,18 @@ function HeroTagline() {
     }, { threshold: 0.5 })
 
     observer.observe(text)
+    const visibility = new MutationObserver(schedule)
+    visibility.observe(text, { attributes: true, attributeFilter: ["inert"] })
     document.addEventListener("visibilitychange", schedule)
     reduced.addEventListener("change", onMotionSetting)
     return () => {
       observer.disconnect()
+      visibility.disconnect()
       document.removeEventListener("visibilitychange", schedule)
       reduced.removeEventListener("change", onMotionSetting)
       window.clearTimeout(timer)
     }
-  }, [])
+  }), [])
 
   const { accent, text } = headlineVariants[typed.index]
   const inProgress = typed.length < text.length
@@ -120,7 +124,7 @@ function HeroTagline() {
 export function HeroSection() {
   const rootRef = useRef<HTMLElement>(null)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current
     if (root) return setupHeroJourney(root)
   }, [])

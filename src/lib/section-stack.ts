@@ -78,6 +78,7 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
     // The first section blends directly with the live botanical scene.
     if (incoming.querySelector("[data-scene-handoff]")) return []
     const enteringContact = incoming.querySelector("#contact") !== null
+    const services = incoming.querySelector<HTMLElement>("#services")
     const incomingEntry = incoming.querySelector<HTMLElement>("[data-stack-entry]")!
     const items = Array.from(surface.querySelectorAll<HTMLElement>("[data-section-motion]"), (element) => ({
       element,
@@ -87,8 +88,8 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
       const betweenPanels = progress > 0 && progress < 1
       // Each offset returns to zero before the handoff, in either scroll direction.
       const travel = betweenPanels ? (end - start) * Math.sin(Math.PI * progress) ** 2 : 0
-      const lift = travel * 0.12
-      const covered = travel * 0.13
+      const lift = travel * (services ? 0.18 : 0.12)
+      const covered = travel * (services ? 0.18 : 0.13)
       const retreat = gsap.utils.clamp(0, 1, (progress - 0.12) / 0.68)
       const release = gsap.utils.clamp(0, 1, (1 - progress) / 0.1)
       const depth = enteringContact ? easeEdge(retreat) * easeEdge(release) : 0
@@ -100,6 +101,12 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
       if (enteringContact) {
         surface.style.transformOrigin = depth ? `center calc(100% - ${covered}px)` : ""
         surface.style.scale = depth ? String(1 - 0.06 * depth) : ""
+      }
+      if (services) {
+        const title = easeEdge(gsap.utils.clamp(0, 1, (progress - 0.18) / 0.62))
+        const question = easeEdge(gsap.utils.clamp(0, 1, (progress - 0.43) / 0.48))
+        services.style.setProperty("--services-title-progress", String(title))
+        services.style.setProperty("--services-question-progress", String(question))
       }
       for (const { element, travel: amount } of items) {
         const offset = travel * amount
@@ -115,7 +122,7 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
       onRefresh: render,
     })
 
-    return [{ surface, incomingEntry, items, trigger }]
+    return [{ surface, incomingEntry, items, trigger, services }]
   })
 
   const revealFocus = (event: FocusEvent) => {
@@ -160,12 +167,14 @@ function startStack(root: HTMLElement, ScrollTrigger: typeof import("gsap/Scroll
     resize.disconnect()
     window.cancelAnimationFrame(refreshFrame)
     root.removeEventListener("focusin", revealFocus)
-    for (const { surface, incomingEntry, items } of transitions) {
+    for (const { surface, incomingEntry, items, services } of transitions) {
       surface.style.removeProperty("clip-path")
       surface.style.removeProperty("translate")
       surface.style.removeProperty("transform-origin")
       surface.style.removeProperty("scale")
       incomingEntry.style.removeProperty("translate")
+      services?.style.removeProperty("--services-title-progress")
+      services?.style.removeProperty("--services-question-progress")
       for (const { element } of items) element.style.removeProperty("translate")
     }
     gsap.ticker.remove(tick)

@@ -1,71 +1,75 @@
-import { gsap } from "gsap"
+const revealAt = 1_230
+const skyPreparationLead = 360
+const fadeTime = 260
+const wipeEase = "cubic-bezier(.44,0,.56,1)"
+const growthEase = "cubic-bezier(.38,.16,.24,1)"
+const detailEase = "cubic-bezier(.22,1,.36,1)"
 
-const inkOnDark = "#f5f5f3"
-const inkOnAccent = "#08111b"
+const mix = (start: number, end: number, progress: number) => start + (end - start) * progress
+const clamp = (value: number) => Math.min(1, Math.max(0, value))
 
-function measureWord(source: HTMLElement, copy: HTMLElement) {
+function measureWord(source: HTMLElement) {
     const bounds = source.getBoundingClientRect()
     const mask = source.parentElement?.getBoundingClientRect() ?? bounds
     const style = getComputedStyle(source)
-
-    copy.textContent = source.textContent
-    Object.assign(copy.style, {
-        width: `${mask.width}px`,
-        height: `${bounds.height}px`,
-        paddingLeft: `${bounds.left - mask.left}px`,
-        paddingTop: style.paddingTop,
-        paddingBottom: style.paddingBottom,
-        fontFamily: style.fontFamily,
-        fontSize: style.fontSize,
-        fontWeight: style.fontWeight,
-        fontStyle: style.fontStyle,
-        letterSpacing: style.letterSpacing,
-        lineHeight: style.lineHeight,
-    })
-
-    return { copy, bounds: new DOMRect(mask.left, bounds.top, mask.width, bounds.height) }
+    return {
+        bounds: new DOMRect(mask.left, bounds.top, mask.width, bounds.height),
+        text: source.textContent,
+        style: {
+            width: `${mask.width}px`,
+            height: `${bounds.height}px`,
+            paddingLeft: `${bounds.left - mask.left}px`,
+            paddingTop: style.paddingTop,
+            paddingBottom: style.paddingBottom,
+            fontFamily: style.fontFamily,
+            fontSize: style.fontSize,
+            fontWeight: style.fontWeight,
+            fontStyle: style.fontStyle,
+            letterSpacing: style.letterSpacing,
+            lineHeight: style.lineHeight,
+        },
+    }
 }
 
 export function setupHeroIntro(root: HTMLElement) {
     const motion = matchMedia("(prefers-reduced-motion: reduce)")
-    if (motion.matches || document.hidden || window.scrollY > 1) return
+    if (motion.matches || document.hidden || (location.hash && location.hash !== "#top")) return
 
     const overlay = root.querySelector<HTMLElement>("[data-hero-intro]")
     const content = root.querySelector<HTMLElement>("[data-landing-content]")
     const heading = root.querySelector<HTMLElement>("#home-title")
     const navigation = root.querySelector<HTMLElement>("[data-home-navigation]")
-    const base = overlay?.querySelector<HTMLElement>("[data-intro-base]")
-    const accent = overlay?.querySelector<HTMLElement>("[data-intro-accent]")
-    const night = overlay?.querySelector<HTMLElement>("[data-intro-night]")
-    if (!overlay || !content || !heading || !navigation || !base || !accent || !night) return
+    const layers = Array.from(overlay?.querySelectorAll<HTMLElement>("[data-intro-layer]") ?? [])
+    if (!overlay || !content || !heading || !navigation || !overlay.animate || layers.length !== 3) return
 
     const sources = Array.from(heading.querySelectorAll<HTMLElement>("[data-home-name]"))
-    const copies = Array.from(overlay.querySelectorAll<HTMLElement>("[data-intro-word]"))
-    if (!sources.length || sources.length !== copies.length) return
+    const copies = layers.map((layer) => Array.from(layer.querySelectorAll<HTMLElement>("[data-intro-word]")))
+    if (!sources.length || copies.some((words) => words.length !== sources.length)) return
 
-    const lines = root.querySelectorAll<HTMLElement>("[data-home-line]")
-    const context = gsap.context(() => {
-        gsap.set(lines, { yPercent: 108, autoAlpha: 0 })
-        gsap.set(navigation, { yPercent: -105, autoAlpha: 0 })
-    }, root)
     const events = new AbortController()
+    const animations: Animation[] = []
     let finished = false
     let fontDeadline = 0
+    let revealTimer = 0
+    let frameRequest = 0
 
-    const showHero = (focusHeading = false) => {
-        heading.style.removeProperty("visibility")
+    const showHero = () => {
         overlay.hidden = true
+        delete overlay.dataset.introRevealing
         content.inert = false
-        if (focusHeading) heading.focus({ preventScroll: true })
     }
 
     const finish = (focusHeading = false) => {
         if (finished) return
         finished = true
         window.clearTimeout(fontDeadline)
+        window.clearTimeout(revealTimer)
+        window.cancelAnimationFrame(frameRequest)
         events.abort()
-        context.revert()
-        showHero(focusHeading)
+        showHero()
+        for (const animation of animations) animation.cancel()
+        delete overlay.dataset.introActive
+        if (focusHeading) heading.focus({ preventScroll: true })
     }
 
     const signal = events.signal
@@ -80,100 +84,119 @@ export function setupHeroIntro(root: HTMLElement) {
     window.addEventListener("scroll", () => {
         if (window.scrollY > 1) finish()
     }, { passive: true, signal })
-    window.addEventListener("resize", interrupt, { signal })
+    window.addEventListener("resize", () => {
+        if (animations.length) finish()
+    }, { signal })
     document.addEventListener("visibilitychange", () => {
         if (document.hidden) finish()
     }, { signal })
     motion.addEventListener("change", interrupt, { signal })
 
+    overlay.dataset.introActive = ""
     overlay.hidden = false
-    heading.style.visibility = "hidden"
     content.inert = true
 
-    // Let the title use the actual font metrics, with a short fallback for a slow connection.
-    const loadFonts = Promise.all(sources.map((source) => {
-        const style = getComputedStyle(source)
-        return document.fonts.load(
-            `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`,
-            source.textContent ?? "",
-        )
-    }))
-    fontDeadline = window.setTimeout(interrupt, 450)
-    void loadFonts.then(() => {
+    const start = () => {
         if (finished) return
         window.clearTimeout(fontDeadline)
 
+        const words = sources.map(measureWord)
+        const first = words[0].bounds
+        const last = words[words.length - 1].bounds
+        const stacked = last.top >= first.bottom - 1
+        const gap = parseFloat(words[0].style.fontSize) * 0.15
+        const rowWidth = words.reduce((width, word) => width + word.bounds.width, gap * (words.length - 1))
+        const rowHeight = stacked ? Math.max(...words.map(({ bounds }) => bounds.height)) : last.bottom - first.top
         const width = overlay.clientWidth
-        const height = overlay.clientHeight
-        const words = sources.map((source, index) => measureWord(source, copies[index]))
-        const firstBounds = words[0].bounds
-        const lastBounds = words[words.length - 1].bounds
-        const stacked = lastBounds.top >= firstBounds.bottom - 1
-        const gap = parseFloat(getComputedStyle(sources[0]).fontSize) * 0.15
-        const titleWidth = words.reduce((sum, word) => sum + word.bounds.width, gap * (words.length - 1))
-        const titleHeight = stacked ? firstBounds.height : lastBounds.bottom - firstBounds.top
-        const startScale = Math.min(0.72, width * (stacked ? 0.64 : 0.41) / titleWidth)
-        const startY = (height - titleHeight * startScale) / 2
-        let rowOffset = 0
-        const positions = words.map((word) => {
-            const position = { ...word, rowOffset }
-            rowOffset += word.bounds.width + gap
-            return position
-        })
-
-        const accentColor = getComputedStyle(accent).backgroundColor
-        const finalInk = getComputedStyle(heading).color
-        const tintedInk = gsap.utils.interpolate(inkOnDark, accentColor, 0.28)
-        const revealInk = gsap.utils.interpolate(tintedInk, finalInk)
-        const mix = gsap.utils.interpolate
-        const clampStop = gsap.utils.clamp(0, 100)
-        const cross = gsap.utils.pipe(gsap.utils.normalize(0.30, 1), gsap.utils.clamp(0, 1), gsap.parseEase("sine.inOut"))
-        const progress = { growth: 0, accent: 0, night: 0, reveal: 0 }
-
-        const paint = () => {
-            if (overlay.hidden) return
-
-            const accentEdge = height * (1 - progress.accent)
-            const nightEdge = height * (1 - progress.night)
-            const scale = mix(startScale, 1, progress.growth)
-            // On narrow screens, separate the lines vertically before their paths cross.
-            const vertical = stacked ? 1 - (1 - progress.growth) ** 4.8 : progress.growth
-            const horizontal = stacked ? cross(progress.growth) : progress.growth
-            const rowScale = stacked ? scale : startScale
-            const rowX = (width - titleWidth * rowScale) / 2
-            const nightInk = revealInk(progress.reveal)
-
-            accent.style.transform = `translate3d(0, ${accentEdge}px, 0)`
-            night.style.transform = `translate3d(0, ${nightEdge}px, 0)`
-            base.style.visibility = progress.reveal > 0 ? "hidden" : "visible"
-            accent.style.visibility = base.style.visibility
-            night.style.opacity = String(1 - progress.reveal)
-
-            // Color follows each wipe edge through the same set of glyphs.
-            for (const { copy, bounds, rowOffset } of positions) {
-                const x = mix(rowX + rowOffset * rowScale, bounds.left, horizontal)
-                const baselineOffset = stacked ? 0 : (bounds.top - firstBounds.top) * startScale
-                const y = mix(startY + baselineOffset, bounds.top, vertical)
-                const accentStop = clampStop((accentEdge - y) / (bounds.height * scale) * 100)
-                const nightStop = clampStop((nightEdge - y) / (bounds.height * scale) * 100)
-                copy.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`
-                copy.style.backgroundImage = `linear-gradient(to bottom, ${inkOnDark} 0% ${accentStop}%, ${inkOnAccent} ${accentStop}% ${nightStop}%, ${nightInk} ${nightStop}% 100%)`
-            }
+        const startScale = Math.min(0.72, width * (stacked ? 0.64 : 0.41) / rowWidth)
+        const startX = (width - rowWidth * startScale) / 2
+        const startY = (overlay.clientHeight - rowHeight * startScale) / 2
+        const startTime = document.timeline.currentTime
+        const animate = (element: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions) => {
+            const animation = element.animate(frames, { fill: "both", ...timing })
+            if (startTime !== null) animation.startTime = startTime
+            animations.push(animation)
+            return animation
         }
 
-        paint()
-        context.add(() => {
-            gsap.timeline({ onUpdate: paint, onComplete: interrupt })
-                .to(progress, { accent: 1, duration: 0.57, ease: "power2.inOut" }, 0.4)
-                .to(progress, { growth: 1, duration: 0.76, ease: "power3.inOut" }, 0.34)
-                .to(progress, { night: 1, duration: 0.51, ease: "power2.inOut" }, 1.06)
-                .to(progress, { reveal: 1, duration: 0.33, ease: "sine.inOut" }, 1.57)
-                .call(() => showHero(), [], 1.9)
-                .addLabel("details", 1.92)
-                .to(lines, { yPercent: 0, autoAlpha: 1, duration: 0.54, stagger: 0.064, ease: "power3.out" }, "details")
-                .to(navigation, { yPercent: 0, autoAlpha: 1, duration: 0.62, ease: "power3.out" }, "details+=0.15")
+        let rowOffset = 0
+        words.forEach(({ text, bounds, style }, index) => {
+            const originX = startX + rowOffset * startScale
+            const baselineOffset = stacked ? 0 : (bounds.top - first.top) * startScale
+            const originY = startY + baselineOffset
+            rowOffset += bounds.width + gap
+            const frame = (growth: number) => {
+                const scale = mix(startScale, 1, growth)
+                // On phones the words separate vertically before moving across each other.
+                const vertical = stacked ? 1 - (1 - growth) ** 4.8 : growth
+                const horizontal = stacked ? (1 - Math.cos(Math.PI * clamp((growth - 0.3) / 0.7))) / 2 : growth
+                const x = mix(originX, bounds.left, horizontal)
+                const y = mix(originY, bounds.top, vertical)
+                return { transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})` }
+            }
+            const frames = stacked ? Array.from({ length: 25 }, (_, step) => {
+                const t = step / 24
+                return { ...frame(t), offset: t }
+            }) : [frame(0), frame(1)]
+            for (const layerWords of copies) {
+                const copy = layerWords[index]
+                copy.textContent = text
+                Object.assign(copy.style, style)
+                animate(copy, frames, { duration: 840, easing: growthEase })
+            }
         })
-    }, interrupt)
+
+        const wipe = (layer: HTMLElement, delay: number, duration: number) => {
+            const ink = layer.firstElementChild as HTMLElement
+            const timing = { delay, duration, easing: wipeEase }
+            // The ink moves against its clipping panel, so the title aligns across both colors.
+            animate(layer, [{ transform: "translate3d(0,100%,0)" }, { transform: "translate3d(0,0,0)" }], timing)
+            animate(ink, [{ transform: "translate3d(0,-100%,0)" }, { transform: "translate3d(0,0,0)" }], timing)
+        }
+        wipe(layers[1], 245, 490)
+        wipe(layers[2], 790, 420)
+
+        // Give the background shader time to draw behind the opaque overlay.
+        revealTimer = window.setTimeout(() => { overlay.dataset.introRevealing = "" }, revealAt - skyPreparationLead)
+        const fade = animate(overlay, [{ opacity: 1 }, { opacity: 0 }], { delay: revealAt, duration: fadeTime, easing: wipeEase })
+        void fade.finished.then(showHero, () => {})
+
+        root.querySelectorAll<HTMLElement>("[data-home-line]").forEach((line, index) => {
+            animate(line, [{ transform: "translateY(75%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }],
+                { delay: revealAt + 135 + index * 30, duration: 360, easing: detailEase })
+        })
+        animate(navigation, [{ transform: "translateY(-90%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }],
+            { delay: revealAt + 180, duration: 390, easing: detailEase })
+        void Promise.all(animations.map((animation) => animation.finished)).then(interrupt, () => {})
+    }
+
+    // Measure only once the displayed typefaces are ready, so the title never shifts mid-intro.
+    frameRequest = window.requestAnimationFrame(() => {
+        if (finished) return
+        const fonts = sources.map((source) => {
+            const font = getComputedStyle(source)
+            return document.fonts.load(`${font.fontStyle} ${font.fontWeight} 1rem ${font.fontFamily}`, source.textContent ?? "")
+        })
+        fontDeadline = window.setTimeout(interrupt, 450)
+        void Promise.all(fonts).then(start, interrupt)
+    })
 
     return interrupt
+}
+
+export function afterHeroIntro(setup: () => (() => void) | undefined) {
+    const opening = document.querySelector("[data-hero-intro]")
+    if (!opening?.hasAttribute("data-intro-active")) return setup()
+
+    let cleanup: (() => void) | undefined
+    const observer = new MutationObserver(() => {
+        if (opening.hasAttribute("data-intro-active")) return
+        observer.disconnect()
+        cleanup = setup()
+    })
+    observer.observe(opening, { attributes: true, attributeFilter: ["data-intro-active"] })
+    return () => {
+        observer.disconnect()
+        cleanup?.()
+    }
 }
