@@ -227,7 +227,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
                 {technologies?.length ? (
                   <ul className="project-technologies">
                     {technologies.map(({ name, iconSrc }) => (
-                      <li key={name} title={name}><img src={iconSrc} alt={name} width={21} height={21} /></li>
+                      <li key={name} title={name}><img src={iconSrc} alt={name} width={21} height={21} loading="lazy" decoding="async" /></li>
                     ))}
                   </ul>
                 ) : project.stack.join(" · ")}

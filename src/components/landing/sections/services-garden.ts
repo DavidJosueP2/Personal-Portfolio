@@ -274,14 +274,13 @@ function meadow(width: number, height: number) {
 
 export function connectServiceGarden(section: HTMLElement) {
   const paintings = new Map(Array.from(section.querySelectorAll<HTMLCanvasElement>("[data-service-paint]"), (canvas, index) => {
-    const context = canvas.getContext("2d")
     const name = canvas.dataset.servicePaint as Flower | "meadow"
     // Paint before the panel reaches the screen, without painting during the opening.
     let ready = false
     let lastSize = ""
 
     const render = () => {
-      if (!context || !ready) return
+      if (!ready) return
       const width = canvas.clientWidth
       const height = canvas.clientHeight
       if (width < 1 || height < 1) return
@@ -289,6 +288,8 @@ export function connectServiceGarden(section: HTMLElement) {
       const ratio = Math.min(1.75, window.devicePixelRatio || 1)
       const size = `${width}:${height}:${ratio}`
       if (size === lastSize) return
+      const context = canvas.getContext("2d")
+      if (!context) return
       lastSize = size
       canvas.width = Math.round(width * ratio)
       canvas.height = Math.round(height * ratio)

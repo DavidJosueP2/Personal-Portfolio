@@ -240,12 +240,19 @@ export async function createEarthScene(
     let lastElapsed = 0
     let lastDeparting = false
     let hasFrame = false
+    let bufferWidth = 0
+    let bufferHeight = 0
+    let pixelRatio = 0
     const resize = () => {
       const width = canvas.clientWidth
       const height = canvas.clientHeight
-      if (!width || !height) return
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 768 ? 1.25 : 1.5, Math.sqrt(1_850_000 / (width * height))))
-      renderer.setSize(width, height, false)
+      if (!width || !height) return false
+      const ratio = Math.min(window.devicePixelRatio || 1, width < 768 ? 1.25 : 1.5, Math.sqrt(1_850_000 / (width * height)))
+      if (width === bufferWidth && height === bufferHeight && ratio === pixelRatio) return false
+      bufferWidth = width
+      bufferHeight = height
+      pixelRatio = ratio
+      renderer.setDrawingBufferSize(width, height, ratio)
       camera.aspect = width / height
       world.resize(camera.aspect)
       words.resize()
@@ -258,6 +265,7 @@ export async function createEarthScene(
       descentPath.v1.set(0.04, 0.08, orbitDistance * 0.72)
       descentPath.v2.copy(landingNormal).multiplyScalar(1.23)
       descentPath.v2.y -= 0.09
+      return true
     }
     resize()
     world.root.visible = true
@@ -315,7 +323,7 @@ export async function createEarthScene(
     }
 
     return {
-      resize() { resize(); if (hasFrame) draw(lastProgress, lastElapsed, lastDeparting) },
+      resize() { if (resize() && hasFrame) draw(lastProgress, lastElapsed, lastDeparting) },
       dispose,
       draw,
       drawDeparture(progress: number, elapsed: number) {

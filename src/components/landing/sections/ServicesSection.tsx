@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import { gsap } from "gsap"
-import clinic from "@/assets/img/projects/clinic/preview.webp"
-import moderation from "@/assets/img/projects/moderation/preview.webp"
-import fuel from "@/assets/img/projects/fuel-system/preview.webp"
-import hospital from "@/assets/img/projects/hospital/preview.webp"
+import clinic from "@/assets/img/projects/clinic/preview-576.webp"
+import moderation from "@/assets/img/projects/moderation/preview-576.webp"
+import fuel from "@/assets/img/projects/fuel-system/preview-576.webp"
+import hospital from "@/assets/img/projects/hospital/preview-576.webp"
 import backendAppointments from "@/assets/img/services/backend-appointments.webp"
 import backendModeration from "@/assets/img/services/backend-moderation.webp"
 import cloudArchitecture from "@/assets/img/services/cloud-architecture.webp"
@@ -300,6 +300,7 @@ export function ServicesSection() {
                         alt=""
                         loading="lazy"
                         decoding="async"
+                        fetchPriority="low"
                         data-active={index === 0}
                         className="invisible absolute inset-0 size-full object-cover data-[active=true]:visible"
                       />

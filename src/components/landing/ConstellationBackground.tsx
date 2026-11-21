@@ -2,6 +2,7 @@ import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
 import { createWebGLAurora } from "./aurora/aurora-webgl"
 import { heroFlight, planetDeparture, planetDepartureTiming } from "@/lib/hero-flight"
+import { scheduleIdle } from "@/lib/idle-work"
 
 type Star = {
   x: number
@@ -266,20 +267,23 @@ function drawAurora(
   ctx.putImageData(raster, 0, 0)
 }
 
-/**
- * Fullscreen background: stars + aurora curtains + scroll-driven warp.
- * Uses WebGL for the aurora and Canvas2D for the stars.
- */
-export function ConstellationBackground() {
-  const backdropRef = React.useRef<HTMLDivElement | null>(null)
-  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
-  const auroraRef = React.useRef<HTMLCanvasElement | null>(null)
+function createFallbackAurora() {
+  const canvas = document.createElement("canvas")
+  canvas.width = AURORA_WIDTH
+  canvas.height = AURORA_HEIGHT
+  const context = canvas.getContext("2d")
+  if (!context) return null
+  return {
+    canvas,
+    context,
+    raster: context.createImageData(canvas.width, canvas.height),
+    columnLight: new Float32Array(canvas.height * 4),
+  }
+}
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current
-    const auroraLayer = auroraRef.current
-    const backdrop = backdropRef.current
-    if (!canvas || !auroraLayer || !backdrop) return
+function connectBackground(canvas: HTMLCanvasElement, auroraLayer: HTMLCanvasElement, backdrop: HTMLDivElement) {
+    const root = document.documentElement
+    const initialTint = getAccentTint(root.dataset.accent)
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -289,22 +293,13 @@ export function ConstellationBackground() {
     const atlasCtx = starAtlas.getContext("2d")
     if (!atlasCtx) return
 
-    const auroraCanvas = document.createElement("canvas")
-    auroraCanvas.width = AURORA_WIDTH
-    auroraCanvas.height = AURORA_HEIGHT
-    const auroraCtx = auroraCanvas.getContext("2d")
-    if (!auroraCtx) return
-    const auroraRaster = auroraCtx.createImageData(auroraCanvas.width, auroraCanvas.height)
-    const auroraColumnLight = new Float32Array(auroraCanvas.height * 4)
-
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)")
     let reducedMotion = motionPreference.matches
     let raf = 0
     const vp = resizeCanvasToViewport(canvas, ctx, MAX_BACKGROUND_DPR)
-    const root = document.documentElement
     let light = root.dataset.theme === "light"
     let vignette = makeVignette(ctx, vp.width, vp.height, light)
-    let tint = getAccentTint(root.dataset.accent)
+    let tint = initialTint
     let auroraPalette = makeAuroraPalette(tint, light)
     let auroraTime = 0
     let lastAuroraPaint = 0
@@ -312,6 +307,8 @@ export function ConstellationBackground() {
     let renderer: ReturnType<typeof createWebGLAurora> = null
     let painting = false
     let auroraAttempted = false
+    let fallback: ReturnType<typeof createFallbackAurora> | undefined
+    let lastAuroraVisibility = -1
 
     const paintAurora = (dt: number) => {
       auroraTime += dt
@@ -321,17 +318,20 @@ export function ConstellationBackground() {
           renderer.draw(auroraTime)
           if (auroraLayer.hidden) auroraLayer.hidden = false
         } else {
-          drawAurora(auroraCtx, auroraRaster, auroraColumnLight, auroraPalette, auroraTime, light, vp.width < vp.height)
+          if (fallback === undefined) fallback = createFallbackAurora()
+          if (fallback) {
+            drawAurora(fallback.context, fallback.raster, fallback.columnLight, auroraPalette, auroraTime, light, vp.width < vp.height)
+          }
         }
         lastAuroraPaint = auroraTime
         auroraDirty = false
       }
-      if (!renderer) ctx.drawImage(auroraCanvas, 0, 0, vp.width, vp.height)
+      if (!renderer && fallback) ctx.drawImage(fallback.canvas, 0, 0, vp.width, vp.height)
     }
 
     // Scroll -> "travel speed". We ease it to feel like a camera inertia.
     const scroll = {
-      lastY: globalThis.scrollY,
+      lastY: 0,
       velocity: 0,
       targetVelocity: 0,
       lastInputTs: performance.now(),
@@ -521,7 +521,10 @@ export function ConstellationBackground() {
       const auroraVisibility = planetDeparture.active
         ? Math.max(1 - clamp(progress / 0.13, 0, 1), returnToAurora)
         : 1 - clamp((journey - 0.04) / 0.26, 0, 1)
-      auroraLayer.style.opacity = String(auroraVisibility)
+      if (auroraVisibility !== lastAuroraVisibility) {
+        auroraLayer.style.opacity = String(auroraVisibility)
+        lastAuroraVisibility = auroraVisibility
+      }
 
       // ease velocity
       scroll.velocity = lerp(scroll.velocity, scroll.targetVelocity, 0.11)
@@ -547,8 +550,10 @@ export function ConstellationBackground() {
       ctx.fillStyle = vignette
       ctx.fillRect(0, 0, vp.width, vp.height)
 
-      for (let i = 0; i < starCount; i++) {
-        drawStar(stars[i], time, zSpeed, forward)
+      if (starVisibility > 0) {
+        for (let i = 0; i < starCount; i++) {
+          drawStar(stars[i], time, zSpeed, forward)
+        }
       }
       ctx.globalAlpha = 1
 
@@ -581,14 +586,10 @@ export function ConstellationBackground() {
 
     const appearanceObserver = new MutationObserver((changes) => {
       const nextLight = root.dataset.theme === "light" && !leavingEarth() && !(heroFlight.active && heroFlight.progress > 0.12)
-      if (nextLight !== light) {
-        setAppearance(nextLight)
-      } else if (!changes.some(({ attributeName }) => attributeName === "data-accent")) {
-        return
-      }
-
-      tint = getAccentTint(root.dataset.accent)
-      setAppearance(light)
+      const accentChanged = changes.some(({ attributeName }) => attributeName === "data-accent")
+      if (accentChanged) tint = getAccentTint(root.dataset.accent)
+      if (nextLight === light && !accentChanged) return
+      setAppearance(nextLight)
       if (painting) drawFrame(reducedMotion ? 0 : performance.now(), 0)
     })
     appearanceObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] })
@@ -624,9 +625,9 @@ export function ConstellationBackground() {
       if (!painting) return
 
       reducedMotion = nextReduced
+      scroll.lastY = globalThis.scrollY
       // Choose the renderer before the first paint, while the intro still covers the sky.
       if (!auroraAttempted) prepareAurora()
-      scroll.lastY = globalThis.scrollY
       scroll.lastInputTs = performance.now()
       scroll.velocity = 0
       scroll.targetVelocity = 0
@@ -664,6 +665,35 @@ export function ConstellationBackground() {
       auroraLayer.removeEventListener("webglcontextlost", onContextLost)
       auroraLayer.removeEventListener("webglcontextrestored", prepareAurora)
       renderer?.dispose()
+    }
+}
+
+export function ConstellationBackground() {
+  const backdropRef = React.useRef<HTMLDivElement | null>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+  const auroraRef = React.useRef<HTMLCanvasElement | null>(null)
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current
+    const auroraLayer = auroraRef.current
+    const backdrop = backdropRef.current
+    if (!canvas || !auroraLayer || !backdrop) return
+
+    const intro = document.querySelector<HTMLElement>("[data-hero-intro]")
+    if (!intro || intro.hidden) return connectBackground(canvas, auroraLayer, backdrop)
+
+    // Give the title's first frame priority over canvas setup.
+    let cancelPreparation: (() => void) | undefined
+    let disconnect: (() => void) | undefined
+    const frame = window.requestAnimationFrame(() => {
+      cancelPreparation = scheduleIdle(() => {
+        disconnect = connectBackground(canvas, auroraLayer, backdrop)
+      }, 160)
+    })
+    return () => {
+      window.cancelAnimationFrame(frame)
+      cancelPreparation?.()
+      disconnect?.()
     }
   }, [])
 

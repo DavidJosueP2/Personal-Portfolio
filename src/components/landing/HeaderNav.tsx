@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
 import { socialLogos } from "@/assets/img/tech"
+import { afterHeroIntro } from "@/lib/hero-intro"
 import { PortfolioLink } from "./PortfolioLink"
 import "./site-chrome.css"
 
@@ -47,7 +48,7 @@ const SECTIONS = [
 function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScroll: boolean) {
   const [surface, setSurface] = useState({ id: "", light: false, brandLight: false, actionsLight: false, experiencePaper: false })
 
-  useEffect(() => {
+  useEffect(() => afterHeroIntro(() => {
     const nav = navRef.current
     if (!nav || !followScroll) return
 
@@ -113,7 +114,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
       cancelAnimationFrame(frame)
       size.disconnect()
     }
-  }, [followScroll, navRef])
+  }), [followScroll, navRef])
 
   return surface
 }
