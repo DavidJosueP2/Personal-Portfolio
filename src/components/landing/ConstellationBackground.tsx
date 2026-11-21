@@ -2,7 +2,6 @@ import * as React from "react"
 import { clamp, lerp, rand, resizeCanvasToViewport } from "@/lib/canvas"
 import { createWebGLAurora } from "./aurora/aurora-webgl"
 import { heroFlight, planetDeparture, planetDepartureTiming } from "@/lib/hero-flight"
-import { scheduleIdle } from "@/lib/idle-work"
 
 type Star = {
   x: number
@@ -269,7 +268,7 @@ function drawAurora(
 
 /**
  * Fullscreen background: stars + aurora curtains + scroll-driven warp.
- * Uses Canvas2D for perf.
+ * Uses WebGL for the aurora and Canvas2D for the stars.
  */
 export function ConstellationBackground() {
   const backdropRef = React.useRef<HTMLDivElement | null>(null)
@@ -313,7 +312,6 @@ export function ConstellationBackground() {
     let renderer: ReturnType<typeof createWebGLAurora> = null
     let painting = false
     let auroraAttempted = false
-    let cancelAurora: (() => void) | undefined
 
     const paintAurora = (dt: number) => {
       auroraTime += dt
@@ -321,6 +319,7 @@ export function ConstellationBackground() {
       if (auroraDirty || auroraTime - lastAuroraPaint >= interval - 0.001) {
         if (renderer) {
           renderer.draw(auroraTime)
+          if (auroraLayer.hidden) auroraLayer.hidden = false
         } else {
           drawAurora(auroraCtx, auroraRaster, auroraColumnLight, auroraPalette, auroraTime, light, vp.width < vp.height)
         }
@@ -606,7 +605,6 @@ export function ConstellationBackground() {
       renderer = createWebGLAurora(auroraLayer)
       renderer?.resize(vp.width, vp.height)
       renderer?.setAppearance(tint, light)
-      auroraLayer.hidden = !renderer
       auroraDirty = true
       if (painting && reducedMotion) drawFrame(0, 0)
     }
@@ -615,30 +613,19 @@ export function ConstellationBackground() {
 
     const intro = document.querySelector<HTMLElement>("[data-hero-intro]")
     const windows = new Set<Element>()
-    let introActive = false
     const updateAnimation = () => {
       const nextPainting = !document.hidden && windows.size > 0
         && (!intro || intro.hidden || intro.hasAttribute("data-intro-revealing"))
       const nextReduced = motionPreference.matches
-      const nextIntroActive = intro?.hasAttribute("data-intro-active") ?? false
-      if (painting === nextPainting && (!painting || (reducedMotion === nextReduced && introActive === nextIntroActive))) return
+      if (painting === nextPainting && (!painting || reducedMotion === nextReduced)) return
       painting = nextPainting
-      introActive = nextIntroActive
       globalThis.cancelAnimationFrame(raf)
       globalThis.removeEventListener("scroll", onScroll)
-      if (!painting) {
-        cancelAurora?.()
-        cancelAurora = undefined
-        return
-      }
+      if (!painting) return
 
       reducedMotion = nextReduced
-      if (!introActive && !auroraAttempted && !cancelAurora) {
-        cancelAurora = scheduleIdle(() => {
-          cancelAurora = undefined
-          if (painting) prepareAurora()
-        }, 320)
-      }
+      // Choose the renderer before the first paint, while the intro still covers the sky.
+      if (!auroraAttempted) prepareAurora()
       scroll.lastY = globalThis.scrollY
       scroll.lastInputTs = performance.now()
       scroll.velocity = 0
@@ -646,7 +633,7 @@ export function ConstellationBackground() {
       lastFrame = 0
       nextFrame = 0
       drawFrame(reducedMotion ? 0 : scroll.lastInputTs, 0)
-      if (!reducedMotion && !introActive) {
+      if (!reducedMotion) {
         globalThis.addEventListener("scroll", onScroll, { passive: true })
         raf = globalThis.requestAnimationFrame(loop)
       }
@@ -661,7 +648,7 @@ export function ConstellationBackground() {
     })
     document.querySelectorAll("[data-hero-stage], #contact, footer").forEach((element) => visibility.observe(element))
     const introObserver = new MutationObserver(updateAnimation)
-    if (intro) introObserver.observe(intro, { attributes: true, attributeFilter: ["hidden", "data-intro-revealing", "data-intro-active"] })
+    if (intro) introObserver.observe(intro, { attributes: true, attributeFilter: ["hidden", "data-intro-revealing"] })
     motionPreference.addEventListener("change", updateAnimation)
     document.addEventListener("visibilitychange", updateAnimation)
 
@@ -669,7 +656,6 @@ export function ConstellationBackground() {
       globalThis.removeEventListener("resize", onResize)
       globalThis.removeEventListener("scroll", onScroll)
       globalThis.cancelAnimationFrame(raf)
-      cancelAurora?.()
       visibility.disconnect()
       introObserver.disconnect()
       appearanceObserver.disconnect()

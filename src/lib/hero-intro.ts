@@ -1,4 +1,5 @@
 const revealAt = 1_230
+const skyPreparationLead = 360
 const fadeTime = 260
 const wipeEase = "cubic-bezier(.44,0,.56,1)"
 const growthEase = "cubic-bezier(.38,.16,.24,1)"
@@ -155,7 +156,8 @@ export function setupHeroIntro(root: HTMLElement) {
         wipe(layers[1], 245, 490)
         wipe(layers[2], 790, 420)
 
-        revealTimer = window.setTimeout(() => { overlay.dataset.introRevealing = "" }, revealAt - 90)
+        // Give the background shader time to draw behind the opaque overlay.
+        revealTimer = window.setTimeout(() => { overlay.dataset.introRevealing = "" }, revealAt - skyPreparationLead)
         const fade = animate(overlay, [{ opacity: 1 }, { opacity: 0 }], { delay: revealAt, duration: fadeTime, easing: wipeEase })
         void fade.finished.then(showHero, () => {})
 
