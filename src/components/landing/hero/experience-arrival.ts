@@ -1,4 +1,4 @@
-import { heroFlight, observeHeroFlight } from "@/lib/hero-flight"
+import { heroFlight } from "@/lib/hero-flight"
 import type { ScrollTrigger as Trigger } from "gsap/ScrollTrigger"
 
 const unit = (value: number) => Math.max(0, Math.min(1, value))
@@ -20,30 +20,26 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
     const viewport = window.innerHeight
     const bounds = panel.getBoundingClientRect()
     const enhanced = hero.hasAttribute("data-hero-journey")
-    const titleTop = masthead.offsetTop + title.offsetTop
+    const titleTop = content.offsetTop + masthead.offsetTop + title.offsetTop
+    const centerY = Math.max(titleTop + 1, (viewport - title.offsetHeight) / 2)
     return {
       viewport, enhanced, titleTop,
       panelY: bounds.top + window.scrollY,
-      centerY: (viewport - title.offsetHeight) / 2,
-      x: (document.documentElement.clientWidth - title.offsetWidth) / 2 - bounds.left - content.offsetLeft - masthead.offsetLeft - title.offsetLeft,
-      contentWidth: content.clientWidth,
+      centerY,
+      travel: viewport * 1.22,
       flightEnd: hero.getBoundingClientRect().top + window.scrollY + hero.offsetHeight - viewport * 4,
     }
   }
   let geometry = measure()
 
-  const transformTitle = (x: number, y: number, scale = 1) => {
-    title.style.transform = x || y || scale !== 1 ? `translate3d(${x}px,${y}px,0) scale(${scale})` : ""
-  }
-
   const render = () => {
-    const { enhanced, viewport, panelY, flightEnd, titleTop, centerY, x, contentWidth } = geometry
+    const { enhanced, viewport, panelY, flightEnd, titleTop, centerY, travel } = geometry
     const scrollY = window.scrollY
     const remaining = panelY - scrollY
     if (!enhanced) {
       sheet.style.opacity = "1"
       sheet.style.removeProperty("pointer-events")
-      transformTitle(contentWidth * 0.84 * (1 - smooth(-remaining / viewport, -0.72, -0.03)), 0)
+      title.style.removeProperty("transform")
       title.style.opacity = "1"
       introduction.style.opacity = String(smooth(-remaining / viewport, -0.3, 0))
       work.style.opacity = "1"
@@ -51,24 +47,19 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
       heroFlight.covered = false
       return
     }
-    const distance = Math.max(1, centerY - titleTop)
-    const landing = unit(1 - remaining / (2 * distance))
-    const settle = smooth(landing)
-    // The quadratic ends at the same one-pixel-per-pixel speed as normal scrolling.
-    const y = remaining > 0 ? centerY - distance * landing ** 2 - (titleTop + remaining) : 0
-    const appear = smooth(heroFlight.progress, 0.967, 0.997)
-    const arrived = smooth(scrollY, flightEnd, flightEnd + viewport * 0.42)
-    const windowIn = smooth(scrollY, flightEnd - viewport * 0.82, flightEnd - viewport * 0.2)
-    const opacity = (appear + (1 - appear) * arrived) * windowIn
-    const scale = 1 + (viewport > 700 && window.innerWidth > 767 ? 0.23 : 0.12) * (1 - settle)
-    if (opacity) transformTitle(x * (1 - settle), y, scale)
-    else transformTitle(0, 0)
+    const distance = centerY - titleTop
+    const landing = unit(1 - remaining / travel)
+    // Match natural scrolling at the end of the curve so releasing the title is seamless.
+    const screenY = centerY - distance * landing ** (travel / distance)
+    const offset = screenY - titleTop - remaining
+    const opacity = smooth(scrollY, flightEnd - viewport * 0.53, flightEnd + viewport * 0.09)
+    title.style.transform = opacity && remaining > 0 ? `translate3d(0,${offset}px,0)` : ""
     title.style.opacity = String(opacity)
-    introduction.style.opacity = String(smooth(landing, 0.46, 0.94))
-    const workReveal = smooth(landing, 0.53, 0.97)
+    introduction.style.opacity = String(smooth(landing, 0.27, 0.93))
+    const workReveal = smooth(landing, 0.42, 0.98)
     work.style.opacity = String(workReveal)
     work.style.visibility = workReveal ? "visible" : "hidden"
-    const shade = 1 - smooth(remaining / viewport, 0.12, 1.16)
+    const shade = 1 - smooth(remaining / viewport, 0.12, 1.5)
     sheet.style.opacity = String(shade)
     sheet.style.pointerEvents = shade > 0.95 ? "" : "none"
     heroFlight.covered = shade === 1
@@ -88,10 +79,8 @@ export function setupExperienceArrival(root: HTMLElement, ScrollTrigger: typeof 
   })
   const size = new ResizeObserver(refresh)
   size.observe(title)
-  const unsubscribe = observeHeroFlight(() => { if (geometry.enhanced && trigger.isActive) render() })
   refresh()
   return () => {
-    unsubscribe()
     size.disconnect()
     trigger.kill()
     delete root.dataset.experienceArrival

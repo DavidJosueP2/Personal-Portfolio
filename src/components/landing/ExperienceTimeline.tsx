@@ -16,7 +16,8 @@ import junitLogo from "@/assets/img/tech/JUnit.webp"
 import playwrightLogo from "@/assets/img/tech/Playwrite.webp"
 import dockerLogo from "@/assets/img/tech/Docker.webp"
 import { afterHeroIntro } from "@/lib/hero-intro"
-import { createExperienceVine } from "./experience-vine"
+import { setupRevealList } from "@/lib/gsap-reveal-list"
+import { connectExperienceVines } from "./experience-vine"
 import { setupExperienceArrival } from "./hero/experience-arrival"
 import "./experience-timeline.css"
 
@@ -114,163 +115,103 @@ const experience = [
 
 export function ExperienceTimeline() {
   const rootRef = useRef<HTMLElement>(null)
-  const sheetRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const vineRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => afterHeroIntro(() => {
     const root = rootRef.current
-    const sheet = sheetRef.current
-    const content = contentRef.current
-    const canvas = vineRef.current
-    if (!root || !sheet || !content || !canvas) return
+    if (!root) return
 
+    const stopVines = connectExperienceVines(root)
+    const stopReveals = setupRevealList(root)
     const motion = gsap.matchMedia(root)
-    const vine = createExperienceVine(canvas)
-    let vineReady = false
-    const fitVine = () => { if (vineReady) vine.fit() }
-    const vineSize = new ResizeObserver(fitVine)
-    vineSize.observe(canvas)
-    const vineVisibility = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      vineReady = true
-      fitVine()
-      vineVisibility.disconnect()
-    }, { rootMargin: "100% 0px" })
-    vineVisibility.observe(canvas)
-    motion.add("(prefers-reduced-motion: reduce)", () => vine.paint(1))
 
     motion.add("(prefers-reduced-motion: no-preference)", (context) => {
       let disposed = false
-      let workVisibility: IntersectionObserver | undefined
       let reset: (() => void) | undefined
-      vine.paint(0)
 
       void import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
         if (disposed) return
         gsap.registerPlugin(ScrollTrigger)
         context.add(() => {
-          const question = content.querySelector(".experience-question")
-          const track = content.querySelector(".experience-roles")
           root.dataset.experienceReady = ""
           const resetArrival = setupExperienceArrival(root, ScrollTrigger)
           reset = () => {
             delete root.dataset.experienceReady
             resetArrival()
           }
-
-          workVisibility = new IntersectionObserver(([entry]) => {
-            if (disposed || !entry.isIntersecting) return
-            workVisibility?.disconnect()
-            context.add(() => {
-              gsap.fromTo(question, { x: 42, opacity: 0.15 }, {
-                x: 0, opacity: 1, ease: "power2.out",
-                scrollTrigger: { trigger: question, start: "top 94%", end: "top 66%", scrub: 0.2 },
-              })
-
-              const paintVine = ({ progress }: { progress: number }) => vine.paint(progress)
-              ScrollTrigger.create({
-                trigger: track,
-                start: "top 85%",
-                end: "bottom 65%",
-                onRefreshInit: fitVine,
-                onRefresh: paintVine,
-                onUpdate: paintVine,
-              })
-
-              for (const job of content.querySelectorAll<HTMLElement>(".experience-role")) {
-                gsap.timeline({
-                  defaults: { ease: "power2.out" },
-                  scrollTrigger: { trigger: job, start: "top 97%", end: "top 66%", scrub: 0.2 },
-                })
-                  .fromTo(job.querySelector(".experience-name-text"), { yPercent: 91 }, { yPercent: 0, duration: 0.8 }, 0.04)
-              }
-
-              for (const text of content.querySelectorAll<HTMLElement>("[data-experience-text]")) {
-                gsap.fromTo(text, {
-                  y: 14, opacity: 0.12, clipPath: "inset(0 0 100% 0)",
-                }, {
-                  y: 0, opacity: 1, clipPath: "inset(-0.2em -0.25em -0.2em -0.25em)",
-                  ease: "power2.out",
-                  scrollTrigger: { trigger: text, start: "top 98%", end: "top 79%", scrub: 0.18 },
-                })
-              }
-            })
-          }, { rootMargin: "100% 0px" })
-          workVisibility.observe(content)
         })
       }).catch((error: unknown) => {
-        vine.paint(1)
         console.error("Could not start the experience animation.", error)
       })
 
       return () => {
         disposed = true
-        workVisibility?.disconnect()
         reset?.()
       }
     })
 
     return () => {
-      vineSize.disconnect()
-      vineVisibility.disconnect()
       motion.revert()
+      stopReveals?.()
+      stopVines()
     }
   }), [])
 
   return (
     <section ref={rootRef} id="experience" className="experience" aria-labelledby="experience-heading" data-scene-handoff data-inverse-cursor-surface>
-      <div ref={sheetRef} className="experience-sheet" aria-hidden="true" />
-      <div ref={contentRef} className="experience-content">
+      <div className="experience-sheet" aria-hidden="true" />
+      <div className="experience-garden" aria-hidden="true">
+        <canvas className="experience-vine experience-vine-crown" data-experience-vine="left" />
+        <canvas className="experience-vine experience-vine-arch" data-experience-vine="right" />
+        <canvas className="experience-vine experience-vine-trail" data-experience-vine="left" />
+        <canvas className="experience-vine experience-vine-ledge" data-experience-vine="right" />
+      </div>
+      <div className="experience-content">
         <header className="experience-masthead">
-          <h2 id="experience-heading">Hi there<span aria-hidden="true">.</span></h2>
-          <p>I’m a full stack developer who <em className="font-serif-italic">listens first</em> and builds software that makes people’s work easier.</p>
+          <h2 id="experience-heading">Hi <em className="font-serif-italic">there<span aria-hidden="true">.</span></em></h2>
+          <p>I’m a full-stack developer who <em className="font-serif-italic">listens first</em> and enjoys talking with people, sharing ideas, and figuring things out together.</p>
         </header>
 
         <div className="experience-work">
-        <div className="experience-question">
-          <span className="experience-question-mark" aria-hidden="true" />
-          <p id="experience-work-heading"><strong>Where have I </strong><em className="font-serif-italic">worked?</em></p>
-        </div>
-
-        <div className="experience-timeline">
-          <canvas ref={vineRef} className="experience-vine" aria-hidden="true" />
+          <div className="experience-question" data-reveal-item>
+            <span className="experience-question-mark" aria-hidden="true" />
+            <p id="experience-work-heading"><strong>Where have I </strong><em className="font-serif-italic">worked?</em></p>
+          </div>
           <ol className="experience-roles" role="list" aria-labelledby="experience-work-heading">
             {experience.map((job) => (
               <li key={job.id}>
                 <article className="experience-role" aria-labelledby={`experience-${job.id}`}>
-                  <header className="experience-job-heading">
+                  <header className="experience-job-heading" data-reveal-item>
                     <div>
                       <div className="experience-company">
                         <img src={job.logo} alt="" width={44} height={44} loading="lazy" decoding="async" />
-                        <h3 id={`experience-${job.id}`}><span className="experience-name-text">{job.name}</span></h3>
+                        <h3 id={`experience-${job.id}`}>{job.name}</h3>
                       </div>
-                      <p className="experience-company-name" data-experience-text>{job.company}</p>
-                      <p className="experience-job-title" data-experience-text>Full Stack Developer</p>
+                      <p className="experience-company-name">{job.company}</p>
+                      <p className="experience-job-title">Full Stack Developer</p>
                     </div>
                     <div className="experience-date">
-                      <p data-experience-text>
+                      <p>
                         <time className="whitespace-nowrap" dateTime={job.start}>{job.startLabel ?? job.start}</time>
                         {"–"}<wbr />
                         <time className="whitespace-nowrap" dateTime={job.end}>{job.endLabel ?? job.end}</time>
                       </p>
-                      <p data-experience-text>{job.detail}</p>
+                      <p>{job.detail}</p>
                     </div>
                   </header>
                   <div className="experience-job-body">
-                    <div className="experience-result">
-                      <p className="experience-focus font-serif-italic" data-experience-text>{job.focus}</p>
+                    <div className="experience-result" data-reveal-item>
+                      <p className="experience-focus font-serif-italic">{job.focus}</p>
                       <ul role="list" className="experience-contributions">
                         {job.contributions.map(({ title, description }) => (
-                          <li key={title} data-experience-text><strong>{title}</strong> {description}</li>
+                          <li key={title}><strong>{title}</strong> {description}</li>
                         ))}
                       </ul>
                     </div>
-                    <div className="experience-stack">
-                      <h4 data-experience-text>Stack used</h4>
+                    <div className="experience-stack" data-reveal-item>
+                      <h4>Stack used</h4>
                       <ul role="list" className="experience-tools" aria-label={`Technologies at ${job.name}`}>
                         {job.tools.map(({ name, icon }) => (
-                          <li key={name} data-experience-text>
+                          <li key={name}>
                             <img src={icon} alt="" width={19} height={19} loading="lazy" decoding="async" />
                             {name}
                           </li>
@@ -282,7 +223,6 @@ export function ExperienceTimeline() {
               </li>
             ))}
           </ol>
-        </div>
         </div>
       </div>
     </section>

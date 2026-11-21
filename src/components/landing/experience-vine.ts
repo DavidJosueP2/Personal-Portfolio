@@ -61,15 +61,17 @@ function ivyLeaf(root: Point, tip: Point, width: number, tone: number, turned: b
   return { ground, detail }
 }
 
-function composeVine(width: number, height: number) {
-  const random = paintRandom(484)
+function composeVine(width: number, height: number, seed: number) {
+  const random = paintRandom(seed)
   const dabs: Dab[] = []
-  const unit = clamp(width / 62, 0.42, 1.3)
-  const stemEnd = Math.max(1, height - 23 * unit)
-  const point = (y: number): Point => [
-    width * (0.47 + 0.17 * Math.sin(y / (48 * unit) - 0.26) + 0.075 * Math.sin(y / (23 * unit) + 0.9)),
-    y,
-  ]
+  const unit = clamp(width / 90, 0.62, 1.5)
+  const stemEnd = height + 2
+  const phase = random() * Math.PI
+  const point = (y: number): Point => {
+    const t = clamp(y / height)
+    const arch = Math.sin(t * Math.PI)
+    return [width * (0.02 + arch * (0.51 + 0.22 * Math.sin(t * 7 + phase))), y]
+  }
 
   for (let y = 0; y < stemEnd; y += 4.5) {
     const end = Math.min(stemEnd, y + 4.6)
@@ -85,8 +87,8 @@ function composeVine(width: number, height: number) {
 
   for (let y = 37 * unit, index = 0; y < stemEnd - 14 * unit; y += Math.max(29, mix(43, 74, random()) * unit), index++) {
     const base = point(y)
-    const side = index % 2 === 0 ? -1 : 1
-    const reach = mix(0.29, 0.42, random()) * width
+    const side = index % 3 === 1 ? -1 : 1
+    const reach = mix(0.25, 0.39, random()) * width
     const joint: Point = [clamp(base[0] + side * reach * 0.41, 3, width - 3), y + mix(2, 12, random()) * unit]
     const tip: Point = [clamp(base[0] + side * reach, 3, width - 3), y - mix(19, 35, random()) * unit]
     const bend: Point = [mix(base[0], joint[0], 0.44), y + 6 * unit]
@@ -106,55 +108,56 @@ function composeVine(width: number, height: number) {
       dabs.push({ y: y + 5 * unit, paint: stroke(curl, Math.max(0.6, 1.15 * unit), pigment(stem, 0.81)) })
     }
   }
-  return dabs.sort((a, b) => a.y - b.y)
+  return dabs.sort((a, b) => a.y - b.y).map(({ paint }) => paint)
 }
 
-export function createExperienceVine(canvas: HTMLCanvasElement) {
-  const context = canvas.getContext("2d")
-  let dabs: Dab[] = []
-  let progress = 1
-  let applied = 0
-  let width = 0
-  let height = 0
-  let size = ""
-
-  const clear = () => {
-    context?.clearRect(0, 0, width + 1, height + 1)
-    applied = 0
-  }
-
-  const render = () => {
-    if (!context) return
-    const edge = height * progress
-    if (progress === 0 || (applied > 0 && edge < dabs[applied - 1].y)) clear()
-    if (progress === 0) return
-    while (applied < dabs.length && dabs[applied].y <= edge) dabs[applied++].paint(context)
-  }
-
-  return {
-    fit() {
-      const nextWidth = canvas.clientWidth
-      const nextHeight = canvas.clientHeight
-      if (!context || !nextWidth || !nextHeight) return
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.8)
-      const nextSize = `${nextWidth}:${nextHeight}:${ratio}`
-      if (size === nextSize) return
+export function connectExperienceVines(root: HTMLElement) {
+  const vines = new Map(Array.from(root.querySelectorAll<HTMLCanvasElement>("[data-experience-vine]"), (canvas, index) => {
+    let size = ""
+    const paint = () => {
+      const width = canvas.clientWidth
+      const height = canvas.clientHeight
+      if (width < 1 || height < 1) return
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.65)
+      const nextSize = `${width}:${height}:${ratio}`
+      if (nextSize === size) return
+      const context = canvas.getContext("2d")
+      if (!context) return
       size = nextSize
-      width = nextWidth
-      height = nextHeight
       canvas.width = Math.round(width * ratio)
       canvas.height = Math.round(height * ratio)
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
       context.lineCap = "round"
       context.lineJoin = "round"
-      dabs = composeVine(width, height)
-      applied = 0
-      render()
-    },
-    paint(next: number) {
-      if (next === progress) return
-      progress = next
-      render()
-    },
+      if (canvas.dataset.experienceVine === "right") {
+        context.translate(width, 0)
+        context.scale(-1, 1)
+      }
+      for (const mark of composeVine(width, height, 484 + 23 * index)) mark(context)
+    }
+    return [canvas, paint] as const
+  }))
+
+  const visibility = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      const canvas = target as HTMLCanvasElement
+      if (isIntersecting) vines.get(canvas)?.()
+      canvas.toggleAttribute("data-vine-visible", isIntersecting)
+    }
+  }, { rootMargin: "35% 0px" })
+  const size = new ResizeObserver((entries) => {
+    for (const { target } of entries) {
+      const canvas = target as HTMLCanvasElement
+      if (canvas.hasAttribute("data-vine-visible")) vines.get(canvas)?.()
+    }
+  })
+  for (const canvas of vines.keys()) {
+    visibility.observe(canvas)
+    size.observe(canvas)
+  }
+  return () => {
+    visibility.disconnect()
+    size.disconnect()
+    for (const canvas of vines.keys()) canvas.removeAttribute("data-vine-visible")
   }
 }
