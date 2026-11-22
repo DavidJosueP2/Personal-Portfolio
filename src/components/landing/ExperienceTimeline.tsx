@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 import { gsap } from "gsap"
+import { Trans, useTranslation } from "react-i18next"
 import eeasaLogo from "@/assets/img/experience/eeasa.webp"
 import kronhosLogo from "@/assets/img/experience/kronhos.webp"
 import angularLogo from "@/assets/img/tech/Angular.webp"
@@ -31,35 +32,10 @@ const experience = [
     id: "kronhos",
     name: "Kronhos ERP",
     company: "Kronhos Business Solutions Cía. Ltda.",
-    focus: "ERP development and business intelligence",
     logo: kronhosLogo,
     start: "2025-12",
-    startLabel: "Dec 2025",
     end: "2026-06",
-    endLabel: "Jun 2026",
-    detail: "6 months",
-    contributions: [
-      {
-        title: "Custom ERP modules.",
-        description: "Built frontend features and the backend logic that supports their business workflows.",
-      },
-      {
-        title: "REST APIs and integrations.",
-        description: "Developed Java and Spring Boot endpoints that connected ERP screens to business logic and data.",
-      },
-      {
-        title: "SQL Server and ERP performance.",
-        description: "Worked with the data behind ERP workflows, improved application performance, and supported a database migration.",
-      },
-      {
-        title: "Azure environments.",
-        description: "Worked with the servers and application environments that host the ERP on Azure.",
-      },
-      {
-        title: "Power BI reporting.",
-        description: "Built reports and dashboards that made ERP data easier to explore and use for business analysis.",
-      },
-    ],
+    hasDateLabels: true,
     tools: [
       ...backend,
       { name: "SQL Server", icon: sqlServerLogo },
@@ -74,33 +50,10 @@ const experience = [
     id: "eeasa",
     name: "EEASA",
     company: "Empresa Eléctrica Ambato Regional Centro Norte S.A.",
-    focus: "Electricity meter incidents",
     logo: eeasaLogo,
     start: "2025",
     end: "2026",
-    detail: "Freelance project · Several months",
-    contributions: [
-      {
-        title: "Angular and React interfaces.",
-        description: "Built screens for the web application used to manage electricity meter incidents.",
-      },
-      {
-        title: "Java and Spring Boot services.",
-        description: "Refactored the backend logic that handles meter incidents and supports the frontend workflow.",
-      },
-      {
-        title: "Incident data modeling.",
-        description: "Reworked the entities the application uses to represent and store incident records.",
-      },
-      {
-        title: "Validation rules.",
-        description: "Updated the checks the system applies before accepting incident data.",
-      },
-      {
-        title: "Oracle database.",
-        description: "Handled incident records in Oracle while updating the application’s data model.",
-      },
-    ],
+    hasDateLabels: false,
     tools: [
       { name: "Angular", icon: angularLogo },
       { name: "React", icon: reactLogo },
@@ -111,9 +64,10 @@ const experience = [
       { name: "Docker", icon: dockerLogo },
     ],
   },
-]
+] as const
 
 export function ExperienceTimeline() {
+  const { t } = useTranslation()
   const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => afterHeroIntro(() => {
@@ -167,61 +121,83 @@ export function ExperienceTimeline() {
       </div>
       <div className="experience-content">
         <header className="experience-masthead">
-          <h2 id="experience-heading">Hi <em className="font-serif-italic">there<span aria-hidden="true">.</span></em></h2>
-          <p>I’m a full-stack developer who <em className="font-serif-italic">listens first</em> and enjoys talking with people, sharing ideas, and figuring things out together.</p>
+          <h2 id="experience-heading">
+            {t("experience.mastheadLead")}{" "}
+            <em className="font-serif-italic">{t("experience.mastheadAccent")}<span aria-hidden="true">.</span></em>
+          </h2>
+          <p>
+            <Trans
+              i18nKey="experience.mastheadBody"
+              components={{ 1: <em className="font-serif-italic" /> }}
+            />
+          </p>
         </header>
 
         <div className="experience-work">
           <div className="experience-question" data-reveal-item>
             <span className="experience-question-mark" aria-hidden="true" />
-            <p id="experience-work-heading"><strong>Where have I </strong><em className="font-serif-italic">worked?</em></p>
+            <p id="experience-work-heading">
+              <Trans
+                i18nKey="experience.workQuestion"
+                components={{
+                  0: <strong />,
+                  1: <em className="font-serif-italic" />,
+                }}
+              />
+            </p>
           </div>
           <ol className="experience-roles" role="list" aria-labelledby="experience-work-heading">
-            {experience.map((job) => (
-              <li key={job.id}>
-                <article className="experience-role" aria-labelledby={`experience-${job.id}`}>
-                  <header className="experience-job-heading" data-reveal-item>
-                    <div>
-                      <div className="experience-company">
-                        <img src={job.logo} alt="" width={44} height={44} loading="lazy" decoding="async" />
-                        <h3 id={`experience-${job.id}`}>{job.name}</h3>
+            {experience.map((job) => {
+              const startLabel = job.hasDateLabels ? t(`experience.jobs.${job.id}.startLabel`) : job.start
+              const endLabel = job.hasDateLabels ? t(`experience.jobs.${job.id}.endLabel`) : job.end
+              const contributions = t(`experience.jobs.${job.id}.contributions`, { returnObjects: true })
+
+              return (
+                <li key={job.id}>
+                  <article className="experience-role" aria-labelledby={`experience-${job.id}`}>
+                    <header className="experience-job-heading" data-reveal-item>
+                      <div>
+                        <div className="experience-company">
+                          <img src={job.logo} alt="" width={44} height={44} loading="lazy" decoding="async" />
+                          <h3 id={`experience-${job.id}`}>{job.name}</h3>
+                        </div>
+                        <p className="experience-company-name">{job.company}</p>
+                        <p className="experience-job-title">{t("experience.jobTitle")}</p>
                       </div>
-                      <p className="experience-company-name">{job.company}</p>
-                      <p className="experience-job-title">Full Stack Developer</p>
+                      <div className="experience-date">
+                        <p>
+                          <time className="whitespace-nowrap" dateTime={job.start}>{startLabel}</time>
+                          {"–"}<wbr />
+                          <time className="whitespace-nowrap" dateTime={job.end}>{endLabel}</time>
+                        </p>
+                        <p>{t(`experience.jobs.${job.id}.detail`)}</p>
+                      </div>
+                    </header>
+                    <div className="experience-job-body">
+                      <div className="experience-result" data-reveal-item>
+                        <p className="experience-focus font-serif-italic">{t(`experience.jobs.${job.id}.focus`)}</p>
+                        <ul role="list" className="experience-contributions">
+                          {contributions.map(({ title, description }, index) => (
+                            <li key={index}><strong>{title}</strong> {description}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="experience-stack" data-reveal-item>
+                        <h4>{t("experience.stackUsed")}</h4>
+                        <ul role="list" className="experience-tools" aria-label={t("experience.toolsAria", { company: job.name })}>
+                          {job.tools.map(({ name, icon }) => (
+                            <li key={name}>
+                              <img src={icon} alt="" width={19} height={19} loading="lazy" decoding="async" />
+                              {name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                    <div className="experience-date">
-                      <p>
-                        <time className="whitespace-nowrap" dateTime={job.start}>{job.startLabel ?? job.start}</time>
-                        {"–"}<wbr />
-                        <time className="whitespace-nowrap" dateTime={job.end}>{job.endLabel ?? job.end}</time>
-                      </p>
-                      <p>{job.detail}</p>
-                    </div>
-                  </header>
-                  <div className="experience-job-body">
-                    <div className="experience-result" data-reveal-item>
-                      <p className="experience-focus font-serif-italic">{job.focus}</p>
-                      <ul role="list" className="experience-contributions">
-                        {job.contributions.map(({ title, description }) => (
-                          <li key={title}><strong>{title}</strong> {description}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="experience-stack" data-reveal-item>
-                      <h4>Stack used</h4>
-                      <ul role="list" className="experience-tools" aria-label={`Technologies at ${job.name}`}>
-                        {job.tools.map(({ name, icon }) => (
-                          <li key={name}>
-                            <img src={icon} alt="" width={19} height={19} loading="lazy" decoding="async" />
-                            {name}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </article>
-              </li>
-            ))}
+                  </article>
+                </li>
+              )
+            })}
           </ol>
         </div>
       </div>

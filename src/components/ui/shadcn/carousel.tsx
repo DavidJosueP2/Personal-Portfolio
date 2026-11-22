@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 type CarouselProps = {
   images: Array<{ src: string; alt: string }>
@@ -8,6 +9,7 @@ type CarouselProps = {
 const controlClassName = "grid h-11 w-11 cursor-pointer place-items-center rounded-lg border border-ink/15 bg-panel text-ink/85 hover:bg-ink/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
 
 export function Carousel({ images }: Readonly<CarouselProps>) {
+  const { t } = useTranslation()
   const [index, setIndex] = useState(0)
   const count = images.length
   const activeIndex = Math.min(index, count - 1)
@@ -21,7 +23,7 @@ export function Carousel({ images }: Readonly<CarouselProps>) {
   return (
     <div
       role="group"
-      aria-label="Project screenshots"
+      aria-label={t("projects.carousel.screenshotsAria")}
       className="min-w-0"
       onKeyDown={(event) => {
         if (count < 2 || event.target instanceof HTMLSelectElement || event.altKey || event.metaKey || event.ctrlKey) return
@@ -37,11 +39,11 @@ export function Carousel({ images }: Readonly<CarouselProps>) {
 
       {count > 1 ? (
         <div className="mt-3 flex items-center justify-between gap-2">
-          <button type="button" data-slot="gallery-prev" onClick={() => move(-1)} className={controlClassName} aria-label="Previous screenshot">
+          <button type="button" data-slot="gallery-prev" onClick={() => move(-1)} className={controlClassName} aria-label={t("projects.carousel.previousAria")}>
             <ChevronLeft aria-hidden="true" className="h-5 w-5" />
           </button>
           <select
-            aria-label="Choose screenshot"
+            aria-label={t("projects.carousel.chooseAria")}
             value={activeIndex}
             onChange={(event) => setIndex(Number(event.target.value))}
             className="min-h-11 min-w-20 rounded-lg border border-ink/15 bg-panel py-2 pl-3 pr-7 text-sm tabular-nums text-ink/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
@@ -50,10 +52,10 @@ export function Carousel({ images }: Readonly<CarouselProps>) {
               <option key={src} value={position}>{position + 1} / {count}</option>
             ))}
           </select>
-          <button type="button" data-slot="gallery-next" onClick={() => move(1)} className={controlClassName} aria-label="Next screenshot">
+          <button type="button" data-slot="gallery-next" onClick={() => move(1)} className={controlClassName} aria-label={t("projects.carousel.nextAria")}>
             <ChevronRight aria-hidden="true" className="h-5 w-5" />
           </button>
-          <p className="sr-only" aria-live="polite">{activeIndex + 1} of {count}. {image.alt}</p>
+          <p className="sr-only" aria-live="polite">{t("projects.carousel.statusSr", { current: activeIndex + 1, total: count, alt: image.alt })}</p>
         </div>
       ) : null}
     </div>

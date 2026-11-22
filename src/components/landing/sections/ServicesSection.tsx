@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { gsap } from "gsap"
+import { Trans, useTranslation } from "react-i18next"
 import clinic from "@/assets/img/projects/clinic/preview-576.webp"
 import moderation from "@/assets/img/projects/moderation/preview-576.webp"
 import fuel from "@/assets/img/projects/fuel-system/preview-576.webp"
@@ -16,12 +17,12 @@ import { connectServiceGarden } from "./services-garden"
 import "./services-section.css"
 
 const services = [
-  { name: "web", images: [clinic, moderation] },
-  { name: "backend", images: [backendModeration, backendAppointments] },
-  { name: "microservices", images: [fuel, hospital] },
-  { name: "mobile", images: [mobileSignIn, mobileChat] },
-  { name: "cloud", images: [cloudArchitecture, cloudOperations] },
-  { name: "devops", images: [cloudQuality, devopsConsole] },
+  { id: "web", images: [clinic, moderation] },
+  { id: "backend", images: [backendModeration, backendAppointments] },
+  { id: "microservices", images: [fuel, hospital] },
+  { id: "mobile", images: [mobileSignIn, mobileChat] },
+  { id: "cloud", images: [cloudArchitecture, cloudOperations] },
+  { id: "devops", images: [cloudQuality, devopsConsole] },
 ] as const
 
 type PreviewPose = { x: number; scale: number }
@@ -30,6 +31,7 @@ type ServicePose = { center: number; previews: PreviewPose[] }
 const interpolate = (from: number, to: number, fraction: number) => from + (to - from) * fraction
 
 export function ServicesSection() {
+  const { t } = useTranslation()
   const sectionRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const wordsRef = useRef<HTMLUListElement>(null)
@@ -253,10 +255,15 @@ export function ServicesSection() {
         <canvas className="services-flowers-early-right" data-service-paint="poppy" data-service-edge="right" />
       </div>
       <header data-section-motion="heading" className="services-heading">
-        <h2 id="services-heading">Services</h2>
+        <h2 id="services-heading">{t("services.heading")}</h2>
         <p>
           <span aria-hidden="true" className="services-mark" />
-          <span>How can I <em className="font-serif-italic">help?</em></span>
+          <span>
+            <Trans
+              i18nKey="services.question"
+              components={{ 1: <em className="font-serif-italic" /> }}
+            />
+          </span>
         </p>
       </header>
 
@@ -267,8 +274,8 @@ export function ServicesSection() {
         </div>
         <div className="relative" data-section-motion="body">
           <ul ref={wordsRef} className="relative z-10 grid justify-items-center gap-[clamp(0.55rem,0.9vw,1rem)]">
-            {services.map(({ name }, index) => (
-              <li key={name} data-service-row>
+            {services.map(({ id }, index) => (
+              <li key={id} data-service-row>
                 <button
                   type="button"
                   data-slot="service-word"
@@ -282,7 +289,7 @@ export function ServicesSection() {
                   }}
                   className={`block min-h-11 cursor-pointer rounded-sm px-1 text-[length:var(--service-word-size)] leading-[0.93] text-heading aria-pressed:text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink motion-safe:transition-[color,transform] motion-safe:duration-200 motion-safe:ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-[1.02] ${index % 2 === 0 ? "font-sans font-bold tracking-[-0.04em]" : "font-serif-italic tracking-[-0.025em]"}`}
                 >
-                  {name}
+                  {t(`services.items.${id}`)}
                 </button>
               </li>
             ))}
@@ -293,9 +300,9 @@ export function ServicesSection() {
               <div key={side} className="services-preview" data-service-frame>
                 <div className="services-preview-drift">
                   <div data-service-photo className="relative aspect-square overflow-hidden rounded-[4px] bg-panel shadow-[0_12px_28px_-11px_rgb(0_0_0/0.4)] [backface-visibility:hidden] sm:aspect-[3/2]">
-                    {services.map(({ name, images }, index) => (
+                    {services.map(({ id, images }, index) => (
                       <img
-                        key={name}
+                        key={id}
                         src={images[side]}
                         alt=""
                         loading="lazy"

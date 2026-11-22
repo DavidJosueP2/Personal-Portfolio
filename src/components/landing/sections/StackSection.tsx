@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from "react"
 import { gsap } from "gsap"
+import { useTranslation } from "react-i18next"
 import { scrollToSection } from "@/lib/section-stack"
 import { createRosePainter, roseRoot, roseWidth, roseHeight, type RoseKind } from "./stack-rose-paint"
 import "./stack-section.css"
@@ -70,34 +71,37 @@ function tech(file: string, name = file.replace(/\.[^.]+$/, "")) {
 const layers = [
   {
     id: "stack-frontend",
-    name: "Frontend",
     tools: [tech("Angular.webp"), tech("React.webp"), tech("Svelte.svg", "SvelteKit"), tech("Tailwind CSS.webp"), tech("TypeScript.webp")],
   },
   {
     id: "stack-backend",
-    name: "Backend",
     tools: [tech("Spring.webp", "Spring Boot"), tech("Java.webp"), tech("Nest.js.webp"), tech("Node.js.webp"), tech("Laravel.webp"), tech("PHP.webp")],
   },
   {
     id: "stack-cloud",
-    name: "Cloud & DevOps",
     tools: [tech("azure.webp", "Azure"), tech("AWS.svg"), tech("Docker.webp"), tech("Kubernetes (1).webp", "Kubernetes"), tech("GitHub Actions.webp"), tech("Jenkins.webp"), tech("Cloudflare.svg"), tech("Amazon S3.svg")],
   },
   {
     id: "stack-data",
-    name: "Data & BI",
     tools: [tech("PostgresSQL.webp", "PostgreSQL"), tech("Microsoft SQL Server.webp"), tech("MySQL.webp"), tech("Oracle.webp"), tech("Power BI.svg")],
   },
   {
     id: "stack-tooling",
-    name: "Tooling",
     tools: [tech("Grafana.webp"), tech("Prometheus.webp"), tech("SonarQube.webp"), tech("JUnit.webp"), tech("Playwrite.webp", "Playwright"), tech("Swagger.webp"), tech("OpenAPI.webp"), tech("GitHub.webp"), tech("Linux.webp")],
   },
-]
+] as const
 
 export function StackSection() {
+  const { t, i18n } = useTranslation()
+  const language = i18n.resolvedLanguage ?? i18n.language
   const rootRef = useRef<HTMLElement>(null)
+  const refreshRef = useRef<(() => void) | null>(null)
   const [current, setCurrent] = useState<string | null>(null)
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => refreshRef.current?.())
+    return () => window.cancelAnimationFrame(frame)
+  }, [language])
 
   useEffect(() => {
     const root = rootRef.current
@@ -236,19 +240,22 @@ export function StackSection() {
               onUpdate: paintTrace,
             })
 
+            refreshRef.current = () => ScrollTrigger.refresh()
+
             for (const chapter of chapters) {
               const heading = chapter.querySelector<HTMLElement>(".tech-stack-chapter-heading")
               if (!heading) continue
-              const letters = heading.querySelectorAll<HTMLElement>("[data-tech-letter]")
-              let painted = -1
+              let paintedKey = ""
               const paintLetters = ({ progress, start, end }: { progress: number; start: number; end: number }) => {
+                const letters = heading.querySelectorAll<HTMLElement>("[data-tech-letter]")
                 const span = end - start
                 const entered = span * progress / (window.innerHeight * 0.38)
                 const leaving = span * (1 - progress) / (window.innerHeight * 0.23)
                 const count = Math.floor(gsap.utils.clamp(0, 1, Math.min(entered, leaving)) * letters.length + 0.001)
-                if (count === painted) return
+                const key = `${heading.getAttribute("aria-label") ?? ""}:${letters.length}:${count}`
+                if (key === paintedKey) return
                 letters.forEach((letter, index) => letter.toggleAttribute("data-turned", index < count))
-                painted = count
+                paintedKey = key
               }
               ScrollTrigger.create({
                 trigger: heading,
@@ -271,6 +278,7 @@ export function StackSection() {
         }).catch((error: unknown) => console.error("Could not start the stack animations.", error))
         return () => {
           disposed = true
+          refreshRef.current = null
           delete root.dataset.techMotion
           paths.forEach((path) => path.style.removeProperty("stroke-dashoffset"))
           root.querySelectorAll("[data-turned]").forEach((letter) => letter.removeAttribute("data-turned"))
@@ -324,12 +332,12 @@ export function StackSection() {
       <div className="tech-stack-inner">
         <header className="tech-stack-intro">
           <h2 id="stack-heading" className="tech-stack-heading">
-            <span>Under the</span>{" "}
-            <em className="font-serif-italic">hood.</em>
+            <span>{t("stack.headingLead")}</span>{" "}
+            <em className="font-serif-italic">{t("stack.headingAccent")}</em>
           </h2>
-          <nav aria-label="Technologies by layer" className="tech-stack-index">
+          <nav aria-label={t("stack.indexAria")} className="tech-stack-index">
             <ul>
-              {layers.map(({ id, name }) => (
+              {layers.map(({ id }) => (
                 <li key={id}>
                   <a
                     href={`#${id}`}
@@ -342,7 +350,7 @@ export function StackSection() {
                       scrollToSection(id)
                     }}
                   >
-                    {name}
+                    {t(`stack.layers.${id}`)}
                   </a>
                 </li>
               ))}
@@ -351,12 +359,14 @@ export function StackSection() {
         </header>
 
         <div className="tech-stack-chapters">
-          {layers.map(({ id, name, tools }) => (
+          {layers.map(({ id, tools }) => {
+            const name = t(`stack.layers.${id}`)
+            return (
               <div key={id} id={id} className="tech-stack-chapter" data-tech-chapter data-active={current === id} data-section-motion="body">
                 <h3 className="tech-stack-chapter-heading" aria-label={name}>
                   <span aria-hidden="true">
                     {name.split(" ").map((word, wordIndex) => (
-                      <Fragment key={word}>
+                      <Fragment key={`${wordIndex}-${word}`}>
                         {wordIndex > 0 && " "}
                         <span className="tech-stack-word">
                           {Array.from(word, (letter, index) => (
@@ -381,7 +391,8 @@ export function StackSection() {
                   ))}
                 </ul>
               </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
