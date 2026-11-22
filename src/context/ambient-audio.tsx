@@ -82,6 +82,7 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
   const isOpenRef = React.useRef(isOpen)
   const currentIndexRef = React.useRef(currentIndex)
   const isPlayingRef = React.useRef(isPlaying)
+  const pausedByHideRef = React.useRef(false)
   const openFrameRef = React.useRef(0)
   const closeTimerRef = React.useRef(0)
 
@@ -103,6 +104,7 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
     const audio = audioRef.current
 
     currentIndexRef.current = safeIndex
+    pausedByHideRef.current = false
     setCurrentIndex(safeIndex)
     setCurrentTime(0)
     setDuration(track.duration)
@@ -136,10 +138,12 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
     }
 
     if (audio.paused) {
+      pausedByHideRef.current = false
       void audio.play().catch(() => {
         setIsPlaying(false)
       })
     } else {
+      pausedByHideRef.current = false
       audio.pause()
     }
   }, [])
@@ -206,6 +210,23 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
     const onEnded = () => {
       loadAndPlay(currentIndexRef.current + 1, true)
     }
+    const pauseWhenHidden = () => {
+      if (!audio.paused) {
+        pausedByHideRef.current = true
+        audio.pause()
+      }
+    }
+    const resumeWhenVisible = () => {
+      if (document.hidden || !pausedByHideRef.current) return
+      pausedByHideRef.current = false
+      void audio.play().catch(() => {
+        setIsPlaying(false)
+      })
+    }
+    const onVisibilityChange = () => {
+      if (document.hidden) pauseWhenHidden()
+      else resumeWhenVisible()
+    }
 
     audio.addEventListener("timeupdate", onTimeUpdate)
     audio.addEventListener("loadedmetadata", onDuration)
@@ -213,6 +234,9 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
     audio.addEventListener("play", onPlay)
     audio.addEventListener("pause", onPause)
     audio.addEventListener("ended", onEnded)
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    window.addEventListener("pagehide", pauseWhenHidden)
+    window.addEventListener("pageshow", resumeWhenVisible)
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate)
@@ -221,11 +245,15 @@ export function AmbientAudioProvider({ children }: Readonly<{ children: React.Re
       audio.removeEventListener("play", onPlay)
       audio.removeEventListener("pause", onPause)
       audio.removeEventListener("ended", onEnded)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+      window.removeEventListener("pagehide", pauseWhenHidden)
+      window.removeEventListener("pageshow", resumeWhenVisible)
       audio.pause()
       audio.removeAttribute("src")
       audio.load()
       audioRef.current = null
       loadedTrackIdRef.current = null
+      pausedByHideRef.current = false
     }
   }, [loadAndPlay])
 
