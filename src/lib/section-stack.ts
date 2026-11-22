@@ -5,6 +5,12 @@ import { prefersReducedMotion } from "./motion"
 
 let activeScroller: Lenis | undefined
 
+export function setPageScrollPaused(paused: boolean) {
+  if (!activeScroller) return
+  if (paused) activeScroller.stop()
+  else activeScroller.start()
+}
+
 const exitTravel = {
   heading: -0.075,
   body: 0.02,

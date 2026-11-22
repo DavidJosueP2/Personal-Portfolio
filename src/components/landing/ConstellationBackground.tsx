@@ -700,6 +700,7 @@ export function ConstellationBackground() {
   return (
       <div
           ref={backdropRef}
+          data-music-fixed
           className="pointer-events-none fixed inset-0 bg-[linear-gradient(#f7fbff,#f9fbfd_48%,#fff)] dark:bg-[linear-gradient(#0b2033,#0a182a_48%,#050b19)]"
           style={{ zIndex: 0, isolation: "isolate" }}
           aria-hidden

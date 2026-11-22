@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react"
-import { ArrowUpRight, Globe, Palette, Volume2, VolumeX } from "lucide-react"
+import { ArrowUpRight, Globe, Palette } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
@@ -175,10 +175,11 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
 
 export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => void }>) {
   const { t } = useTranslation()
-  const { enabled, toggle } = useAmbientAudio()
+  const { isOpen, isPlaying, toggleDrawer } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
   const navRef = useRef<HTMLElement>(null)
   const surface = useNavigationSurface(navRef, Boolean(onSection))
+  const showMusicHint = Boolean(onSection) && (surface.id === "" || surface.id === "top")
 
   return (
     <header className="site-header" data-surface={surface.light ? "light" : "dark"} data-experience-paper={surface.experiencePaper || undefined}>
@@ -240,21 +241,35 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
           <button
             type="button"
             data-slot="audio-toggle"
-            onClick={toggle}
+            onClick={toggleDrawer}
             className="site-header-icon"
-            aria-label={enabled ? t("nav.audio.mute") : t("nav.audio.unmute")}
-            title={enabled ? t("nav.audio.mute") : t("nav.audio.unmute")}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? t("nav.audio.close") : t("nav.audio.open")}
+            title={isOpen ? t("nav.audio.close") : t("nav.audio.open")}
           >
-            {enabled ? (
-              <Volume2 aria-hidden="true" className="size-[18px]" />
-            ) : (
-              <VolumeX aria-hidden="true" className="size-[18px]" />
-            )}
+            <span className="music-eq" data-playing={isPlaying} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
 
-          <a href={onSection ? "/contact/" : "#contact-form"} className="site-header-contact">
-            {t("nav.contactCta")} <ArrowUpRight aria-hidden="true" className="size-3.5" />
-          </a>
+          <div className="site-header-cta-wrap">
+            <a href={onSection ? "/contact/" : "#contact-form"} className="site-header-contact">
+              {t("nav.contactCta")} <ArrowUpRight aria-hidden="true" className="size-3.5" />
+            </a>
+            {showMusicHint && (
+              <button
+                type="button"
+                data-slot="music-hint"
+                onClick={toggleDrawer}
+                className="site-header-music-hint"
+                aria-label={t("nav.audio.open")}
+              >
+                {t("nav.audio.hint")}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>
