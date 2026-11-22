@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ArrowUpRight, CodeXml, Cpu, MapPin } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 import awsPractitioner from "@/assets/img/about/aws-cloud-practitioner.webp"
 import awsSimuLearn from "@/assets/img/about/aws-simulearn.webp"
 import spotifyCover from "@/assets/img/about/spotify-cover.webp"
@@ -11,6 +12,7 @@ import hatunsoftLogo from "@/assets/img/about/university/hatunsoft.webp"
 import tcsLogo from "@/assets/img/about/university/tcs.webp"
 import utaLogo from "@/assets/img/about/university/uta.webp"
 import { setupRevealList } from "@/lib/gsap-reveal-list"
+import { resolveLanguage } from "@/i18n"
 import "./about-section.css"
 
 const university = "Universidad Técnica de Ambato"
@@ -19,26 +21,27 @@ const spotify = "https://open.spotify.com/user/j9g88t92xw14rfuaz5olbi77e?si=4c2c
 
 const credentials = [
   {
-    title: "AWS Certified Cloud Practitioner",
+    id: "awsPractitioner",
     issuer: aws,
     image: awsPractitioner,
     href: "https://www.credly.com/badges/bcfbf0db-890f-4bb1-b2e2-e2c7641b0af2",
+    lang: "en",
   },
   {
-    title: "AWS SimuLearn – Solutions Architect – Training Badge",
+    id: "awsSimuLearn",
     issuer: aws,
     image: awsSimuLearn,
     href: "https://www.credly.com/badges/8353d88c-0542-4302-b19e-c750c1848f2a",
+    lang: "en",
   },
-  { title: "ESP32 Microcontroller Programming Course", issuer: `${university} · 2025`, icon: Cpu },
-  { title: "Desarrollo Web con Python y Django", issuer: university, icon: CodeXml, lang: "es" },
-]
+  { id: "esp32", issuer: `${university} · 2025`, icon: Cpu },
+  { id: "pythonDjango", issuer: university, icon: CodeXml, lang: "es" },
+] as const
 
 type UniversityEvent = {
-  title: string
-  type: string
+  id: "grok" | "hackathon" | "congress" | "codificadas" | "csei" | "hatunsoft"
+  type: "community" | "competition" | "conference"
   organizer: string
-  detail: string
   logo: string
   coOrganizerLogo?: string
   href?: string
@@ -48,68 +51,78 @@ const eventYears: { year: number; events: UniversityEvent[] }[] = [
   {
     year: 2026,
     events: [
-      { title: "Grok Bot Ambato Meetup", type: "Community", organizer: university, detail: "A local meetup on AI agents and what people are building with them.", logo: grokLogo },
-      { title: "UTA 2026 Hackathon", type: "Competition", organizer: university, detail: "An on-campus hackathon focused on building working prototypes.", logo: utaLogo },
-      { title: "3rd Universal Congress of Sciences and Research", type: "Conference", organizer: university, detail: "Attended the 32-hour program.", logo: utaLogo },
+      { id: "grok", type: "community", organizer: university, logo: grokLogo },
+      { id: "hackathon", type: "competition", organizer: university, logo: utaLogo },
+      { id: "congress", type: "conference", organizer: university, logo: utaLogo },
     ],
   },
   {
     year: 2025,
     events: [
-      { title: "Codificadas, first edition", type: "Competition", organizer: "Tata Consultancy Services", detail: "A regional programming competition for women in tech.", logo: tcsLogo, href: "https://tcscodificadas.com/" },
+      { id: "codificadas", type: "competition", organizer: "Tata Consultancy Services", logo: tcsLogo, href: "https://tcscodificadas.com/" },
     ],
   },
   {
     year: 2024,
     events: [
-      { title: "CSEI 2024", type: "Conference", organizer: `FISEI, ${university}`, detail: "Attended the sixth Conference on Computer Science, Electronics and Industrial Engineering online.", logo: cseiLogo, coOrganizerLogo: fiseiLogo },
+      { id: "csei", type: "conference", organizer: `FISEI, ${university}`, logo: cseiLogo, coOrganizerLogo: fiseiLogo },
     ],
   },
   {
     year: 2023,
     events: [
-      { title: "HatunSoft, first programming contest", type: "Competition", organizer: `FISEI, ${university}`, detail: "Five hours of programming problems at the FISEI agora.", logo: hatunsoftLogo },
+      { id: "hatunsoft", type: "competition", organizer: `FISEI, ${university}`, logo: hatunsoftLogo },
     ],
   },
 ]
 
-const interests = [
-  { title: "Friends", detail: "I always look forward to getting out and catching up with friends in person." },
-  { title: "Valorant", detail: "Valorant is my go-to game. I love how a round can turn on one smart play or a good call from the team." },
-]
+const interests = ["friends", "valorant"] as const
 
 function Profile() {
+  const { t, i18n } = useTranslation()
+  const activeLanguage = resolveLanguage(i18n.resolvedLanguage ?? i18n.language)
+
   return (
     <div className="about-layout about-profile">
       <div>
-        <h3 className="about-lead">Full-stack developer, <em className="font-serif-italic">microservices at heart.</em></h3>
+        <h3 className="about-lead">
+          <Trans
+            i18nKey="about.profile.lead"
+            components={{ 1: <em className="font-serif-italic" /> }}
+          />
+        </h3>
         <p className="about-copy">
-          I’m David Barragán, with <strong>one year of professional experience</strong> building web and mobile software,
-          developing microservices, and working in cloud environments.
-          I use Clean Architecture and domain-driven design (DDD) to build reliable backend services,
-          with clean, scalable code that’s easy to improve as the product grows. I care about code quality.
+          <Trans
+            i18nKey="about.profile.copy"
+            components={{ 1: <strong /> }}
+          />
         </p>
 
         <div className="about-profile-details">
           <div id="education">
-            <h4 className="about-subheading">Education</h4>
-            <p className="about-list-title">Software Engineering</p>
+            <h4 className="about-subheading">{t("about.profile.educationHeading")}</h4>
+            <p className="about-list-title">{t("about.profile.degree")}</p>
             <p className="about-detail">{university}</p>
           </div>
           <div>
-            <h4 className="about-subheading">Languages</h4>
+            <h4 className="about-subheading">{t("about.profile.languagesHeading")}</h4>
             <dl className="about-languages">
-              <div><dt>Spanish</dt><dd>Native</dd></div>
-              <div><dt>English</dt><dd>B2</dd></div>
+              <div><dt>{t("about.profile.spanish")}</dt><dd>{t("about.profile.spanishLevel")}</dd></div>
+              <div><dt>{t("about.profile.english")}</dt><dd>{t("about.profile.englishLevel")}</dd></div>
             </dl>
           </div>
         </div>
       </div>
 
       <div id="certs" className="about-certificates">
-        <h3 className="about-subheading">Certificates</h3>
+        <h3 className="about-subheading">{t("about.profile.certificatesHeading")}</h3>
         <ul className="about-credentials">
-          {credentials.map(({ title, issuer, image, href, icon: Icon, lang }) => {
+          {credentials.map((credential) => {
+            const title = t(`about.profile.credentials.${credential.id}`)
+            const Icon = "icon" in credential ? credential.icon : undefined
+            const image = "image" in credential ? credential.image : undefined
+            const href = "href" in credential ? credential.href : undefined
+            const titleLang = "lang" in credential && credential.lang !== activeLanguage ? credential.lang : undefined
             const content = (
               <>
                 {image ? (
@@ -118,14 +131,14 @@ function Profile() {
                   <span className="about-credential-icon">{Icon && <Icon aria-hidden="true" size={23} strokeWidth={1.5} />}</span>
                 )}
                 <span>
-                  <span className="about-list-title" lang={lang}>{title}</span>
-                  <span className="about-detail">{issuer}</span>
+                  <span className="about-list-title" lang={titleLang}>{title}</span>
+                  <span className="about-detail">{credential.issuer}</span>
                 </span>
                 {href && <ArrowUpRight aria-hidden="true" size={17} />}
               </>
             )
             return (
-              <li key={title}>
+              <li key={credential.id}>
                 {href ? (
                   <a className="about-credential" href={href} target="_blank" rel="noopener noreferrer">{content}</a>
                 ) : (
@@ -141,33 +154,40 @@ function Profile() {
 }
 
 function University() {
+  const { t } = useTranslation()
+
   return (
     <div className="about-layout about-university">
       <div>
-        <h3 className="about-lead">Competitions <em className="font-serif-italic">and conferences.</em></h3>
-        <p className="about-copy">Meetups, programming contests, and conferences from my time at {university}.</p>
+        <h3 className="about-lead">
+          <Trans
+            i18nKey="about.university.lead"
+            components={{ 1: <em className="font-serif-italic" /> }}
+          />
+        </h3>
+        <p className="about-copy">{t("about.university.copy", { university })}</p>
       </div>
       <ol className="about-events">
         {eventYears.map(({ year, events }) => (
           <li className="about-event-year" key={year}>
             <h4><time dateTime={String(year)}>{year}</time></h4>
             <ul>
-              {events.map(({ title, type, organizer, detail, logo, coOrganizerLogo, href }) => (
-                <li className="about-event" key={title}>
+              {events.map(({ id, type, organizer, logo, coOrganizerLogo, href }) => (
+                <li className="about-event" key={id}>
                   <div className="about-event-logos">
                     <img src={logo} alt="" width={176} height={176} loading="lazy" decoding="async" />
                     {coOrganizerLogo && <img src={coOrganizerLogo} alt="" width={176} height={176} loading="lazy" decoding="async" />}
                   </div>
                   <div>
                     <div className="about-event-head">
-                      <h5 className="about-list-title">{title}</h5>
-                      <span>{type}</span>
+                      <h5 className="about-list-title">{t(`about.university.events.${id}.title`)}</h5>
+                      <span>{t(`about.university.types.${type}`)}</span>
                     </div>
                     <p className="about-detail">{organizer}</p>
-                    <p className="about-event-copy">{detail}</p>
+                    <p className="about-event-copy">{t(`about.university.events.${id}.detail`)}</p>
                     {href && (
                       <a className="about-event-link" href={href} target="_blank" rel="noopener noreferrer">
-                        Event website <ArrowUpRight aria-hidden="true" size={14} />
+                        {t("about.university.eventWebsite")} <ArrowUpRight aria-hidden="true" size={14} />
                       </a>
                     )}
                   </div>
@@ -182,6 +202,7 @@ function University() {
 }
 
 function BasketballToy() {
+  const { t } = useTranslation()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -215,7 +236,7 @@ function BasketballToy() {
   }, [])
 
   return (
-    <button ref={buttonRef} className="about-basketball" data-slot="about-basketball" type="button" aria-label="Bounce the basketball">
+    <button ref={buttonRef} className="about-basketball" data-slot="about-basketball" type="button" aria-label={t("about.personal.basketball.toyAria")}>
       <span className="about-basketball-shadow" aria-hidden="true" />
       <span className="about-basketball-body" aria-hidden="true">
         <span className="about-basketball-fallback" />
@@ -226,31 +247,38 @@ function BasketballToy() {
 }
 
 function Personal() {
+  const { t } = useTranslation()
+
   return (
     <div className="about-layout about-personal">
       <div>
-        <h3 className="about-lead">Off the <em className="font-serif-italic">clock.</em></h3>
+        <h3 className="about-lead">
+          <Trans
+            i18nKey="about.personal.lead"
+            components={{ 1: <em className="font-serif-italic" /> }}
+          />
+        </h3>
         <ul className="about-interests">
           <li className="about-interest about-interest-basketball">
-            <h4>Basketball</h4>
+            <h4>{t("about.personal.basketball.title")}</h4>
             <div className="about-basketball-detail">
-              <p>Give me a court and a ball and I’m happy. Playing basketball is one of my favorite ways to unwind.</p>
+              <p>{t("about.personal.basketball.detail")}</p>
               <BasketballToy />
             </div>
           </li>
-          {interests.map(({ title, detail }) => (
-            <li className="about-interest" key={title}>
-              <h4>{title}</h4>
-              <p>{detail}</p>
+          {interests.map((id) => (
+            <li className="about-interest" key={id}>
+              <h4>{t(`about.personal.${id}.title`)}</h4>
+              <p>{t(`about.personal.${id}.detail`)}</p>
             </li>
           ))}
           <li className="about-interest">
-            <h4>Music</h4>
+            <h4>{t("about.personal.music.title")}</h4>
             <div>
-              <p>I love music. I’m the kind of person who wants a soundtrack for the whole day.</p>
+              <p>{t("about.personal.music.detail")}</p>
               <a className="about-spotify" href={spotify} target="_blank" rel="noopener noreferrer">
                 <img src={spotifyCover} alt="" width={300} height={300} loading="lazy" decoding="async" />
-                <span>Find me on Spotify</span>
+                <span>{t("about.personal.music.spotifyCta")}</span>
                 <ArrowUpRight aria-hidden="true" size={19} />
               </a>
             </div>
@@ -260,15 +288,15 @@ function Personal() {
       <figure className="about-art">
         <img
           src={surrealism}
-          alt="Surrealist painting of a reclining figure whose silhouette opens onto a blue sky with clouds"
+          alt={t("about.personal.surrealism.alt")}
           width={1200}
           height={1499}
           loading="lazy"
           decoding="async"
         />
         <figcaption>
-          <h4>Surrealism</h4>
-          <p>Surrealism is the art I keep coming back to. I like how a familiar scene can start to feel like a dream.</p>
+          <h4>{t("about.personal.surrealism.title")}</h4>
+          <p>{t("about.personal.surrealism.detail")}</p>
         </figcaption>
       </figure>
     </div>
@@ -276,12 +304,13 @@ function Personal() {
 }
 
 const tabs = [
-  { id: "profile", label: "Profile", Panel: Profile },
-  { id: "university", label: "University", Panel: University },
-  { id: "personal", label: "Personal", Panel: Personal },
+  { id: "profile", Panel: Profile },
+  { id: "university", Panel: University },
+  { id: "personal", Panel: Personal },
 ] as const
 
 export function AboutSection() {
+  const { t } = useTranslation()
   const rootRef = useRef<HTMLElement>(null)
   const [active, setActive] = useState(0)
 
@@ -309,12 +338,17 @@ export function AboutSection() {
       <div className="about-inner">
         <header className="about-heading" data-reveal-item data-section-motion="heading">
           <div>
-            <h2 id="about-heading">About <em className="font-serif-italic">me.</em></h2>
-            <p className="about-location"><MapPin aria-hidden="true" size={15} /> Ambato, Ecuador</p>
+            <h2 id="about-heading">
+              <Trans
+                i18nKey="about.heading"
+                components={{ 1: <em className="font-serif-italic" /> }}
+              />
+            </h2>
+            <p className="about-location"><MapPin aria-hidden="true" size={15} /> {t("about.location")}</p>
           </div>
 
-          <div className="about-tabs" role="tablist" aria-label="About me" onKeyDown={navigateTabs}>
-            {tabs.map(({ id, label }, index) => (
+          <div className="about-tabs" role="tablist" aria-label={t("about.tabsAria")} onKeyDown={navigateTabs}>
+            {tabs.map(({ id }, index) => (
               <button
                 key={id}
                 type="button"
@@ -326,7 +360,7 @@ export function AboutSection() {
                 tabIndex={active === index ? 0 : -1}
                 onClick={() => setActive(index)}
               >
-                {label}
+                {t(`about.tabs.${id}`)}
               </button>
             ))}
           </div>

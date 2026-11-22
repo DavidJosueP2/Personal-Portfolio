@@ -1,19 +1,10 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react"
-import type { Project, ProjectCategory } from "../types"
+import { Trans, useTranslation } from "react-i18next"
+import type { Project } from "../types"
 import { ProjectGalleryDialog } from "./ProjectGalleryDialog"
 import { createProjectSpread } from "./project-spread-motion"
 import "./projects-showcase.css"
-
-const categoryLabels: Record<ProjectCategory, string> = {
-  web: "Web development",
-  backend: "Backend",
-  mobile: "Mobile",
-  devops: "DevOps",
-  microservices: "Microservices",
-  fullstack: "Full-stack development",
-  other: "Software development",
-}
 
 type Gesture = {
   pointer: number
@@ -23,6 +14,7 @@ type Gesture = {
 }
 
 export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Project[] }>) {
+  const { t } = useTranslation()
   const sceneRef = useRef<HTMLElement>(null)
   const mediaRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
@@ -151,7 +143,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
       data-nav-light
       className="project-scene"
       aria-labelledby="projects-heading"
-      aria-roledescription="carousel"
+      aria-roledescription={t("projects.actions.carouselRole")}
       tabIndex={0}
       data-lenis-prevent-horizontal
       onKeyDown={onKeyDown}
@@ -176,13 +168,20 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
     >
       <div className="project-spread">
         <p className="project-phrase">
-          <span><span data-project-phrase-line>Each project is a chance</span></span>{" "}
-          <span><span data-project-phrase-line>to <em className="font-serif-italic">learn, experiment</em> and</span></span>{" "}
-          <span><span data-project-phrase-line>push my limits.</span></span>
+          <span><span data-project-phrase-line>{t("projects.phrase.line1")}</span></span>{" "}
+          <span>
+            <span data-project-phrase-line>
+              <Trans
+                i18nKey="projects.phrase.line2"
+                components={{ 1: <em className="font-serif-italic" /> }}
+              />
+            </span>
+          </span>{" "}
+          <span><span data-project-phrase-line>{t("projects.phrase.line3")}</span></span>
         </p>
 
         <h2 id="projects-heading" className="project-heading" data-section-motion="heading">
-          <span>Selected</span>{" "}<em className="font-serif-italic">work.</em>
+          <span>{t("projects.heading.lead")}</span>{" "}<em className="font-serif-italic">{t("projects.heading.accent")}</em>
         </h2>
 
         <div ref={mediaRef} className="project-media">
@@ -193,7 +192,7 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
               data-slot="project-preview"
               data-project-preview={id}
               data-current={active === index}
-              aria-label={active === index ? images.cover.alt : `Show ${title}`}
+              aria-label={active === index ? images.cover.alt : t("projects.actions.showProjectAria", { title })}
               tabIndex={-1}
               aria-disabled={active === index}
               onClick={() => motionRef.current?.select(index)}
@@ -218,11 +217,11 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
         <div className="project-details" data-section-motion="body">
           <dl key={project.id} className="project-swap">
             <div>
-              <dt>Category</dt>
-              <dd>{categoryLabels[project.category]}</dd>
+              <dt>{t("projects.details.category")}</dt>
+              <dd>{t(`projects.categories.${project.category}`)}</dd>
             </div>
             <div>
-              <dt>Technologies</dt>
+              <dt>{t("projects.details.technologies")}</dt>
               <dd>
                 {technologies?.length ? (
                   <ul className="project-technologies">
@@ -235,10 +234,10 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
             </div>
             {repositories.length > 0 && (
               <div>
-                <dt>Source</dt>
+                <dt>{t("projects.details.source")}</dt>
                 <dd className="project-repositories">
                   {repositories.map(({ href, label }) => (
-                    <a key={href} href={href} target="_blank" rel="noreferrer" aria-label={`${project.title}: ${label} repository`}>
+                    <a key={href} href={href} target="_blank" rel="noreferrer" aria-label={t("projects.actions.repoAria", { title: project.title, label })}>
                       {label} <ArrowUpRight aria-hidden="true" size={13} />
                     </a>
                   ))}
@@ -254,14 +253,14 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
             <div key={project.id} className="project-swap">
               <h3>
                 {demo ? (
-                  <a href={demo.href} aria-label={`Visit ${project.title} live site`} target="_blank" rel="noreferrer">
+                  <a href={demo.href} aria-label={t("projects.actions.liveSiteAria", { title: project.title })} target="_blank" rel="noreferrer">
                     <span>{project.title}</span><ArrowUpRight aria-hidden="true" />
                   </a>
                 ) : project.title}
               </h3>
               <ProjectGalleryDialog project={project}>
-                <button type="button" data-slot="project-trigger" className="project-gallery-link" aria-label={`View project: ${project.title}`}>
-                  View project <ArrowRight aria-hidden="true" size={15} />
+                <button type="button" data-slot="project-trigger" className="project-gallery-link" aria-label={t("projects.actions.viewProjectAria", { title: project.title })}>
+                  {t("projects.actions.viewProject")} <ArrowRight aria-hidden="true" size={15} />
                 </button>
               </ProjectGalleryDialog>
             </div>
@@ -273,17 +272,17 @@ export function ProjectsShowcase({ projects }: Readonly<{ projects: readonly Pro
         </div>
 
         {navigable && (
-          <div className="project-controls" data-project-controls role="group" aria-label="Project navigation">
-            <button type="button" data-slot="project-previous" aria-label="Previous project" onClick={() => motionRef.current?.step(-1)}>
+          <div className="project-controls" data-project-controls role="group" aria-label={t("projects.actions.navAria")}>
+            <button type="button" data-slot="project-previous" aria-label={t("projects.actions.previousAria")} onClick={() => motionRef.current?.step(-1)}>
               <ArrowLeft aria-hidden="true" size={18} />
             </button>
             <span aria-hidden="true">{String(active + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}</span>
-            <button type="button" data-slot="project-next" aria-label="Next project" onClick={() => motionRef.current?.step(1)}>
+            <button type="button" data-slot="project-next" aria-label={t("projects.actions.nextAria")} onClick={() => motionRef.current?.step(1)}>
               <ArrowRight aria-hidden="true" size={18} />
             </button>
           </div>
         )}
-        <p className="sr-only" role="status">{project.title}, project {active + 1} of {projects.length}</p>
+        <p className="sr-only" role="status">{t("projects.actions.statusSr", { title: project.title, current: active + 1, total: projects.length })}</p>
       </div>
       <div ref={runwayRef} className="project-runway" aria-hidden="true" />
     </section>

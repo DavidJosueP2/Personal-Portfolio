@@ -1,5 +1,6 @@
 import type { ReactElement } from "react"
 import { ArrowUpRight, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { socialLogos } from "@/assets/img/tech"
 import type { Project } from "../types"
 import {
@@ -23,18 +24,14 @@ function dedupeImages(project: Project) {
   })
 }
 
-const statusLabels: Record<NonNullable<Project["status"]>, string> = {
-  live: "Deployment live",
-  offline: "Deployment offline",
-  wip: "In development",
-}
-
 type Props = {
   project: Project
   children: ReactElement
 }
 
 export function ProjectGalleryDialog({ project, children }: Readonly<Props>) {
+  const { t } = useTranslation()
+
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -52,7 +49,7 @@ export function ProjectGalleryDialog({ project, children }: Readonly<Props>) {
             <button
               type="button"
               data-slot="dialog-close"
-              aria-label="Close project"
+              aria-label={t("projects.dialog.closeAria")}
               className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-lg border border-ink/15 text-ink/85 hover:bg-ink/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
             >
               <X aria-hidden="true" className="h-5 w-5" />
@@ -66,7 +63,7 @@ export function ProjectGalleryDialog({ project, children }: Readonly<Props>) {
           <div className="min-w-0 space-y-5">
             {project.highlights?.length ? (
               <section>
-                <h3 className="font-semibold text-ink">Technical highlights</h3>
+                <h3 className="font-semibold text-ink">{t("projects.dialog.highlightsHeading")}</h3>
                 <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm leading-relaxed text-ink/75 marker:text-accent-ink">
                   {project.highlights.map((highlight) => <li key={highlight}>{highlight}</li>)}
                 </ul>
@@ -75,7 +72,7 @@ export function ProjectGalleryDialog({ project, children }: Readonly<Props>) {
 
             {project.stack.length > 0 ? (
               <section>
-                <h3 className="font-semibold text-ink">Technology stack</h3>
+                <h3 className="font-semibold text-ink">{t("projects.dialog.stackHeading")}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink/75">{project.stack.join(" · ")}</p>
               </section>
             ) : null}
@@ -98,7 +95,7 @@ export function ProjectGalleryDialog({ project, children }: Readonly<Props>) {
               </div>
             ) : null}
 
-            {project.status ? <p className="text-xs text-ink/65">{statusLabels[project.status]}</p> : null}
+            {project.status ? <p className="text-xs text-ink/65">{t(`projects.dialog.status.${project.status}`)}</p> : null}
           </div>
         </div>
       </DialogContent>
