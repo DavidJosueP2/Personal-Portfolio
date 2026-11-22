@@ -183,13 +183,11 @@ export function HeroSection() {
             <HeroTagline />
             <p data-hero-secondary className="mt-3 max-w-full text-sm leading-snug text-ink/75 md:mt-4 md:text-base">
               <MaskedLine>{t("hero.summaryLine1")}</MaskedLine>{" "}
-              <MaskedLine className="py-[0.22em]">
+              <MaskedLine>
                 <Trans
                   i18nKey="hero.summaryLine2"
                   components={{
-                    1: (
-                      <strong className="inline-block rounded-md bg-[rgb(var(--accent-rgb,52_211_153)/0.14)] px-2 py-[0.04em] font-semibold text-accent-ink ring-1 ring-inset ring-[rgb(var(--accent-rgb,52_211_153)/0.4)]" />
-                    ),
+                    1: <em className="font-serif-italic text-[1.12em] text-ink" />,
                   }}
                 />
               </MaskedLine>

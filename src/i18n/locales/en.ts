@@ -56,9 +56,9 @@ export const en = {
   hero: {
     role: "Software Engineer",
     taglineVariants: [
-      { prefix: "Engineering systems that ", accent: "scale under pressure", tail: "." },
-      { prefix: "Code built for ", accent: "real production", tail: ", not just demos." },
-      { prefix: "Backends ", accent: "without shortcuts", tail: ", interfaces with craft." },
+      { prefix: "Clean architecture for ", accent: "distributed systems", tail: "." },
+      { prefix: "Systems designed to ", accent: "grow with the product", tail: "." },
+      { prefix: "Reliable software ", accent: "from backend to interface", tail: "." },
     ],
     summaryLine1: "Full Stack Developer. Loving Cloud,",
     summaryLine2: "<1>Microservices</1>, Spring Boot & React Native.",
@@ -378,7 +378,7 @@ export const en = {
       spanish: "Spanish",
       spanishLevel: "Native",
       english: "English",
-      englishLevel: "B2",
+      englishLevel: "B2+",
       certificatesHeading: "Certificates",
       credentials: {
         awsPractitioner: "AWS Certified Cloud Practitioner",

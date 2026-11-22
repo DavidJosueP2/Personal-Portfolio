@@ -66,9 +66,9 @@ export const es: DeepString<typeof en> = {
   hero: {
     role: "Ingeniero de Software",
     taglineVariants: [
-      { prefix: "Diseño sistemas que ", accent: "escalan sin romperse", tail: "." },
-      { prefix: "Código para ", accent: "producción real", tail: ", no solo demos." },
-      { prefix: "Backend ", accent: "sin atajos", tail: ", interfaces con carácter." },
+      { prefix: "Arquitectura limpia para ", accent: "sistemas distribuidos", tail: "." },
+      { prefix: "Sistemas diseñados para ", accent: "crecer con el producto", tail: "." },
+      { prefix: "Software confiable ", accent: "del backend a la interfaz", tail: "." },
     ],
     summaryLine1: "Desarrollador Full Stack. Apasionado por Cloud,",
     summaryLine2: "<1>Microservicios</1>, Spring Boot y React Native.",
@@ -392,7 +392,7 @@ export const es: DeepString<typeof en> = {
       spanish: "Español",
       spanishLevel: "Nativo",
       english: "Inglés",
-      englishLevel: "B2",
+      englishLevel: "B2+",
       certificatesHeading: "Certificados",
       credentials: {
         awsPractitioner: "AWS Certified Cloud Practitioner",
