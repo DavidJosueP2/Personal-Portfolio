@@ -48,22 +48,26 @@ export function LandingPage() {
     }, [])
 
     return (
-        <div ref={rootRef} className="min-h-screen bg-paper text-ink">
+        <div ref={rootRef} className="min-h-screen text-ink">
             <ConstellationBackground />
             <div data-landing-content className="relative z-10">
-                <HeaderNav onSection={scrollToSection} />
-                <main ref={sectionsRef} className="isolate">
-                    {sections.map((Section, index) => (
-                        <div key={index} data-stack-panel className="relative" style={{ zIndex: index }}>
-                            <div data-stack-entry>
-                                <div data-stack-surface>
-                                    <Section />
+                <div data-music-fixed className="music-fixed-header">
+                    <HeaderNav onSection={scrollToSection} />
+                </div>
+                <div data-music-flow>
+                    <main ref={sectionsRef} className="isolate">
+                        {sections.map((Section, index) => (
+                            <div key={index} data-stack-panel className="relative" style={{ zIndex: index }}>
+                                <div data-stack-entry>
+                                    <div data-stack-surface>
+                                        <Section />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </main>
-                <Footer onSection={scrollToSection} />
+                        ))}
+                    </main>
+                    <Footer onSection={scrollToSection} />
+                </div>
             </div>
             <div data-hero-intro hidden aria-hidden="true" className="hero-opening">
                 {["base", "accent", "night"].map((phase) => (
