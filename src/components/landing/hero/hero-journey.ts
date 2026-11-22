@@ -206,6 +206,7 @@ export function setupHeroJourney(root: HTMLElement) {
             })
             resize = new ResizeObserver(() => scene?.resize())
             resize.observe(stage)
+            stage.querySelectorAll("[data-garden-word]").forEach((word) => resize?.observe(word))
             visibility = new IntersectionObserver(([entry]) => {
               stageVisible = entry.isIntersecting
               updateAnimation()

@@ -1,6 +1,7 @@
 import { StrictMode } from "react"
 import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
+import "./i18n"
 import { ContactPage } from "@/components/contact/ContactPage"
 import { InverseCursor } from "@/components/ui/InverseCursor"
 import { AccentThemeProvider } from "@/context/accent-theme"

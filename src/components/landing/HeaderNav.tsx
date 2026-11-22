@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react"
-import { ArrowUpRight, Palette, Volume2, VolumeX } from "lucide-react"
+import { ArrowUpRight, Globe, Palette, Volume2, VolumeX } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/shadcn/popover"
 import { useAccentTheme, type Accent } from "@/context/accent-theme"
 import { useAmbientAudio } from "@/context/ambient-audio"
 import { socialLogos } from "@/assets/img/tech"
 import { afterHeroIntro } from "@/lib/hero-intro"
+import { toggleAppLanguage } from "@/i18n"
 import { PortfolioLink } from "./PortfolioLink"
 import "./site-chrome.css"
 
@@ -13,11 +15,13 @@ function AccentSwatch({
   current,
   onSelect,
   style,
+  label,
 }: Readonly<{
   value: Accent
   current: Accent
   onSelect: (v: Accent) => void
   style: CSSProperties
+  label: string
 }>) {
   const selected = value === current
 
@@ -32,18 +36,13 @@ function AccentSwatch({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 " +
         (selected ? "border-ink/80 ring-2 ring-ink/20" : "border-ink/15 hover:border-ink/45")
       }
-      aria-label={`Set accent to ${value}`}
+      aria-label={label}
       aria-pressed={selected}
     />
   )
 }
 
-const SECTIONS = [
-  { id: "experience", label: "Experience" },
-  { id: "services", label: "Services" },
-  { id: "projects", label: "Projects" },
-  { id: "about", label: "About" },
-] as const
+const SECTION_IDS = ["experience", "services", "projects", "about"] as const
 
 function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScroll: boolean) {
   const [surface, setSurface] = useState({ id: "", light: false, brandLight: false, actionsLight: false, experiencePaper: false })
@@ -121,6 +120,7 @@ function useNavigationSurface(navRef: RefObject<HTMLElement | null>, followScrol
 
 function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; setAccent: (a: Accent) => void }>) {
   const [open, setOpen] = useState(false)
+  const { t } = useTranslation()
 
   const dotColor: Record<Accent, string> = {
     lime: "#bef264",
@@ -131,6 +131,8 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
     red: "#fb7185",
   }
 
+  const swatches: Accent[] = ["lime", "emerald", "cyan", "violet", "amber", "red"]
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -138,8 +140,8 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
           type="button"
           data-slot="accent-trigger"
           className="site-header-icon"
-          aria-label="Pick accent color"
-          title="Accent"
+          aria-label={t("nav.accent.ariaLabel")}
+          title={t("nav.accent.title")}
         >
           <Palette aria-hidden="true" className="size-4" />
           <span
@@ -150,17 +152,21 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 max-w-[calc(100vw-24px)]">
-        <p className="text-xs font-semibold tracking-[0.25em] text-ink/70">ACCENT</p>
+        <p className="text-xs font-semibold tracking-[0.25em] text-ink/70">{t("nav.accent.heading")}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <AccentSwatch value="lime" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#bef264" }} />
-          <AccentSwatch value="emerald" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#34d399" }} />
-          <AccentSwatch value="cyan" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#22d3ee" }} />
-          <AccentSwatch value="violet" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#a78bfa" }} />
-          <AccentSwatch value="amber" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fbbf24" }} />
-          <AccentSwatch value="red" current={accent} onSelect={(v) => { setAccent(v); setOpen(false) }} style={{ backgroundColor: "#fb7185" }} />
+          {swatches.map((value) => (
+            <AccentSwatch
+              key={value}
+              value={value}
+              current={accent}
+              label={t("nav.accent.setTo", { color: t(`nav.accent.colors.${value}`) })}
+              onSelect={(v) => { setAccent(v); setOpen(false) }}
+              style={{ backgroundColor: dotColor[value] }}
+            />
+          ))}
         </div>
         <p className="mt-3 text-xs text-ink/65">
-          Current: <span className="font-semibold text-ink">{accent}</span>
+          {t("nav.accent.current")} <span className="font-semibold text-ink">{t(`nav.accent.colors.${accent}`)}</span>
         </p>
       </PopoverContent>
     </Popover>
@@ -168,6 +174,7 @@ function AccentPickerPopover({ accent, setAccent }: Readonly<{ accent: Accent; s
 }
 
 export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => void }>) {
+  const { t } = useTranslation()
   const { enabled, toggle } = useAmbientAudio()
   const { accent, setAccent } = useAccentTheme()
   const navRef = useRef<HTMLElement>(null)
@@ -176,24 +183,36 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
   return (
     <header className="site-header" data-surface={surface.light ? "light" : "dark"} data-experience-paper={surface.experiencePaper || undefined}>
       <div data-home-navigation className="site-header-frame">
-        <PortfolioLink section="top" onSection={onSection} aria-label="DJB, David Barragán, home" className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
+        <PortfolioLink section="top" onSection={onSection} aria-label={t("nav.brandAria")} className="site-header-brand" data-surface={surface.brandLight ? "light" : "dark"}>
           DJB
         </PortfolioLink>
 
-        <nav ref={navRef} aria-label="Main navigation" className="site-header-nav">
+        <nav ref={navRef} aria-label={t("nav.mainAria")} className="site-header-nav">
           <ul>
-            {SECTIONS.map(({ label, id }, index) => (
+            {SECTION_IDS.map((id, index) => (
               <li key={id}>
                 <PortfolioLink section={id} onSection={onSection} aria-current={surface.id === id ? "location" : undefined}>
-                  {label}
+                  {t(`nav.sections.${id}`)}
                 </PortfolioLink>
-                {index < SECTIONS.length - 1 && <span aria-hidden="true">,</span>}
+                {index < SECTION_IDS.length - 1 && <span aria-hidden="true">,</span>}
               </li>
             ))}
           </ul>
         </nav>
 
         <div className="site-header-actions" data-surface={surface.actionsLight ? "light" : "dark"}>
+          <button
+            type="button"
+            data-slot="language-toggle"
+            onClick={toggleAppLanguage}
+            className="site-header-icon site-header-lang"
+            aria-label={t("nav.language.switchAria")}
+            title={t("nav.language.switchTitle")}
+          >
+            <Globe aria-hidden="true" className="size-3.5" />
+            <span className="site-header-lang-code">{t("nav.language.label")}</span>
+          </button>
+
           <AccentPickerPopover accent={accent} setAccent={setAccent} />
 
           <a
@@ -223,8 +242,8 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
             data-slot="audio-toggle"
             onClick={toggle}
             className="site-header-icon"
-            aria-label={enabled ? "Mute" : "Unmute"}
-            title={enabled ? "Mute" : "Unmute"}
+            aria-label={enabled ? t("nav.audio.mute") : t("nav.audio.unmute")}
+            title={enabled ? t("nav.audio.mute") : t("nav.audio.unmute")}
           >
             {enabled ? (
               <Volume2 aria-hidden="true" className="size-[18px]" />
@@ -234,7 +253,7 @@ export function HeaderNav({ onSection }: Readonly<{ onSection?: (id: string) => 
           </button>
 
           <a href={onSection ? "/contact/" : "#contact-form"} className="site-header-contact">
-            Get in touch <ArrowUpRight aria-hidden="true" className="size-3.5" />
+            {t("nav.contactCta")} <ArrowUpRight aria-hidden="true" className="size-3.5" />
           </a>
         </div>
       </div>
