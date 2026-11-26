@@ -13,6 +13,15 @@ dist-ssr
 *.local
 /fonts-local/
 
+# Local LaTeX builds
+/cv/*.aux
+/cv/*.fdb_latexmk
+/cv/*.fls
+/cv/*.out
+/cv/*.pdf
+/cv/*.synctex.gz
+/cv/*.xdv
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

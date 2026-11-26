@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/shadcn/button"
 import { scrollToSection } from "@/lib/section-stack"
 import { afterHeroIntro } from "@/lib/hero-intro"
 import { topHeroTools, socialLogos } from "@/assets/img/tech"
-import cvPdf from "@/assets/docs/Curriculum.pdf"
+import cvEn from "@/assets/docs/david-barragan-cv-en.pdf"
+import cvEs from "@/assets/docs/david-barragan-cv-es.pdf"
+import { resolveLanguage } from "@/i18n"
 import { setupHeroJourney } from "../hero/hero-journey"
 import { gardenWords } from "../hero/journey-copy"
 import "../hero/hero-journey.css"
 
 const readingTime = 4_800
+const cvFiles = { en: cvEn, es: cvEs }
 
 function MaskedLine({ children, className = "", secondary = false }: Readonly<{ children: ReactNode; className?: string; secondary?: boolean }>) {
   return (
@@ -140,7 +143,8 @@ function HeroTagline() {
 }
 
 export function HeroSection() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const language = resolveLanguage(i18n.resolvedLanguage ?? i18n.language)
   const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -199,7 +203,7 @@ export function HeroSection() {
                   {t("hero.viewProjects")}
                 </Button>
                 <Button asChild variant="outline" className="min-h-10 rounded-full border-ink/20 bg-transparent px-3 text-xs text-ink/85! hover:bg-ink/5 hover:text-ink! min-[361px]:px-4 min-[361px]:text-sm">
-                  <a href={cvPdf} target="_blank" rel="noreferrer">{t("hero.cv")}</a>
+                  <a href={cvFiles[language]} target="_blank" rel="noreferrer">{t("hero.cv")}</a>
                 </Button>
                 <Button asChild variant="outline" className="min-h-10 rounded-full border-ink/20 bg-transparent px-3 text-xs text-ink/85! hover:bg-ink/5 hover:text-ink! min-[361px]:px-4 min-[361px]:text-sm">
                   <a href="https://www.linkedin.com/in/david-barragan-dev" target="_blank" rel="noreferrer">
