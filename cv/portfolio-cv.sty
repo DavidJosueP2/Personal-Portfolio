@@ -1,0 +1,80 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{portfolio-cv}
+
+\RequirePackage{fontspec}
+\RequirePackage{babel}
+\RequirePackage{microtype}
+\RequirePackage[letterpaper,margin=0.65in,top=0.55in,bottom=0.55in]{geometry}
+\RequirePackage{enumitem}
+\RequirePackage{xcolor}
+\RequirePackage[colorlinks,bookmarks=false,pdfpagelabels=false]{hyperref}
+
+\setmainfont{texgyretermes-regular.otf}[
+  BoldFont=texgyretermes-bold.otf,
+  ItalicFont=texgyretermes-italic.otf,
+  BoldItalicFont=texgyretermes-bolditalic.otf
+]
+\newfontfamily\cvHeadingFont{Georgia}
+
+\definecolor{cvBlue}{HTML}{263F59}
+\definecolor{cvRule}{HTML}{8190A0}
+\hypersetup{urlcolor=cvBlue,pdfauthor={David Barragán},pdfdisplaydoctitle}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\linespread{1.04}
+\raggedright
+
+\AddToHook{enddocument/afterlastpage}{%
+  \ifnum\ReadonlyShipoutCounter>1
+    \PackageError{portfolio-cv}{The CV exceeds one page}{Shorten the content and compile again.}%
+  \fi
+}
+
+\newcommand{\cvSeparator}{\enspace\textbar\enspace}
+
+\newcommand{\cvHeader}[2]{%
+  {\centering
+    {\cvHeadingFont\fontsize{30}{34}\selectfont\bfseries David Barragán\par}
+    \vspace{3pt}
+    {\large #1\par}
+    \vspace{3pt}
+    {\small
+      Ambato, Ecuador\cvSeparator
+      \href{tel:+593998657051}{+593 99 865 7051}\cvSeparator
+      \href{mailto:deividjosue52@hotmail.com}{deividjosue52@hotmail.com}\cvSeparator
+      \href{https://www.linkedin.com/in/david-barragan-dev}{LinkedIn}\cvSeparator
+      \href{https://github.com/DavidJosueP2}{GitHub}\cvSeparator
+      \href{https://david-portfolio-dev-ten.vercel.app/}{#2}\par
+    }
+  }
+  \vspace{10pt}
+}
+
+\newcommand{\cvSection}[1]{%
+  \par\addvspace{10pt}%
+  {\cvHeadingFont\color{cvBlue}\bfseries\MakeUppercase{#1}\par}
+  \nobreak\vspace{1pt}%
+  {\color{cvRule}\hrule height 0.45pt}
+  \nobreak\vspace{5pt}%
+}
+
+\newcommand{\cvDetail}[2]{\textbf{#1}\enspace #2\par}
+
+\newcommand{\cvEntry}[2]{%
+  \par\addvspace{5pt}%
+  {\cvHeadingFont\bfseries #1}\hfill\mbox{\textit{#2}}\par\nobreak
+}
+
+\newenvironment{cvList}
+  {\begin{itemize}[label=\textbullet,leftmargin=1.15em,topsep=2pt,itemsep=1pt,parsep=0pt,partopsep=0pt]}
+  {\end{itemize}}
+
+\newcommand{\cvFuelIQ}{\href{https://github.com/DavidJosueP2/Distributed-Gasoline-System}{FuelIQ}}
+\newcommand{\cvHospital}[1]{\href{https://github.com/JosueGarciaAbata/hospital-management-system}{#1}}
+\newcommand{\cvForis}{\href{https://github.com/DavidJosueP2/FORIS-Forum-Chat}{FORIS}}
+\newcommand{\cvAWSPractitioner}{%
+  \href{https://www.credly.com/badges/bcfbf0db-890f-4bb1-b2e2-e2c7641b0af2}{AWS Certified Cloud Practitioner}%
+}
+\newcommand{\cvAWSSimuLearn}{%
+  \href{https://www.credly.com/badges/8353d88c-0542-4302-b19e-c750c1848f2a}{AWS SimuLearn: Solutions Architect}%
+}
