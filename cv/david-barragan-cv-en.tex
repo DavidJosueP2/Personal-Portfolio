@@ -1,0 +1,63 @@
+% !LW recipe = latexmk (xelatex)
+\documentclass[11pt,english]{article}
+\usepackage{portfolio-cv}
+\hypersetup{pdftitle={David Barragán | CV},pdflang={en}}
+
+\begin{document}
+\cvHeader{Software Engineer \cvSeparator Full Stack Developer}{Portfolio}
+
+\textit{Full-stack developer focused on Java and Spring Boot backend services. Experienced in ERP systems, microservices, web and mobile applications, Azure deployments, CI/CD, and data analysis with Power BI. I apply software engineering best practices and clean code principles to build maintainable, testable systems.}
+
+\cvSection{Professional experience}
+\cvEntry{Kronhos ERP \cvSeparator Full Stack Developer}{Dec 2025 -- Jun 2026}
+\begin{cvList}
+  \item Built frontend and backend features for the ERP. Implemented REST APIs with Java and Spring Boot to connect application screens to business logic and data.
+  \item Improved application performance and supported a SQL Server database migration.
+  \item Worked with the ERP's application environments and servers on Azure.
+  \item Built Power BI reports and dashboards to make ERP data easier to explore for business analysis.
+\end{cvList}
+
+\cvEntry{EEASA \cvSeparator Backend Developer (Freelance)}{2025 -- 2026}
+\begin{cvList}
+  \item Refactored the Spring Boot logic for electricity meter incidents to make it easier to maintain.
+  \item Restructured the Oracle entities for incident records and updated their validation rules.
+  \item Implemented incident management screens with Angular and React.
+\end{cvList}
+
+\cvSection{Selected projects}
+\cvEntry{\cvFuelIQ{} \cvSeparator Fuel, trip, and route management on Azure AKS}{}
+\begin{cvList}
+  \item NestJS microservices with PostgreSQL per service and deployment with Docker and GitHub Actions.
+\end{cvList}
+
+\cvEntry{\cvHospital{Hospital Management Suite}}{}
+\begin{cvList}
+  \item Spring Boot microservices with Eureka and Clean Architecture, distributed PostgreSQL using Citus, and a React and TypeScript frontend.
+\end{cvList}
+
+\cvEntry{\cvForis{} \cvSeparator Community forum and real-time chat}{}
+\begin{cvList}
+  \item React and NestJS monorepo with PostgreSQL. Topic-based posts and static code analysis with SonarQube.
+\end{cvList}
+
+\cvSection{Areas of expertise}
+\cvDetail{Backend}{Java, Spring Boot, NestJS, REST APIs, microservices}
+\cvDetail{Frontend}{React, TypeScript, Angular, React Native}
+\cvDetail{Architecture and code quality}{Clean Architecture, DDD, JUnit, Playwright, SonarQube}
+\cvDetail{Cloud and DevOps}{Azure, Docker, Kubernetes (AKS), Git, GitHub Actions, Jenkins, CI/CD}
+\cvDetail{Data and BI}{SQL Server, PostgreSQL, Oracle, Power BI}
+\cvDetail{Soft skills}{Communication and leadership, technical documentation, and task coordination in Scrum.}
+\cvDetail{Languages}{Native Spanish \cvSeparator English B2+}
+
+\cvSection{Education}
+\cvEntry{Universidad Técnica de Ambato}{2022 -- Present}
+Software Engineering
+
+\cvSection{Courses and certifications}
+\begin{cvList}
+  \item \cvAWSPractitioner{} \cvSeparator AWS Training and Certification
+  \item \cvAWSSimuLearn{} (training badge) \cvSeparator AWS Training and Certification
+  \item ESP32 Microcontroller Programming Course \cvSeparator Universidad Técnica de Ambato, 2025
+  \item Web Development with Python and Django \cvSeparator Universidad Técnica de Ambato
+\end{cvList}
+\end{document}

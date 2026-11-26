@@ -1,0 +1,63 @@
+% !LW recipe = latexmk (xelatex)
+\documentclass[11pt,spanish]{article}
+\usepackage{portfolio-cv}
+\hypersetup{pdftitle={David Barragán | Currículum},pdflang={es}}
+
+\begin{document}
+\cvHeader{Ingeniero de Software \cvSeparator Desarrollador Full Stack}{Portafolio}
+
+\textit{Desarrollador Full Stack enfocado en servicios backend con Java y Spring Boot. Experiencia en sistemas ERP, microservicios, aplicaciones web y móviles, despliegues en Azure, CI/CD y análisis de datos con Power BI. Aplico buenas prácticas de desarrollo y principios de código limpio para construir sistemas mantenibles y fáciles de probar.}
+
+\cvSection{Experiencia profesional}
+\cvEntry{Kronhos ERP \cvSeparator Desarrollador Full Stack}{dic. 2025 -- jun. 2026}
+\begin{cvList}
+  \item Desarrollé funcionalidades del ERP en frontend y backend. Implementé APIs REST con Java y Spring Boot para conectar las pantallas del ERP con la lógica de negocio y los datos.
+  \item Optimicé el rendimiento de la aplicación y apoyé una migración de base de datos en SQL Server.
+  \item Trabajé con los servidores y entornos de aplicación del ERP en Azure.
+  \item Creé reportes y paneles en Power BI para explorar los datos del ERP y apoyar el análisis de negocio.
+\end{cvList}
+
+\cvEntry{EEASA \cvSeparator Desarrollador backend (freelance)}{2025 -- 2026}
+\begin{cvList}
+  \item Refactoricé la lógica de incidencias de medidores eléctricos en Spring Boot para facilitar su mantenimiento.
+  \item Reestructuré las entidades de incidencias en Oracle y ajusté las reglas de validación de sus registros.
+  \item Implementé pantallas de gestión de incidencias con Angular y React.
+\end{cvList}
+
+\cvSection{Proyectos seleccionados}
+\cvEntry{\cvFuelIQ{} \cvSeparator Control de combustible, viajes y rutas en Azure AKS}{}
+\begin{cvList}
+  \item Microservicios NestJS con PostgreSQL por servicio y despliegue con Docker y GitHub Actions.
+\end{cvList}
+
+\cvEntry{\cvHospital{Suite de Gestión Hospitalaria}}{}
+\begin{cvList}
+  \item Microservicios con Spring Boot, Eureka y Clean Architecture, PostgreSQL distribuido con Citus e interfaz web en React y TypeScript.
+\end{cvList}
+
+\cvEntry{\cvForis{} \cvSeparator Foro comunitario y chat en tiempo real}{}
+\begin{cvList}
+  \item Monorepo con React, NestJS y PostgreSQL. Publicaciones por tema y análisis estático con SonarQube.
+\end{cvList}
+
+\cvSection{Competencias}
+\cvDetail{Backend}{Java, Spring Boot, NestJS, APIs REST, microservicios}
+\cvDetail{Frontend}{React, TypeScript, Angular, React Native}
+\cvDetail{Arquitectura y calidad de código}{Clean Architecture, DDD, JUnit, Playwright, SonarQube}
+\cvDetail{Cloud y DevOps}{Azure, Docker, Kubernetes (AKS), Git, GitHub Actions, Jenkins, CI/CD}
+\cvDetail{Datos y BI}{SQL Server, PostgreSQL, Oracle, Power BI}
+\cvDetail{Habilidades blandas}{Comunicación y liderazgo, documentación técnica y coordinación de tareas en Scrum.}
+\cvDetail{Idiomas}{Español nativo \cvSeparator Inglés B2+}
+
+\cvSection{Educación}
+\cvEntry{Universidad Técnica de Ambato}{2022 -- Actualidad}
+Ingeniería en Software
+
+\cvSection{Cursos y certificaciones}
+\begin{cvList}
+  \item \cvAWSPractitioner{} \cvSeparator AWS Training and Certification
+  \item \cvAWSSimuLearn{} (insignia de formación) \cvSeparator AWS Training and Certification
+  \item Curso de Programación de Microcontroladores ESP32 \cvSeparator Universidad Técnica de Ambato, 2025
+  \item Desarrollo Web con Python y Django \cvSeparator Universidad Técnica de Ambato
+\end{cvList}
+\end{document}
